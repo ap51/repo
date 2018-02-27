@@ -16,5 +16,8 @@
   "bugs": {
     "url": "https://github.com/ap51/repo/issues"
   },
-  "homepage": "https://github.com/ap51/repo#readme"
+  "homepage": "https://github.com/ap51/repo#readme",
+  "dependencies": {
+    "express": "^4.16.2"
+  }
 }
