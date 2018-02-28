@@ -1,16 +1,15 @@
 <template>
     <div class="layout-view">
-        <h1>OAUTH Service Provider</h1>
+        <h1>АВТОРИЗАЦИЯ</h1>
 
         <div>
             <p>
 <!--
                 &emsp;&emsp;
 -->
-                User oauth/auth page to sign in and get access token.
+                Сервис проверки наличия номера мобильного телефона в базе данных (PostgresSQL) с использованием oauth2.0 авторизации на базе nodejs+express+pgsql vuejs+vuetifyjs.
             </p>
         </div>
-        <v-btn color="blue darken-2" flat="flat" to="auth">auth</v-btn>
     </div>
 </template>
 

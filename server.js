@@ -5,6 +5,9 @@ const path = require('path');
 
 const express = require('express');
 
+const staticFileMiddleware = express.static('public', {});
+const history = require('connect-history-api-fallback');
+
 const fs = require('fs');
 const key  = fs.readFileSync('ssl/key.pem', 'utf8');
 const cert = fs.readFileSync('ssl/cert.pem', 'utf8');
@@ -13,6 +16,16 @@ const credentials = {key, cert};
 const httpsListenPort = 5000;
 
 const app = express();
+
+app.use(staticFileMiddleware);
+
+app.use(history({
+    disableDotRule: true,
+    verbose: true
+}));
+
+app.use(staticFileMiddleware);
+
 
 let httpsServer = https.createServer(credentials, app);
 
@@ -27,7 +40,19 @@ app.use('/_file_/:name', function (req, res, next){
     });
 });
 
-app.use('/phones', require('./services/phones/router'));
+fs.readdir('./services/', (err, dirs) => {
+    dirs.forEach(dir => {
+        console.log(dir);
+        try {
+            app.use(`/${dir}`, require(`./services/${dir}/router`)(dir));
+        }
+        catch (err) {
+            console.log(err);
+        }
+    });
 
-httpsServer.listen(httpsListenPort);
-console.log(`https servel linten on ${httpsListenPort} port.`);
+    httpsServer.listen(httpsListenPort);
+    console.log(`https servel linten on ${httpsListenPort} port.`);
+});
+
+

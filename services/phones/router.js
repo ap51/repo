@@ -161,4 +161,7 @@ let end = async function(req, res, next) {
 
 router.all('/:route', end);
 
-module.exports = router;
+module.exports = function (name) {
+    service = name;
+    return router;
+};

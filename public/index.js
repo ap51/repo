@@ -83,6 +83,7 @@ Vue.prototype.$request = async function(url, data, method) {
         url: url,
         method: data ? method || 'post' : 'get',
         headers: {
+            'Authorization': 'Bearer sdlflsdk'
         }
     };
 
