@@ -1,31 +1,20 @@
-const path = require('path');
-const express = require('express');
-const bodyParser = require('body-parser');
-const expressSession = require('express-session');
+let service = __dirname.split(/\/|\\/g);
+service = service[service.length - 1];
+
+const utils = require('../../utils');
+/*
+let beginHandler = utils.beginHandler;
+let endHandler = utils.endHandler;
+*/
+
+let router = utils.router(service);
+
+const config = require('../../config');
+let patterns = config.route_patterns;
 
 const OAuth2Server = require('oauth2-server');
 const Request = OAuth2Server.Request;
 const Response = OAuth2Server.Response;
-
-const loadContent = require('../../utils').loadContent;
-
-let service = '';
-
-let router = express.Router();
-
-const MemoryStore = expressSession.MemoryStore;
-
-router.use(expressSession({
-    saveUninitialized: true,
-    resave: true,
-    secret: 'ljeklfjwlekjf',
-    store: new MemoryStore(),
-    cookie: {
-        maxAge: 3600000 * 24 * 7 * 52
-    },
-}));
-
-router.use(bodyParser.json());
 
 oauth = new OAuth2Server({
     model: require('./model')
@@ -44,6 +33,8 @@ function authenticateHandler(options) {
             .catch(function(err) {
                 // handle error condition
                 console.log(err);
+                let callback = req.headers.referer.replace(req.url, '/oauthorize');
+                err.code === 8401 && res.redirect(callback);
             });
     }
 }
@@ -87,19 +78,31 @@ function tokenHandler(options) {
     }
 }
 
-router.all('/:route', async function(req, res, next) {
-    next();
-});
+router.all(patterns, router.beginHandler());
+
+function apiHandler(options) {
+    return function(req, res, next) {
+        if(res.locals.route.name === 'api') {
+            console.log(service, 'api call:', res.locals.route.action);
+
+            next();
+        }
+        else next();
+    }
+}
+
+router.all(patterns, apiHandler());
+
 
 router.all('/api', authenticateHandler(), async function(req, res, next) {
     next();
 });
 
-router.post('/oauth/authorize', async function(req, res, next) {
+router.post('/oauthorize', async function(req, res, next) {
     next();
 });
 
-router.post('/oauth/token?', async function(req, res, next) {
+router.post('/otoken', async function(req, res, next) {
     next();
 });
 
@@ -130,37 +133,9 @@ router.post('/signout', function(req, res, next){
     next();
 });
 
-
-
-let end = async function(req, res, next) {
-    if(req.method === 'GET') {
-        let route = req.session.redirect || req.params.route;
-
-        let content = route && await loadContent(route, res, service);
-
-        res.locals.component = content.toString();
-    }
-
-    let response = {
-        redirect: req.session.redirect,
-        data: res.locals.data,
-        error: res.locals.error,
-        component: res.locals.component,
-        session: {
-            auth: req.session.user,
-            id: req.session.id
-        }
-    };
-
-
-    delete req.session.redirect;
-
-    res.end(JSON.stringify(response));
-};
-
-router.all('/:route', end);
+router.all(patterns, router.endHandler());
 
 module.exports = function (name) {
-    service = name;
+    //service = name;
     return router;
 };

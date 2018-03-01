@@ -1,6 +1,6 @@
 <template>
     <div class="layout-view">
-        <h1>О данном приложении:</h1>
+        <h1>OAuth server:</h1>
 
         <div>
             <p>

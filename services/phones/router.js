@@ -1,44 +1,23 @@
-const path = require('path');
-const express = require('express');
-const bodyParser = require('body-parser');
-const expressSession = require('express-session');
-const staticFileMiddleware = express.static(path.join(__dirname.replace(/services[\/|\\].*/, ''), 'public'), {});
-const history = require('connect-history-api-fallback');
+let service = __dirname.split(/\/|\\/g);
+service = service[service.length - 1];
 
-const loadContent = require('../../utils').loadContent;
+const utils = require('../../utils');
+/*
+let beginHandler = utils.beginHandler;
+let endHandler = utils.endHandler;
+*/
 
-let service = 'phones';
+let router = utils.router(service);
 
-let router = express.Router();
-
-const MemoryStore = expressSession.MemoryStore;
-router.use(expressSession({
-    saveUninitialized: true,
-    resave: true,
-    secret: 'ljeklfjwlekjf',
-    store: new MemoryStore(),
-    cookie: {
-        maxAge: 3600000 * 24 * 7 * 52
-    },
-}));
-
-router.use(staticFileMiddleware);
-
-router.use(history({
-    disableDotRule: true,
-    verbose: true
-}));
-
-router.use(staticFileMiddleware);
-
-router.use(bodyParser.json());
+const config = require('../../config');
+let patterns = config.route_patterns;
 
 let ensureSignedIn = function(req, res, next) {
     if (!req.session.isSignedIn) {
 
         req.session.redirect = 'unauthorized';
 
-        return end(req, res);
+        return router.endHandler()(req, res);
     }
     else {
         res.locals.data = {phones: db.phones};
@@ -47,9 +26,52 @@ let ensureSignedIn = function(req, res, next) {
     }
 };
 
-router.all('/:route', async function(req, res, next) {
+router.get('/authorize', async function(req, res, next) {
+    //get this after client registered and save locally/db
+    let client_id = 'one';
+    let response_type = 'code';
+    let redirect_uri = 'https://localhost:5000/phones/_code';
+    let authorize_uri = 'https://localhost:5000/auth-api/oauthorize/';
+
+    let url = path.join(authorize_uri, `?response_type=${response_type}&client_id=${client_id}&redirect_uri=${redirect_uri}`);
+    res.redirect(url);
+
     next();
 });
+
+router.all('/_code', async function(req, res, next) {
+    res.end();
+});
+
+router.all('/_token', async function(req, res, next) {
+    res.end();
+});
+
+router.all('/:route', function (req, res, next) {
+    console.log();
+    next()
+});
+
+router.all(patterns, router.beginHandler());
+
+function apiHandler(options) {
+    return function(req, res, next) {
+        if(res.locals.route.name === 'api') {
+            console.log(service, 'api call:', res.locals.route.action);
+
+            let api_uri = 'https://localhost:5000/auth-api/';
+
+            let url = api_uri + res.locals.route.url;
+            res.redirect(url);
+
+            //next();
+        }
+        else next();
+    }
+}
+
+router.all(patterns, apiHandler());
+
 
 router.post('/signout', function(req, res, next){
     let data = req.body;
@@ -133,35 +155,10 @@ router.patch('/phone', ensureSignedIn, function(req, res, next){
     next();
 });
 
-let end = async function(req, res, next) {
-    if(req.method === 'GET') {
-        let route = req.session.redirect || req.params.route;
-
-        let content = route && await loadContent(route, res, service);
-
-        res.locals.component = content.toString();
-    }
-
-    let response = {
-        redirect: req.session.redirect,
-        data: res.locals.data,
-        error: res.locals.error,
-        component: res.locals.component,
-        session: {
-            auth: req.session.user,
-            id: req.session.id
-        }
-    };
-
-
-    delete req.session.redirect;
-
-    res.end(JSON.stringify(response));
-};
-
-router.all('/:route', end);
+router.all(patterns, router.endHandler());
 
 module.exports = function (name) {
-    service = name;
+    //service = name;
+
     return router;
 };

@@ -345,6 +345,17 @@
 		return value;
 	}
 
+    function parseComponentURL(url) {
+        let [route, action] = url.split('.');
+        let [name, id] = route.split(':');
+
+        return {
+            name,
+            url
+        };
+    }
+
+/*
 	function parseComponentURL(url) {
 
 		var comp = url.match(/(.*?)([^/]+?)\/?(\.vue)?(\?.*|#.*|$)/);
@@ -353,6 +364,7 @@
 			url: comp[1] + comp[2] + (comp[3] === undefined ? '/index.vue' : comp[3]) + comp[4]
 		};
 	}
+*/
 
 	function resolveURL(baseURL, url) {
 

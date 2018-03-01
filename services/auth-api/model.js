@@ -64,7 +64,7 @@ model.getAccessToken = async function(accessToken, callback) {
     db.access_token.find({access_token: accessToken}, function(err, tokens) {
         let token = tokens[0];
 
-        tokens.length ? callback(null, token) : callback(err || new OAuth2Server.InvalidTokenError('Access token not found.'));
+        tokens.length ? callback(null, token) : callback(err || new OAuth2Server.InvalidTokenError('Access token not found.', {code: 8401}));
     });
 };
 

@@ -1,14 +1,36 @@
 
-let service = window.location.pathname.split('/')[1] || 'test'
-let base = `/${service}/`;
-let path = window.location.pathname.replace(base, '') || 'about';
 let cache = {};
+let service = window.location.pathname.split('/')[1];
+let route = function (path) {
+    let [route, action] = path.split('.');
+    let [name, id] = route.split(':');
 
-Vue.prototype.$state = {service, base, path, entities: {}, session: {}};
+    return {
+        name,
+        id,
+        action,
+        ident: route
+    };
+};
+
+Vue.prototype.$state = {
+    service: service || 'stub',
+    base: `/${service}/`,
+    path: window.location.pathname.replace(`/${service}/`, '') || 'about',
+    route: route(window.location.pathname.replace(`/${service}/`, '') || 'about'),
+    entities: {
+
+    },
+    session: {
+        id: 0,
+        token: '',
+        user: ''
+    }
+};
 
 let router = new VueRouter(
     {
-        base,
+        base: Vue.prototype.$state.base,
         mode: 'history',
         routes: [
             {
@@ -61,10 +83,11 @@ axios.interceptors.response.use(
 );
 
 Vue.prototype.$page = function(path, force) {
+    //path = route(path).name;
 
     if(force || Vue.prototype.$state.path !== path) {
         !cache[path] && httpVueLoader.register(Vue, path);
-        Vue.prototype.$state.path = path;
+        Vue.prototype.$state.path = route(path).name;
     }
 };
 
@@ -72,6 +95,7 @@ Vue.prototype.$bus = new Vue({});
 
 Vue.prototype.$request = async function(url, data, method) {
     let name = url.replace('/index.vue', '');
+
     url = router.options.base + name;
 
     let response = !data && cache[name];
@@ -83,7 +107,8 @@ Vue.prototype.$request = async function(url, data, method) {
         url: url,
         method: data ? method || 'post' : 'get',
         headers: {
-            'Authorization': 'Bearer sdlflsdk'
+            'Authorization': 'Bearer sdlflsdk',
+            'x-service': router.options.base
         }
     };
 
@@ -95,7 +120,7 @@ Vue.prototype.$request = async function(url, data, method) {
 
             if(!res.data.error) {
                 if (res.data.redirect) {
-                    let path = res.data.redirect.replace(base, '');
+                    let path = res.data.redirect.replace(Vue.prototype.$state.base, '');
 
                     Vue.prototype.$page(path);
 

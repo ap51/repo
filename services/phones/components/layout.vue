@@ -106,6 +106,11 @@
                         name: 'phones db',
                         to: 'phones-database',
                         icon: 'fas fa-database'
+                    },
+                    {
+                        name: 'auth-api API',
+                        to: 'api.get-phones',
+                        icon: 'fas fa-user-secret'
                     }
                 ]
             }

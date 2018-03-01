@@ -1,6 +1,6 @@
 <template>
     <div class="layout-view">
-        <h1>О данном приложении:</h1>
+        <h1>Phones server:</h1>
 
         <div>
             <p>
