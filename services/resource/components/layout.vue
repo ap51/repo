@@ -1,8 +1,8 @@
 <template>
         <v-app ref="layout">
             <v-content>
-                <v-toolbar color="red darken-2" dark dense>
-                    <v-tabs color="red darken-2"
+                <v-toolbar color="blue darken-2" dark dense>
+                    <v-tabs color="blue darken-2"
                             >
 
                         <v-tabs-slider color="yellow"></v-tabs-slider>

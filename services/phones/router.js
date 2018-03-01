@@ -2,12 +2,13 @@ let service = __dirname.split(/\/|\\/g);
 service = service[service.length - 1];
 
 const utils = require('../../utils');
-/*
-let beginHandler = utils.beginHandler;
-let endHandler = utils.endHandler;
-*/
+const database = require('./database/db');
+const axios = require('axios');
 
 let router = utils.router(service);
+
+let begin = router.beginHandler();
+let end = router.endHandler();
 
 const config = require('../../config');
 let patterns = config.route_patterns;
@@ -52,19 +53,60 @@ router.all('/:route', function (req, res, next) {
     next()
 });
 
-router.all(patterns, router.beginHandler());
+router.all(patterns, begin);
 
 function apiHandler(options) {
-    return function(req, res, next) {
+    return async function(req, res, next) {
         if(res.locals.route.name === 'api') {
-            console.log(service, 'api call:', res.locals.route.action);
+            !req.session.user && (req.session.user = {
+                //actually do sign in
+                email: 'bob@bob.com',
+                token: 'token_0393933'
+            });
 
-            let api_uri = 'https://localhost:5000/auth-api/';
+            try {
+                let credential = await database.findOne('credential', {});
 
-            let url = api_uri + res.locals.route.url;
-            res.redirect(url);
+                console.log(service, 'api call:', credential);
 
-            //next();
+                let api_uri = credential.resource_endpoint;
+
+                let url = api_uri + res.locals.route.url;
+
+                let config = {
+                    url: url,
+                    method: 'post',
+                    headers: {
+                        //'Authorization': 'Bearer ' + req.session.user.token,
+                    }
+                };
+
+                process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
+                let apiCallResult = await axios(config);
+
+                console.log(apiCallResult.data);
+
+                if(apiCallResult.data.error && [8401, 401].indexOf(apiCallResult.data.error.code) !== -1 ) {
+                    //get access token begin
+                    config.url = credential.authorize_endpoint;
+                    config.data = {
+                        client_id: credential.client_id,
+                        response_type: 'code',
+                        redirect_uri: credential.redirect_uri,
+                        scope: ['profile', 'phones'],
+                        state: 'some_state'
+                    };
+
+                    let authorize = await axios(config);
+                    console.log(authorize);
+                }
+            }
+            catch (err) {
+                let {code, message} = err;
+                res.locals.error = {code, message};
+                next();
+            }
+
         }
         else next();
     }
@@ -155,7 +197,7 @@ router.patch('/phone', ensureSignedIn, function(req, res, next){
     next();
 });
 
-router.all(patterns, router.endHandler());
+router.all(patterns, end);
 
 module.exports = function (name) {
     //service = name;

@@ -1,0 +1,1 @@
+{"client_id":"one","client_secret":"one_secret","redirectUris":["https://localhost:5000/phones/token"],"app_name":"Phones","grants":["authorization_code"],"scope":["profile","phones"],"authorize_uri":"https://localhost:5000/auth-api/oauthorize","_id":"ce6uRphpwanaGtL9"}

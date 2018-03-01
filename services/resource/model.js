@@ -1,4 +1,4 @@
-const db = require('./db/db');
+const db = require('./database/db');
 const OAuth2Server = require('oauth2-server');
 let model = module.exports;
 
@@ -10,11 +10,17 @@ model.generateRefreshToken = async function(client, user, scope, callback) {
     return await new Promise('works!');
 };
 
+/*
 model.generateAuthorizationCode = async function(client, user, scope, callback) {
     return await new Promise('works!');
 };
+*/
 
 model.getAuthorizationCode = async function(authorizationCode, callback) {
+    return await new Promise('works!');
+};
+
+model.getUser = async function(username, password, callback) {
     return await new Promise('works!');
 };
 
@@ -37,7 +43,12 @@ model.saveToken = async function(token, client, user, callback) {
 };
 
 model.saveAuthorizationCode = async function(code, client, user, callback) {
-    return await new Promise('works!');
+    code.client = {id: client.client_id};
+    code.user = user._id;
+    db.code.insert(code, function (err, inserted) {
+        callback(err, inserted);
+    });
+    //return await new Promise('works!');
 };
 
 model.revokeAuthorizationCode = async function(code, callback) {

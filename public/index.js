@@ -75,6 +75,8 @@ axios.interceptors.request.use(
 
 axios.interceptors.response.use(
     function (response) {
+        if(response.data.error)
+            return Promise.reject(response.data.error);
         return response;
     },
     function (error) {

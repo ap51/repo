@@ -2,6 +2,7 @@ let service = __dirname.split(/\/|\\/g);
 service = service[service.length - 1];
 
 const utils = require('../../utils');
+const database = require('./database/db');
 /*
 let beginHandler = utils.beginHandler;
 let endHandler = utils.endHandler;
@@ -22,27 +23,33 @@ oauth = new OAuth2Server({
 
 function authenticateHandler(options) {
     return async function(req, res, next) {
-        let request = new Request(req);
-        let response = new Response(res);
+        if (res.locals.route.name === 'api') {
+            if(!req.session.user) {
+                req.session.user = await database.findOne('user', {email: 'user@user.com'});
+            }
 
-        return oauth.authenticate(request, response, options)
-            .then(function(token) {
-                res.locals.oauth = {token: token};
-                next();
-            })
-            .catch(function(err) {
-                // handle error condition
-                console.log(err);
-                let callback = req.headers.referer.replace(req.url, '/oauthorize');
-                err.code === 8401 && res.redirect(callback);
-            });
+            let request = new Request(req);
+            let response = new Response(res);
+
+            return oauth.authenticate(request, response, options)
+                .then(function (token) {
+                    res.locals.oauth = {token: token};
+                    next();
+                })
+                .catch(function (err) {
+                    let {code, message} = err;
+                    res.locals.error = {code, message};
+                    next();
+                });
+        }
+        else next();
     }
 }
 
 let authorizeOptions = {
     authenticateHandler: {
-        handle: function(request, response) {
-            return request.session.user;
+        handle: async function(request, response) {
+            return await database.findOne('user', {email: 'user@user.com'});
         }
     }
 };
@@ -53,7 +60,7 @@ function authorizeHandler(options) {
         let response = new Response(res);
         return oauth.authorize(request, response, options)
             .then(function(code) {
-                res.locals.oauth = {code: code};
+                res.locals.data = {code: code.authorizationCode};
                 next();
             })
             .catch(function(err) {
@@ -80,27 +87,31 @@ function tokenHandler(options) {
 
 router.all(patterns, router.beginHandler());
 
-function apiHandler(options) {
-    return function(req, res, next) {
-        if(res.locals.route.name === 'api') {
-            console.log(service, 'api call:', res.locals.route.action);
-
-            next();
-        }
-        else next();
+/*
+function apiHandler(req, res, next) {
+    if(res.locals.route.name === 'api') {
+        console.log(service, 'api call:', res.locals.route.action);
+        return authenticateHandler()(req, res, next);
     }
+    else next();
 }
+*/
 
-router.all(patterns, apiHandler());
+router.all(patterns, function(req, res, next) {
+    console.log(req.params.route);
+    next();
+});
+
+router.all(patterns, authenticateHandler());
 
 
+/*
 router.all('/api', authenticateHandler(), async function(req, res, next) {
     next();
 });
+*/
 
-router.post('/oauthorize', async function(req, res, next) {
-    next();
-});
+router.post('/oauthorize', authorizeHandler(authorizeOptions));
 
 router.post('/otoken', async function(req, res, next) {
     next();

@@ -66,6 +66,8 @@ let _router = function(service) {
     router.beginHandler = function(options) {
         //let service = options.service;
         return async function (req, res, next) {
+            console.log(service);
+
             let route = {...req.params};
             route.ident = `${route.name}${route.id ? ':' + route.id : ''}`;
             route.url = `${route.name}${route.id ? ':' + route.id : ''}${route.action ? '.' + route.action : ''}`;
