@@ -2,27 +2,54 @@
         <v-app ref="layout">
             <v-content>
                 <v-toolbar color="blue darken-2" dark dense>
+                    <v-toolbar-title class="mr-2"><v-icon class="mr-1 mb-1">{{icon}}</v-icon><small>{{title}}</small></v-toolbar-title>
+<!--
+                    <v-toolbar-items>
+
+                        <v-btn flat to="about"><v-icon class="mr-1 mb-1">{{icon}}</v-icon>{{title}}</v-btn>
+                    </v-toolbar-items>
+-->
+
                     <v-tabs color="blue darken-2"
-                            >
+                            :right="false">
+
+                        <v-tabs-slider color="yellow"></v-tabs-slider>
+
+                        <v-tab v-for="tab in tabs"
+                             :key="tab.name"
+                             :to="tab.to || tab.name"
+                             v-if="!tab.right">
+
+                                <v-icon class="mr-1 mb-1">{{ tab.icon}}</v-icon>
+
+                                {{ tab.name }}
+                        </v-tab>
+
+                    </v-tabs>
+
+                    <!--<v-spacer></v-spacer>-->
+
+                    <v-tabs color="blue darken-2"
+                            :right="true">
 
                         <v-tabs-slider color="yellow"></v-tabs-slider>
 
                         <v-tab v-for="tab in tabs"
                                :key="tab.name"
-                               :to="tab.to || tab.name">
+                               :to="tab.to || tab.name"
+                               v-if="tab.right">
 
                             <v-icon class="mr-1 mb-1">{{ tab.icon}}</v-icon>
 
                             {{ tab.name }}
                         </v-tab>
+
                     </v-tabs>
 
                     <v-toolbar-items>
-<!--
                         <v-btn v-if="!state.session.auth" flat @click="signin = true">
                             <v-icon class="mr-1 mb-1">fas fa-user-circle</v-icon>SIGN IN
                         </v-btn>
--->
 
                         <v-btn v-if="state.session.auth"  flat @click="signout = true">
                             <v-icon class="mr-1 mb-1">fas fa-sign-out-alt</v-icon>{{state.session.auth}}
@@ -63,6 +90,10 @@
 </template>
 
 <style scoped>
+    .toolbar__title {
+        overflow: visible;
+    }
+
     .base-layout {
         height: calc(100vh - 64px)!important;
         margin: 8px;
@@ -75,6 +106,7 @@
 
 <script>
     module.exports = {
+        name: 'layout',
         extends: component,
         components: {
             'signin': httpVueLoader('signin'),
@@ -82,7 +114,7 @@
         },
         data() {
             return {
-                signin: false,
+                //signin: false,
                 signout: false,
                 snackbar: {
                     timeout: 3000,
@@ -92,22 +124,10 @@
                     visible: false,
                     message: ''
                 },
-                tabs: [
-                    {
-                        name: 'about',
-                        icon: 'far fa-question-circle'
-                    },
-                    {
-                        name: 'find phone',
-                        to: 'find-phone',
-                        icon: 'fas fa-mobile'
-                    },
-                    {
-                        name: 'phones db',
-                        to: 'phones-database',
-                        icon: 'fas fa-database'
+/* GET FROM server
                     }
                 ]
+*/
             }
         },
         created() {
@@ -139,3 +159,31 @@
 
     //# sourceURL=layout.js
 </script>
+
+<component-data>
+    {
+        title: 'My Tiny Social Network',
+        icon: 'fab fa-empire',
+        signin: false,
+        tabs: [
+            {
+                name: 'about',
+                icon: 'far fa-question-circle'
+            },
+            {
+                name: 'profile',
+                icon: 'fas fa-user-circle'
+            },
+            {
+                name: 'find phone',
+                to: 'find-phone',
+                icon: 'fas fa-mobile'
+            },
+            {
+                name: 'phones db',
+                to: 'phones-database',
+                icon: 'fas fa-database'
+            }
+        ]
+    }
+</component-data>

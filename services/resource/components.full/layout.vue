@@ -1,8 +1,8 @@
 <template>
         <v-app ref="layout">
             <v-content>
-                <v-toolbar color="red darken-2" dark dense>
-                    <v-tabs color="red darken-2"
+                <v-toolbar color="blue darken-2" dark dense>
+                    <v-tabs color="blue darken-2"
                             >
 
                         <v-tabs-slider color="yellow"></v-tabs-slider>
@@ -99,18 +99,13 @@
                     },
                     {
                         name: 'find phone',
-                        to: 'phone-find',
+                        to: 'find-phone',
                         icon: 'fas fa-mobile'
                     },
                     {
                         name: 'phones db',
-                        to: 'phones',
+                        to: 'phones-database',
                         icon: 'fas fa-database'
-                    },
-                    {
-                        name: 'auth-api API',
-                        to: 'phone:1',
-                        icon: 'fas fa-user-secret'
                     }
                 ]
             }

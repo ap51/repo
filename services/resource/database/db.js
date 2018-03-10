@@ -1,4 +1,4 @@
-let collections = ['access_token', 'client', 'refresh_token', 'user', 'code'];
+let collections = ['token', 'client', 'user', 'code', 'scope', 'client_user'];
 
 const path = require('path');
 const Datastore = require('nedb');
@@ -11,13 +11,33 @@ for(let inx in collections) {
 }
 
 db.client.find({client_id: 'one'}, function (err, clients) {
-    !clients.length && db.client.insert({
-        client_id: 'one',
-        client_secret: 'one_secret',
-        redirect_uri: 'https://localhost:5000/phones/token',
-        app_name: 'Phones',
-        scopes: ['profile', 'phones']
-    });
+    !clients.length && db.client.insert(
+        {
+            "client_id":"one",
+            "client_secret":"one_secret",
+            "redirectUris":["https://localhost:5000/phones/token"],
+            "app_name":"Phones",
+            "grants":["authorization_code"],
+            "scope":["profile","phones"],
+            "authorize_uri":"https://localhost:5000/auth-api/oauthorize",
+        },
+        {
+            client_id: 'self',
+            client_secret: 'self_secret',
+            redirect_uri: 'https://localhost:5000/resouce/token',
+            app_name: 'Administrator app',
+            scopes: ['profile', 'admin-api.*'],
+            grants:["authorization_code"]
+        },
+        {
+            client_id: 'one',
+            client_secret: 'one_secret',
+            redirect_uri: 'https://localhost:5000/phones/token',
+            app_name: 'Phones app',
+            scopes: ['profile', 'phones-api.*'],
+            grants:["authorization_code"]
+        },
+    );
 });
 
 db.user.find({email: 'user@user.com'}, function (err, users) {
@@ -36,9 +56,9 @@ db.find = function(collenction, query) {
             else {
                 results && results.length && resolve(results);
 
-                results && !results.length && reject(new Error('Nothings found.'));
+                results && !results.length && reject(new Error('Nothing has been found.'));
 
-                !results && reject(new Error('Results not difined.'));
+                !results && reject(new Error('Results not defined.'));
             }
         })
     });

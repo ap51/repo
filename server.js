@@ -52,7 +52,7 @@ fs.readdir('./services/', (err, dirs) => {
     });
 
     httpsServer.listen(httpsListenPort);
-    console.log(`https servel linten on ${httpsListenPort} port.`);
+    console.log(`https server linten on ${httpsListenPort} port.`);
 });
 
 

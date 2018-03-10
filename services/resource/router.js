@@ -22,25 +22,34 @@ oauth = new OAuth2Server({
 });
 
 function authenticateHandler(options) {
+
     return async function(req, res, next) {
-        if (res.locals.route.name === 'api') {
-            if(!req.session.user) {
-                req.session.user = await database.findOne('user', {email: 'user@user.com'});
+        if (router.api.authentificate(req)) {
+            try {
+                res.locals.user = await database.findOne('user', {_id: res.locals.token.user_id});
+
+                let request = new Request(req);
+                let response = new Response(res);
+
+                return oauth.authenticate(request, response, options)
+                    .then(function (token) {
+                        res.locals.data = {token};
+
+                        res.locals.data = res.locals.route;
+
+                        next();
+                    })
+                    .catch(function (err) {
+                        let {code, message} = err;
+                        res.locals.error = {code, message};
+                        next();
+                    });
             }
-
-            let request = new Request(req);
-            let response = new Response(res);
-
-            return oauth.authenticate(request, response, options)
-                .then(function (token) {
-                    res.locals.oauth = {token: token};
-                    next();
-                })
-                .catch(function (err) {
-                    let {code, message} = err;
-                    res.locals.error = {code, message};
-                    next();
-                });
+            catch (err) {
+                let {code, message} = err;
+                res.locals.error = {code, message};
+                next();
+            }
         }
         else next();
     }
@@ -49,23 +58,26 @@ function authenticateHandler(options) {
 let authorizeOptions = {
     authenticateHandler: {
         handle: async function(request, response) {
-            return await database.findOne('user', {email: 'user@user.com'});
+            return response.locals.user;
         }
     }
 };
 
 function authorizeHandler(options) {
-    return function(req, res, next) {
+    return async function(req, res, next) {
         let request = new Request(req);
         let response = new Response(res);
+
         return oauth.authorize(request, response, options)
-            .then(function(code) {
+            .then(function (code) {
                 res.locals.data = {code: code.authorizationCode};
                 next();
             })
-            .catch(function(err) {
-                // handle error condition
+            .catch(function (err) {
+                let {code, message} = err;
+                res.locals.error = {code, message};
                 console.log(err);
+                next();
             });
     }
 }
@@ -75,30 +87,35 @@ function tokenHandler(options) {
         let request = new Request(req);
         let response = new Response(res);
         return oauth.token(request, response, options)
-            .then(function(code) {
-                res.locals.oauth = {token: token};
+            .then(function(token) {
+                res.locals.data = {token: token.accessToken};
                 next();
             })
             .catch(function(err) {
-                // handle error condition
+                let {code, message} = err;
+                res.locals.error = {code, message};
+                console.log(err);
+                next()
             });
     }
 }
 
-router.all(patterns, router.beginHandler());
-
-/*
-function apiHandler(req, res, next) {
-    if(res.locals.route.name === 'api') {
-        console.log(service, 'api call:', res.locals.route.action);
-        return authenticateHandler()(req, res, next);
+router.onComponentData = function(req, res, response, data) {
+    switch(res.locals.route.name) {
+        case 'layout':
+            if(!response.session.auth)
+                data.tabs = [data.tabs[0]];
+            break;
     }
-    else next();
-}
-*/
+
+    return data;
+};
+
+router.all(patterns, router.beginHandler());
+//res.locals.route
 
 router.all(patterns, function(req, res, next) {
-    console.log(req.params.route);
+    console.log(req.params);
     next();
 });
 
@@ -113,9 +130,7 @@ router.all('/api', authenticateHandler(), async function(req, res, next) {
 
 router.post('/oauthorize', authorizeHandler(authorizeOptions));
 
-router.post('/otoken', async function(req, res, next) {
-    next();
-});
+router.post('/otoken', tokenHandler());
 
 /*
 router.get('/grant', function(req, res, next){

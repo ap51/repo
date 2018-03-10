@@ -18,12 +18,11 @@ Vue.prototype.$state = {
     base: `/${service}/`,
     path: window.location.pathname.replace(`/${service}/`, '') || 'about',
     route: route(window.location.pathname.replace(`/${service}/`, '') || 'about'),
-    entities: {
-
-    },
+    entities: {},
+    data: {},
     session: {
         id: 0,
-        token: '',
+        token: '{user_id:1010010, user_name:"bob dilan", container_id:"pdqwp08qfu", token:"qfefw98we7ggwvv7s"}',
         user: ''
     }
 };
@@ -85,7 +84,6 @@ axios.interceptors.response.use(
 );
 
 Vue.prototype.$page = function(path, force) {
-    //path = route(path).name;
 
     if(force || Vue.prototype.$state.path !== path) {
         !cache[path] && httpVueLoader.register(Vue, path);
@@ -94,6 +92,7 @@ Vue.prototype.$page = function(path, force) {
 };
 
 Vue.prototype.$bus = new Vue({});
+
 
 Vue.prototype.$request = async function(url, data, method) {
     let name = url.replace('/index.vue', '');
@@ -109,8 +108,9 @@ Vue.prototype.$request = async function(url, data, method) {
         url: url,
         method: data ? method || 'post' : 'get',
         headers: {
-            'Authorization': 'Bearer sdlflsdk',
-            'x-service': router.options.base
+            'Authorization': `Bearer ${Vue.prototype.$state.session.token}`,
+            'x-service': router.options.base,
+            'Access-Control-Allow-Origin': '*'
         }
     };
 
@@ -118,27 +118,38 @@ Vue.prototype.$request = async function(url, data, method) {
 
     return axios(config)
         .then(function(res) {
-            res.data.session && Vue.set(Vue.prototype.$state, 'session', res.data.session);
-
-            if(!res.data.error) {
-                if (res.data.redirect) {
-                    let path = res.data.redirect.replace(Vue.prototype.$state.base, '');
-
-                    Vue.prototype.$page(path);
-
-                    name = path;
-                }
-                cache[name] = res.data.component || cache[name];
-
-                res.data.data && Vue.set(Vue.prototype.$state, 'entities', res.data.data);
-
-                return cache[name];
+            let redirect = window.location.origin + res.config.url !== res.request.responseURL;
+            if(redirect) {
+                window.location.href = res.request.responseURL;
+                //window.history.pushState(null, null, res.request.responseURL);
             }
-            else Vue.prototype.$bus.$emit('snackbar', res.data.error);
+            else {
+                res.data.session && Vue.set(Vue.prototype.$state, 'session', res.data.session);
+
+                if (!res.data.error) {
+                    if (res.data.redirect) { ///>?????
+                        let path = res.data.redirect.replace(Vue.prototype.$state.base, '');
+
+                        Vue.prototype.$page(path);
+
+                        name = path;
+                    }
+
+                    cache[name] = res.data.component || cache[name];
+
+                    res.data.data && Vue.set(Vue.prototype.$state.data, name, res.data.data);
+                    //ОБЪЕДИНИТЬ ТОЛЬКО ЧТО НОВОЕ! пример сделан в проекте
+                    res.data.entities && Vue.set(Vue.prototype.$state, 'entities', res.data.entities);
+
+                    return cache[name];
+                }
+                else Vue.prototype.$bus.$emit('snackbar', res.data.error);
+            }
         })
         .catch(function(err) {
             return Promise.reject(err);
         });
+
 };
 
 httpVueLoader.httpRequest = Vue.prototype.$request;
@@ -153,9 +164,13 @@ let component = {
         }
     },
     data() {
-        return {
-            state: this.$state
-        }
+        let data = {
+            state: this.$state,
+        };
+
+        Object.assign(data, this.$state.data[this.$options.name || this.$options._componentTag]);
+
+        return data;
     },
     watch: {
         'state.path': function () {

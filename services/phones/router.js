@@ -21,7 +21,7 @@ let ensureSignedIn = function(req, res, next) {
         return router.endHandler()(req, res);
     }
     else {
-        res.locals.data = {phones: db.phones};
+        res.locals.entities = {phones: db.phones};
 
         next();
     }
@@ -44,12 +44,11 @@ router.all('/_code', async function(req, res, next) {
     res.end();
 });
 
-router.all('/_token', async function(req, res, next) {
+router.all('/token', async function(req, res, next) {
     res.end();
 });
 
 router.all('/:route', function (req, res, next) {
-    console.log();
     next()
 });
 
@@ -57,7 +56,85 @@ router.all(patterns, begin);
 
 function apiHandler(options) {
     return async function(req, res, next) {
-        if(res.locals.route.name === 'api') {
+        if(router.api.authentificate(req)) {
+            //res.redirect('https://localhost:5001/resource/unauthorized');
+/*
+            res.writeHead(302,
+                {
+                    //'Location': 'https://riafan.ru',
+                    'Location': 'https://localhost:5000/resource/unauthorized',
+                }
+            );
+            res.end();
+            return next();
+*/
+
+            res.locals.entities = router.api.exec(req, res);
+
+            if(res.locals.entities.redirect) {
+                let config = {
+                    url: res.locals.entities.redirect,
+                    method: req.method,
+                    headers: {...req.headers, 'Content-Type': 'application/x-www-form-urlencoded'},
+                    transformRequest: function(obj) {
+                        let str = [];
+                        for(let key in obj)
+                            str.push(encodeURIComponent(key) + "=" + encodeURIComponent(obj[key]));
+                        return str.join("&");
+                    },
+                    data: req.body
+                };
+
+                process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
+                try {
+                    let apiCallResult = await axios(config);
+                    let redirected = apiCallResult.config.url !== apiCallResult.request.res.responseUrl;
+                    if(redirected) {
+                        res.redirect(apiCallResult.request.res.responseUrl);
+/*
+                        res.writeHead(301,
+                            {
+                                //'Location': 'https://riafan.ru',
+                                'Location': apiCallResult.request.res.responseUrl,
+                                'Access-Control-Allow-Origin': '*'
+                            }
+                        );
+                        res.end();
+*/
+
+                        return;
+                    }
+                    res.locals.entities = apiCallResult;
+
+                }
+                catch (err) {
+                    console.log(err);
+                    let credential = await database.findOne('credential', {});
+
+                    config.url = credential.authorize_endpoint;
+                    config.method = 'POST';
+                    config.data = {
+                        client_id: credential.client_id,
+                        response_type: 'code',
+                        redirect_uri: credential.redirect_uri,
+                        scope: ['profile', 'phones'],
+                        state: 'some_state'
+                    };
+
+                    try {
+                        let apiCallResult = await axios(config);
+
+                        res.locals.entities = apiCallResult;
+                    }
+                    catch (err) {
+                        console.log(err);
+                    }
+                }
+            }
+
+            console.log(res.locals.entities);
+
+/*
             !req.session.user && (req.session.user = {
                 //actually do sign in
                 email: 'bob@bob.com',
@@ -73,18 +150,31 @@ function apiHandler(options) {
 
                 let url = api_uri + res.locals.route.url;
 
+                axios.interceptors.response.use(function (response) {
+                    // Do something with response data
+                    return response;
+                }, function (error) {
+                    // Do something with response error
+                    return Promise.reject(error);
+                });
+
                 let config = {
                     url: url,
                     method: 'post',
-                    headers: {
-                        //'Authorization': 'Bearer ' + req.session.user.token,
-                    }
+                    headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+                    transformRequest: function(obj) {
+                        let str = [];
+                        for(let key in obj)
+                            str.push(encodeURIComponent(key) + "=" + encodeURIComponent(obj[key]));
+                        return str.join("&");
+                    },
                 };
 
                 process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
                 let apiCallResult = await axios(config);
 
                 console.log(apiCallResult.data);
+                return next();
 
                 if(apiCallResult.data.error && [8401, 401].indexOf(apiCallResult.data.error.code) !== -1 ) {
                     //get access token begin
@@ -97,8 +187,30 @@ function apiHandler(options) {
                         state: 'some_state'
                     };
 
-                    let authorize = await axios(config);
-                    console.log(authorize);
+                    try {
+                        let authorize = await axios(config);
+                        let code = authorize.data.data.code;
+                        //console.log();
+
+                        config.url = credential.token_endpoint;
+                        config.data.code = code;
+                        config.data.client_secret = credential.client_secret;
+                        config.data.grant_type = credential.grant_type;
+
+                        let token = await axios(config);
+                        token = token.data.data.token;
+
+                        config.url = api_uri + res.locals.route.url;
+                        config.data = {token};
+                        config.headers['Authorization'] = `Bearer ${token}`;
+
+                        apiCallResult = await axios(config);
+                        console.log(apiCallResult.data);
+
+                    }
+                    catch (err) {
+                        console.log(err);
+                    }
                 }
             }
             catch (err) {
@@ -107,6 +219,7 @@ function apiHandler(options) {
                 next();
             }
 
+*/
         }
         else next();
     }

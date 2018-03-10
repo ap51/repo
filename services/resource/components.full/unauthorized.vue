@@ -1,6 +1,6 @@
 <template>
     <div class="layout-view">
-        <h1>RESOURCE unauthorized access</h1>
+        <h1>unauthorized access</h1>
         <v-icon color="red darken-2" class="shadow">fas fa-unlink fa-3x</v-icon>
         <h1>"{{location}}"</h1>
 
