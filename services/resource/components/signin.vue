@@ -1,5 +1,4 @@
 <template>
-    <v-dialog v-model="visible" persistent max-width="500px">
         <v-card>
             <v-card-title>
                 <v-icon class="mr-1">fas fa-user-circle</v-icon>
@@ -44,7 +43,6 @@
                 <v-btn color="blue darken-2" flat @click.native="signin()">sign in</v-btn>
             </v-card-actions>
         </v-card>
-    </v-dialog>
 </template>
 
 <style scoped>
@@ -53,9 +51,6 @@
 <script>
     module.exports = {
         extends: component,
-        props: [
-            'visible'
-        ],
         data() {
             return {
                 email: '',

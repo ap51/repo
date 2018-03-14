@@ -1,20 +1,8 @@
 //fill res.locals.entities then normalize it and send to user agent or client app
 
 let routes = [
-/*
-    {
-        category: 'Scopes',
-        routes: ['scopes'],
-        method: 'get',
-        fn: function (req, res) {
-            return res.router.api.map((route) => route.public);
-        },
-        public: true
-    },
-*/
     {
         category: 'Profile',
-        public: false,
         name: 'profile',
         actions: [
             {
@@ -29,7 +17,6 @@ let routes = [
     },
     {
         category: 'Phones',
-        public: false,
         name: 'phones',
         actions: [
             {
@@ -52,7 +39,21 @@ let routes = [
     },
     {
         category: 'Phones',
-        public: false,
+        name: 'phone-find',
+        actions: [
+            {
+                '*.get': function (req, res) {
+                    return {
+                        id: 1,
+                        phone: '+78009092233',
+                        owner: 'Will Smith'
+                    } //get phone by ID
+                }
+            }
+        ],
+    },
+    {
+        category: 'Phones',
         name: 'phone',
         actions: [
             {

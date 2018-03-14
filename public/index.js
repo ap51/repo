@@ -20,11 +20,9 @@ Vue.prototype.$state = {
     route: route(window.location.pathname.replace(`/${service}/`, '') || 'about'),
     entities: {},
     data: {},
-    session: {
-        id: 0,
-        token: '{user_id:1010010, user_name:"bob dilan", container_id:"pdqwp08qfu", token:"qfefw98we7ggwvv7s"}',
-        user: ''
-    }
+    token: sessionStorage.getItem('token'),
+    auth: void 0
+    //token: '{user_id:1010010, user_name:"bob dilan", container_id:"pdqwp08qfu", token:"qfefw98we7ggwvv7s"}',
 };
 
 let router = new VueRouter(
@@ -104,50 +102,70 @@ Vue.prototype.$request = async function(url, data, method) {
     if(response)
         return response;
 
+/*
+    let search = window.location.search.slice(1);
+    search = search.split('&');
+
+    search = search.reduce(function (memo, item) {
+        let [key, value] = item.split('=');
+        memo[key] = value;
+
+        return memo;
+    }, {});
+
+    let referer = search && search['from'];
+*/
+
     let config = {
         url: url,
         method: data ? method || 'post' : 'get',
         headers: {
-            'Authorization': `Bearer ${Vue.prototype.$state.session.token}`,
+            'Authorization': Vue.prototype.$state.token ? `Bearer ${Vue.prototype.$state.token}` : '',
             'x-service': router.options.base,
-            'Access-Control-Allow-Origin': '*'
+            //'Access-Control-Allow-Origin': '*'
         }
     };
 
+    //referer && (config.headers['x-referer'] = referer);
     data && (config.data = data);
 
     return axios(config)
         .then(function(res) {
-            let redirect = window.location.origin + res.config.url !== res.request.responseURL;
-            if(redirect) {
-                window.location.href = res.request.responseURL;
+            let redirected = decodeURIComponent(window.location.origin + res.config.url) !== decodeURIComponent(res.request.responseURL);
+            if(false) {
+                //window.location.href = res.request.responseURL;
                 //window.history.pushState(null, null, res.request.responseURL);
             }
             else {
-                res.data.session && Vue.set(Vue.prototype.$state, 'session', res.data.session);
+                res.data.token && Vue.set(Vue.prototype.$state, 'token', res.data.token);
+                sessionStorage.setItem('token', Vue.prototype.$state.token);
 
-                if (!res.data.error) {
-                    if (res.data.redirect) { ///>?????
+                if (res.data.redirect) {
+                    if(res.data.redirect.local) {
                         let path = res.data.redirect.replace(Vue.prototype.$state.base, '');
 
                         Vue.prototype.$page(path);
 
                         name = path;
                     }
-
-                    cache[name] = res.data.component || cache[name];
-
-                    res.data.data && Vue.set(Vue.prototype.$state.data, name, res.data.data);
-                    //ОБЪЕДИНИТЬ ТОЛЬКО ЧТО НОВОЕ! пример сделан в проекте
-                    res.data.entities && Vue.set(Vue.prototype.$state, 'entities', res.data.entities);
-
-                    return cache[name];
+                    else {
+                        window.location.replace(res.data.redirect.remote);
+                        return;
+                    }
                 }
-                else Vue.prototype.$bus.$emit('snackbar', res.data.error);
+
+                cache[name] = res.data.component || cache[name];
+
+                res.data.data && Vue.set(Vue.prototype.$state.data, name, res.data.data);
+                //ОБЪЕДИНИТЬ ТОЛЬКО ЧТО НОВОЕ! пример сделан в проекте
+                res.data.entities && Vue.set(Vue.prototype.$state, 'entities', res.data.entities);
+
+                return cache[name];
             }
         })
         .catch(function(err) {
-            return Promise.reject(err);
+            Vue.prototype.$bus.$emit('snackbar', err);
+            return '';// Promise.reject(err);
         });
 
 };

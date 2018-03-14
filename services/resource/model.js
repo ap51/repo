@@ -26,9 +26,9 @@ model.generateRefreshToken = async function(client, user, scope, callback) {
 };
 */
 
-model.generateAuthorizationCode = function(client, user, scope, callback) {
+model.generateAuthorizationCode = async function(client, user, scope, callback) {
     user = user && user._id;
-    callback(!user && new Error(401, 'no user'), generateRandomToken());
+    callback(!user && new Error(401, 'no user'), await generateRandomToken());
 };
 
 model.getAuthorizationCode = async function(authorizationCode, callback) {
@@ -36,7 +36,7 @@ model.getAuthorizationCode = async function(authorizationCode, callback) {
         if (err || !codes.length)
             return callback(err);
 
-        let code = codes[0] && codes[0].user;
+        let code = codes[0];// && codes[0].user;
 
         callback(null, code);
     });

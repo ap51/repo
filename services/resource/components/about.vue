@@ -37,6 +37,7 @@
         height: 100%;
         border: none;
     }
+
     .layout-view {
         display: flex;
         justify-content: center;

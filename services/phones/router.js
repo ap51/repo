@@ -2,7 +2,6 @@ let service = __dirname.split(/\/|\\/g);
 service = service[service.length - 1];
 
 const utils = require('../../utils');
-const database = require('./database/db');
 const axios = require('axios');
 
 let router = utils.router(service);
@@ -56,172 +55,43 @@ router.all(patterns, begin);
 
 function apiHandler(options) {
     return async function(req, res, next) {
-        if(router.api.authentificate(req)) {
-            //res.redirect('https://localhost:5001/resource/unauthorized');
-/*
-            res.writeHead(302,
-                {
-                    //'Location': 'https://riafan.ru',
-                    'Location': 'https://localhost:5000/resource/unauthorized',
+        if(router.api.check(req)) {
+
+            let data = await router.api.exec(req, res);
+
+            res.locals = {...res.locals, ...data};
+
+/*            if(data.error) {
+
+                if(data.error.redirect) {
+                    //data.error.redirect = '';
+                    //res.locals.route.name = 'unauthorized';
+                    //data.error.redirect = 'unauthorized';
+                    res.locals.error = data.error;
                 }
-            );
-            res.end();
-            return next();
-*/
+                else {
 
-            res.locals.entities = router.api.exec(req, res);
+                    let credential = await router.database.findOne('credential', {});
 
-            if(res.locals.entities.redirect) {
-                let config = {
-                    url: res.locals.entities.redirect,
-                    method: req.method,
-                    headers: {...req.headers, 'Content-Type': 'application/x-www-form-urlencoded'},
-                    transformRequest: function(obj) {
-                        let str = [];
-                        for(let key in obj)
-                            str.push(encodeURIComponent(key) + "=" + encodeURIComponent(obj[key]));
-                        return str.join("&");
-                    },
-                    data: req.body
-                };
-
-                process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
-                try {
-                    let apiCallResult = await axios(config);
-                    let redirected = apiCallResult.config.url !== apiCallResult.request.res.responseUrl;
-                    if(redirected) {
-                        res.redirect(apiCallResult.request.res.responseUrl);
-/*
-                        res.writeHead(301,
-                            {
-                                //'Location': 'https://riafan.ru',
-                                'Location': apiCallResult.request.res.responseUrl,
-                                'Access-Control-Allow-Origin': '*'
-                            }
-                        );
-                        res.end();
-*/
-
-                        return;
-                    }
-                    res.locals.entities = apiCallResult;
-
-                }
-                catch (err) {
-                    console.log(err);
-                    let credential = await database.findOne('credential', {});
-
-                    config.url = credential.authorize_endpoint;
-                    config.method = 'POST';
-                    config.data = {
-                        client_id: credential.client_id,
-                        response_type: 'code',
-                        redirect_uri: credential.redirect_uri,
-                        scope: ['profile', 'phones'],
-                        state: 'some_state'
+                    let config = {
+                        url: credential.authorize_endpoint,
+                        method: 'POST',
+                        data: {
+                            client_id: credential.client_id,
+                            response_type: 'code',
+                            redirect_uri: credential.redirect_uri,
+                            scope: ['profile', 'phones'],
+                            state: 'some_state'
+                        }
                     };
 
-                    try {
-                        let apiCallResult = await axios(config);
-
-                        res.locals.entities = apiCallResult;
-                    }
-                    catch (err) {
-                        console.log(err);
-                    }
+                    let token = await router.api.request(config);
+                    console.log(token);
                 }
             }
-
-            console.log(res.locals.entities);
-
-/*
-            !req.session.user && (req.session.user = {
-                //actually do sign in
-                email: 'bob@bob.com',
-                token: 'token_0393933'
-            });
-
-            try {
-                let credential = await database.findOne('credential', {});
-
-                console.log(service, 'api call:', credential);
-
-                let api_uri = credential.resource_endpoint;
-
-                let url = api_uri + res.locals.route.url;
-
-                axios.interceptors.response.use(function (response) {
-                    // Do something with response data
-                    return response;
-                }, function (error) {
-                    // Do something with response error
-                    return Promise.reject(error);
-                });
-
-                let config = {
-                    url: url,
-                    method: 'post',
-                    headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-                    transformRequest: function(obj) {
-                        let str = [];
-                        for(let key in obj)
-                            str.push(encodeURIComponent(key) + "=" + encodeURIComponent(obj[key]));
-                        return str.join("&");
-                    },
-                };
-
-                process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
-                let apiCallResult = await axios(config);
-
-                console.log(apiCallResult.data);
-                return next();
-
-                if(apiCallResult.data.error && [8401, 401].indexOf(apiCallResult.data.error.code) !== -1 ) {
-                    //get access token begin
-                    config.url = credential.authorize_endpoint;
-                    config.data = {
-                        client_id: credential.client_id,
-                        response_type: 'code',
-                        redirect_uri: credential.redirect_uri,
-                        scope: ['profile', 'phones'],
-                        state: 'some_state'
-                    };
-
-                    try {
-                        let authorize = await axios(config);
-                        let code = authorize.data.data.code;
-                        //console.log();
-
-                        config.url = credential.token_endpoint;
-                        config.data.code = code;
-                        config.data.client_secret = credential.client_secret;
-                        config.data.grant_type = credential.grant_type;
-
-                        let token = await axios(config);
-                        token = token.data.data.token;
-
-                        config.url = api_uri + res.locals.route.url;
-                        config.data = {token};
-                        config.headers['Authorization'] = `Bearer ${token}`;
-
-                        apiCallResult = await axios(config);
-                        console.log(apiCallResult.data);
-
-                    }
-                    catch (err) {
-                        console.log(err);
-                    }
-                }
-            }
-            catch (err) {
-                let {code, message} = err;
-                res.locals.error = {code, message};
-                next();
-            }
-
-*/
+            else res.locals.entities = data;*/
         }
-        else next();
+        next();
     }
 }
 

@@ -47,6 +47,12 @@ db.user.find({email: 'user@user.com'}, function (err, users) {
     });
 });
 
+class NotFoundError extends Error {
+    constructor() {
+        super('Nothing has been found.');
+        this.code = 404;
+    }
+}
 db.find = function(collenction, query) {
     return new Promise(function (resolve, reject) {
         db[collenction].find(query, function (err, results) {
@@ -56,9 +62,9 @@ db.find = function(collenction, query) {
             else {
                 results && results.length && resolve(results);
 
-                results && !results.length && reject(new Error('Nothing has been found.'));
+                results && !results.length && reject(new NotFoundError());
 
-                !results && reject(new Error('Results not defined.'));
+                !results && reject(new NotFoundError());
             }
         })
     });

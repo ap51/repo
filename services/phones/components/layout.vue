@@ -24,8 +24,8 @@
                         </v-btn>
 -->
 
-                        <v-btn v-if="state.session.auth"  flat @click="signout = true">
-                            <v-icon class="mr-1 mb-1">fas fa-sign-out-alt</v-icon>{{state.session.auth}}
+                        <v-btn v-if="state.auth"  flat @click="signout = true">
+                            <v-icon class="mr-1 mb-1">fas fa-sign-out-alt</v-icon>{{state.auth}}
                         </v-btn>
 
                         <!--
@@ -121,8 +121,8 @@
                 self.signin = true;
             });
 
-            this.$bus.$on('snackbar', function (message) {
-                self.snackbar.message = message;
+            this.$bus.$on('snackbar', function (err) {
+                self.snackbar.message = `${err.code}: ${err.message}`;
                 self.snackbar.visible = true;
             })
         },
@@ -133,7 +133,7 @@
             }
         },
         watch: {
-            'state.session.auth': function (newValue) {
+            'state.auth': function (newValue) {
                 !newValue && (delete cache[this.location]);
                 !newValue && this.$page(this.location, true);
                 //!newValue && this.$request(this.location);//this.$page(this.location, true);

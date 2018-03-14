@@ -2,7 +2,7 @@
         <v-app ref="layout">
             <v-content>
                 <v-toolbar color="blue darken-2" dark dense>
-                    <v-toolbar-title class="mr-2"><v-icon class="mr-1 mb-1">{{icon}}</v-icon><small>{{title}}</small></v-toolbar-title>
+                    <v-toolbar-title class="mr-2"><v-icon class="mr-1 mb-1">{{icon}}</v-icon><small>{{title + ': external signin'}}</small></v-toolbar-title>
 <!--
                     <v-toolbar-items>
 
@@ -10,7 +10,7 @@
                     </v-toolbar-items>
 -->
 
-                    <v-tabs color="blue darken-2"
+                    <v-tabs v-if="location !== 'external-signin'" color="blue darken-2"
                             :right="false">
 
                         <v-tabs-slider color="yellow"></v-tabs-slider>
@@ -46,13 +46,13 @@
 
                     </v-tabs>
 
-                    <v-toolbar-items>
-                        <v-btn v-if="!state.session.auth" flat @click="signin = true">
+                    <v-toolbar-items v-if="location !== 'external-signin'">
+                        <v-btn v-if="!state.auth" flat @click="signin = true">
                             <v-icon class="mr-1 mb-1">fas fa-user-circle</v-icon>SIGN IN
                         </v-btn>
 
-                        <v-btn v-if="state.session.auth"  flat @click="signout = true">
-                            <v-icon class="mr-1 mb-1">fas fa-sign-out-alt</v-icon>{{state.session.auth}}
+                        <v-btn v-if="state.auth"  flat @click="signout = true">
+                            <v-icon class="mr-1 mb-1">fas fa-sign-out-alt</v-icon>{{state.auth}}
                         </v-btn>
 
                         <!--
@@ -65,7 +65,7 @@
 
                 </v-toolbar>
 
-                <signin :visible="signin" @cancel="signin = false"></signin>
+                <dialog-signin :visible="signin" @cancel="signin = false"></dialog-signin>
                 <signout :visible="signout" @cancel="signout = false"></signout>
 
                 <v-card class="base-layout">
@@ -109,7 +109,7 @@
         name: 'layout',
         extends: component,
         components: {
-            'signin': httpVueLoader('signin'),
+            'dialog-signin': httpVueLoader('dialog-signin'),
             'signout': httpVueLoader('signout')
         },
         data() {
@@ -148,7 +148,7 @@
             }
         },
         watch: {
-            'state.session.auth': function (newValue) {
+            'state.auth': function (newValue) {
                 !newValue && (delete cache[this.location]);
                 !newValue && this.$page(this.location, true);
                 //!newValue && this.$request(this.location);//this.$page(this.location, true);
