@@ -17,14 +17,14 @@ const httpsListenPort = 5000;
 
 const app = express();
 
-app.use(staticFileMiddleware);
+app.use('/:service/ui', staticFileMiddleware);
 
-app.use(history({
+app.use('/:service/ui', history({
     disableDotRule: true,
     verbose: true
 }));
 
-app.use(staticFileMiddleware);
+app.use('/:service/ui', staticFileMiddleware);
 
 
 let httpsServer = https.createServer(credentials, app);
@@ -44,7 +44,7 @@ fs.readdir('./services/', (err, dirs) => {
     dirs.forEach(dir => {
         console.log(dir);
         try {
-            app.use(`/${dir}`, require(`./services/${dir}/router`)(dir));
+            app.use(`/${dir}/`, require(`./services/${dir}/router`)(dir));
         }
         catch (err) {
             console.log(err);

@@ -14,18 +14,6 @@ let generateRandomToken = function() {
     });
 };
 
-/*
-model.generateAccessToken = async function(client, user, scope, callback) {
-    return await new Promise('generateAccessToken!');
-};
-*/
-
-/*
-model.generateRefreshToken = async function(client, user, scope, callback) {
-    return await new Promise('generateRefreshToken!');
-};
-*/
-
 model.generateAuthorizationCode = async function(client, user, scope, callback) {
     user = user && user._id;
     callback(!user && new Error(401, 'no user'), await generateRandomToken());
@@ -127,9 +115,19 @@ model.getAccessToken = function(accessToken, callback) {
     });
 };
 
-model.verifyScope = async function(accessToken, scope, callback) {
-    model.getAccessToken(accessToken, function (err, token) {
-        console.log(token.scopes);
-        callback(err, token);
-    });
+model.verifyScope = function(accessToken, scope, callback) {
+    callback(null, !!accessToken.client.scope);
 };
+
+
+/*
+model.generateAccessToken = async function(client, user, scope, callback) {
+    return await new Promise('generateAccessToken!');
+};
+*/
+
+/*
+model.generateRefreshToken = async function(client, user, scope, callback) {
+    return await new Promise('generateRefreshToken!');
+};
+*/

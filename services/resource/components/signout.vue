@@ -75,17 +75,19 @@
             //debugger;
             try {
                 //debugger
-                await this.router.database.remove('token', {accessToken: req.token.access[this.router.service]});
-
-                req.token.access[this.router.service] = void 0;
-                req.token.auth = void 0;
-                delete req.token.data.user_id;
-                res.redirect_local = req.headers.location;
+                await this.router.database.remove('token', {accessToken: req.token.access});
             }
             catch (err) {
+/*
                 let {code, message} = err;
                 res.locals.error = {code, message};
+*/
             }
+
+            req.token.access = void 0;
+            req.token.auth = void 0;
+
+            res.redirect_local = req.headers.location;
         }
     }
 

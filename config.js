@@ -3,5 +3,5 @@ const path = require('path');
 
 let config = module.exports;
 
-config.route_patterns = ['/:name\::id\.:action', '/:name\.:action', '/:name\::id', '/:name'];
+config.route_patterns = ['/ui/:name\::id\.:action', '/ui/:name\.:action', '/ui/:name\::id', '/ui/:name'];
 

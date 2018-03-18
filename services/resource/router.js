@@ -3,10 +3,6 @@ service = service[service.length - 1];
 
 const utils = require('../../utils');
 const database = require('./database/db');
-/*
-let beginHandler = utils.beginHandler;
-let endHandler = utils.endHandler;
-*/
 
 let router = utils.router(service);
 
@@ -27,9 +23,15 @@ router.authenticateHandler = function(options) {
             let request = new Request(req);
             let response = new Response(res);
 
+            options.scope = req.path;
             let token = await oauth.authenticate(request, response, options);
         }
         catch (err) {
+            if(req.token) {
+                req.token.access = void 0;
+                req.token.auth = void 0;
+            }
+
             let {code, message} = err;
             res.locals.error = {code, message};
         }
@@ -40,19 +42,15 @@ router.authenticateHandler = function(options) {
 
 let authorizeOptions = {
     authenticateHandler: {
-        handle: async function(request, response) {
+        handle: async function(req, res) {
             let user = void 0;
 
-            if(response.locals.token.user_id) {
-                try {
-                    user = await router.database.findOne('user', {_id: response.locals.token.user_id});
-                }
-                catch (err) {
-                    response.locals.redirect = {remote: 'https://localhost:5000/resource/external-signin'}
-                }
+            try {
+                let token = await router.database.findOne('token', {accessToken: req.token.access});
+                user = await router.database.findOne('user', {_id: token.user._id});
             }
-            else {
-                response.locals.redirect = {remote: 'https://localhost:5000/resource/external-signin'};
+            catch (err) {
+                res.redirect_remote = 'https://localhost:5000/resource/external-signin';
             }
 
             return user;
@@ -86,11 +84,11 @@ router.tokenHandler = function(options) {
             let response = new Response(res);
 
             let token = await oauth.token(request, response, options);
-            req.token.access = req.token.access || {};
-            req.token.access[router.service] = token.accessToken;
-            req.token.auth = token.user.name;
-            req.token.data.user_id = token.user._id;
 
+            req.token.access = token.accessToken;
+            req.token.auth = token.user.name;
+
+            //req.token.data.user_id = token.user._id;
         }
         catch (err) {
             let {code, message} = err;
@@ -105,6 +103,14 @@ router.onComponentData = async function(req, res, response, data) {
 
     return data;
 };
+
+router.all('*', router.jwtHandler());
+
+router.all('/api/:name\.:action', router.authenticateHandler({allowBearerTokensInQueryString: true}), function (req, res, next) {
+    res.locals.error ? res.status(res.locals.error.code).send(res.locals.error.message) : res.status(201).json({api: 'v.1.0'});
+    return res.end();
+    //next(false);
+});
 
 router.all(patterns, router.beginHandler());
 

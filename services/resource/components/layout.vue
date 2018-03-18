@@ -29,6 +29,7 @@
 
                     <!--<v-spacer></v-spacer>-->
 
+<!--
                     <v-tabs color="blue darken-2"
                             :right="true">
 
@@ -45,8 +46,13 @@
                         </v-tab>
 
                     </v-tabs>
+-->
 
                     <v-toolbar-items v-if="location !== 'external-signin'">
+                        <v-btn flat @click="apiCall">
+                            <v-icon class="mr-1 mb-1">fas fa-plus</v-icon>API CALL
+                        </v-btn>
+
                         <v-btn v-if="!auth" flat @click="signin = true">
                             <v-icon class="mr-1 mb-1">fas fa-user-circle</v-icon>SIGN IN
                         </v-btn>
@@ -142,9 +148,8 @@
             })
         },
         methods: {
-            onSignIn(data) {
-                console.log(data);
-                this.signin = false
+            apiCall(data) {
+                this.$request(`${window.location.origin}/${this.state.service}/api/profile.get`, data);
             }
         },
         watch: {
@@ -193,6 +198,11 @@
                         name: 'phones db',
                         to: 'phones-database',
                         icon: 'fas fa-database'
+                    },
+                    {
+                        name: 'action profile.get',
+                        to: 'profile.get?access_token=19e09bf54f25fe6c44be01d8035903fb4e97ca74',
+                        icon: 'fas fa-user'
                     }
                 ]
             }

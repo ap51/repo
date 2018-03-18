@@ -118,6 +118,7 @@
                 await this.router.authenticateHandler({})(req, res);
                 if (res.locals.error) {
                     res.locals.error = void 0;
+
                     let {client_id, client_secret, scope} = await this.router.database.findOne('client', {client_id: 'authentificate'});
 
                     req.body.client_id = client_id;
@@ -128,15 +129,10 @@
                     await this.router.tokenHandler({})(req, res);
                 }
 
-                res.locals.data = {
-                    email: '',
-                    password: ''
-                };
-
                 res.redirect_local = req.headers.location;
             }
             catch (err) {
-                debugger
+                debugger;
                 let {code, message} = err;
                 res.locals.error = {code, message};
             }

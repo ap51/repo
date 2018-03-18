@@ -66,7 +66,7 @@ function apiHandler(options) {
     }
 }
 
-router.all(patterns, apiHandler());
+//router.all(patterns, apiHandler());
 
 
 router.post('/signout', function(req, res, next){

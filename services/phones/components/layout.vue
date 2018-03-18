@@ -99,12 +99,12 @@
                     },
                     {
                         name: 'find phone',
-                        to: 'phone-find',
+                        to: 'find-phone',
                         icon: 'fas fa-mobile'
                     },
                     {
                         name: 'phones db',
-                        to: 'phones',
+                        to: 'phones-database',
                         icon: 'fas fa-database'
                     },
                     {

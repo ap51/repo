@@ -58,120 +58,10 @@ let _router = function(service) {
     router.service = service;
     router.database = require(path.join(__dirname, 'services', service, 'database', 'db'));
 
-/*
-    class RequestError extends Error {
-        constructor(options) {
-            super(options.message);
-            this.code = options.code;
-            this.redirect = options.redirect;
-        }
-    }
-*/
-
-/*
-    class Api {
-        constructor(routes, router) {
-            this.routes = routes;
-            this.map = {};
-            this.router = router;
-            this.tokens = {};
-        }
-
-        check(req) {
-            let route = function (path) {
-                let [route, action] = path.split('.');
-                let [name, id] = route.split(':');
-
-                return {
-                    name,
-                    id,
-                    action,
-                    ident: route
-                };
-            };
-
-            req.isAPI = this.routes.find(function (item) {
-
-                let result = name === item.name;
-
-                result = result && item.actions.find(function (item) {
-                    return item[`${action}.${method}`] || item[`*.${method}`] || item[`*.*`];
-                });
-
-                let key = Object.keys(result || {})[0];
-                key && (self.map[JSON5.stringify(route)] = result[key]);
-
-                return !!key;
-            });
-
-            req.isAPI = !!req.isAPI;
-
-            return req
-        }
-
-        check1(req) {
-            let self = this;
-            let route = req.params;
-            let method = req.method.toLowerCase();
-            let {name, action} = route;
-
-            req.isAPI = this.routes.find(function (item) {
-
-                let result = name === item.name;
-
-                result = result && item.actions.find(function (item) {
-                    return item[`${action}.${method}`] || item[`*.${method}`] || item[`*.*`];
-                });
-
-                let key = Object.keys(result || {})[0];
-                key && (self.map[JSON5.stringify(route)] = result[key]);
-
-                return !!key;
-            });
-
-            req.isAPI = !!req.isAPI;
-
-            return req.isAPI;
-        }
-
-        exec(req, res) {
-            this.route = req.params;
-            this.redirect = req.headers.referer;
-
-            return this.map[JSON5.stringify(this.route)](req, res, this.router);
-        }
-
-        normalize(data) {
-            //get schema & applly to data
-            return data;
-        }
-
-
-    }
-
-    const routes = require(path.join(__dirname, 'services', service, 'api'));
-    router.database = require(path.join(__dirname, 'services', service, 'database', 'db'));
-
-    router.api = new Api(routes || [], router);
-*/
-
     router.use(bodyParser.urlencoded({extended: false}));
     router.use(bodyParser.json());
 
     router.token = jwt;
-
-
-/*
-    router.get('/public-key', function (req, res, next) {
-        res.setHeader(200).end(router.keys.public);
-    });
-*/
-
-/*
-    let generateKeys = async function (force) {
-        keys = (keys && !force) || await crypto.createKeyPair();
-    };
-*/
 
     let encryptRSA = async function(data, publicKey) {let buffer = new Buffer(data);
         let encrypted = await crypto.encrypt.rsa(data, publicKey);
@@ -183,13 +73,14 @@ let _router = function(service) {
         return decrypted;
     };
 
+    let keys = void 0;
+
     router.encode = async function (token) {
-        token.verified = true;
+        token[router.service].verified = true;
 
-        token.data = token.data || {session: await crypto.createPassword()};
-        token.data = JSON5.stringify(token.data);
+        token[router.service].data = token[router.service].data || {session: await crypto.createPassword()};
 
-        token.data = await encryptRSA(token.data, token.public || keys.publicKey);
+        token[router.service].access && (token[router.service].access = await encryptRSA(token[router.service].access, token.public || keys.publicKey));
 
         let encoded = jwt.sign(token, keys.privateKey);
         return encoded;
@@ -197,32 +88,63 @@ let _router = function(service) {
 
     router.decode = async function (token) {
         let decoded = {};
+
+        decoded[router.service] = {};
+        let verified = true;
+
         try {
-            decoded = token ? jwt.verify(token, keys.privateKey) : {};
+            decoded = token ? jwt.verify(token, keys.privateKey) : decoded;
         }
         catch (err) {
             decoded = jwt.decode(token);
-            decoded.verified = false;
+            verified = false;
         }
 
-        decoded.data = await decryptRSA(decoded.data, keys.privateKey);
-        decoded.data = JSON5.parse(decoded.data);
+        decoded[router.service] = decoded[router.service] || {};
+        decoded[router.service].verified = verified;
 
-        decoded.count = decoded.count + 1 || 1;
+        decoded[router.service].access && (decoded[router.service].access = await decryptRSA(decoded[router.service].access, keys.privateKey));
+
+        decoded[router.service].count = decoded[router.service].count + 1 || 1;
         return decoded;
     };
 
-    router.beginHandler = function(options) {
+    router.jwtHandler = function(options) {
         getKeys(service, true);
+        keys = _keys[service];
 
         return async function (req, res, next) {
-            console.log('BEGIN - ', req.originalUrl);
             router.req = req;
             router.res = res;
 
             let token = req.headers['token'];
-            req.token = token ? await router.decode(token) : {};
-            req.headers['authorization'] = req.token.access && `Bearer ${req.token.access[router.service]}`;
+            if(token) {
+                req._token = token;
+
+                req._token = await router.decode(req._token);
+                req.token = req._token[router.service];
+
+                req.headers['authorization'] = req.token.access && `Bearer ${req.token.access}`;
+            }
+            next();
+        }
+    };
+
+    router.beginHandler = function(options) {
+        return async function (req, res, next) {
+            console.log('BEGIN - ', req.originalUrl);
+/*
+            router.req = req;
+            router.res = res;
+
+            let token = req.headers['token'];
+            req._token = token;
+
+            req._token = await router.decode(req._token);
+            req.token = req._token[router.service];
+
+            req.headers['authorization'] = req.token.access && `Bearer ${req.token.access}`;
+*/
 
             let name = req.params.name;
 
@@ -250,14 +172,16 @@ let _router = function(service) {
 
     router.endHandler = function(options) {
 
-        return async function (req, res) {
-            req.params.action && await router.component[req.params.action](req, res);
+        return async function (req, res, next) {
+            req.params.action && router.component[req.params.action] && await router.component[req.params.action](req, res);
+
+            req._token[router.service] = req.token;
 
             let response = {
                 error: res.locals.error,
                 redirect_remote: res.redirect_remote,
                 redirect_local: res.redirect_local,
-                token: await router.encode(req.token),
+                token: await router.encode(req._token),
                 auth: req.token.auth,
                 data: router.component.data
             };
@@ -265,27 +189,6 @@ let _router = function(service) {
             if(res.redirect_remote || res.redirect_local) {
                 return res.end(JSON.stringify(response));
             }
-
-/*
-            let route = res.redirect_local || req.params.name;
-
-            let content = route && await loadContent(route, res, service);
-            let $ = cheerio.load(content);
-
-            let selector = $('server-script');
-
-            let component = void 0;
-            selector.each(function(i, element) {
-                if(i === 0) {
-                    let code = $(element).text();
-                    let Class = requireFromString(code, `server-${route}.js`);
-                    component = new Class(route, service, {});
-                }
-            });
-
-            selector.remove();
-*/
-
 
             if (!req.isAPI && req.method === 'GET') {
                 res.locals.data = router.component.data;
@@ -302,7 +205,9 @@ let _router = function(service) {
 
             delete res.locals.redirect;
 
-            return res.end(JSON.stringify(response));
+            res.json(response);
+            return res.end();
+            //res.send(JSON.stringify(response));
 
             console.log('END - ', req.originalUrl);
 
@@ -312,7 +217,7 @@ let _router = function(service) {
     return router;
 };
 
-let keys = void 0;
+let _keys = {};
 
 let getKeys = async function (service) {
     let file_path = path.join(__dirname, 'services', service);
@@ -320,11 +225,11 @@ let getKeys = async function (service) {
     try {
         let privateKey = fs.readFileSync(path.join(file_path, 'private.pem'), 'utf8');
         let publicKey = fs.readFileSync(path.join(file_path, 'public.pem'), 'utf8');
-        keys = privateKey && publicKey ? {privateKey, publicKey} : void 0;
+        _keys[service] = privateKey && publicKey ? {privateKey, publicKey} : void 0;
     }
     catch (err) {
-        if (!keys) {
-            keys = {privateKey, publicKey} = await crypto.createKeyPair();
+        if (!_keys[service]) {
+            _keys[service] = {privateKey, publicKey} = await crypto.createKeyPair();
 
             fs.writeFileSync(path.join(file_path, 'private.pem'), privateKey, 'utf-8');
             fs.writeFileSync(path.join(file_path, 'public.pem'), publicKey, 'utf-8');

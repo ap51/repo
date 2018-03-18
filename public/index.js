@@ -15,9 +15,9 @@ let route = function (path) {
 
 Vue.prototype.$state = {
     service: service || 'stub',
-    base: `/${service}/`,
-    path: window.location.pathname.replace(`/${service}/`, '') || 'about',
-    route: route(window.location.pathname.replace(`/${service}/`, '') || 'about'),
+    base: `/${service}/ui/`,
+    path: window.location.pathname.replace(`/${service}/ui/`, '') || 'about',
+    route: route(window.location.pathname.replace(`/${service}/ui/`, '') || 'about'),
     entities: {},
     data: {},
     locationToggle: false,
@@ -129,36 +129,42 @@ Vue.prototype.$request = async function(url, data, method) {
 
     return axios(config)
         .then(function(res) {
-            let redirected = decodeURIComponent(window.location.origin + res.config.url) !== decodeURIComponent(res.request.responseURL);
+            if(res.status === 200) {
+                let redirected = decodeURIComponent(window.location.origin + res.config.url) !== decodeURIComponent(res.request.responseURL);
 
-            //res.data.token && Vue.set(Vue.prototype.$state, 'token', res.data.token);
+                //res.data.token && Vue.set(Vue.prototype.$state, 'token', res.data.token);
 
-            Vue.set(Vue.prototype.$state, 'auth', res.data.auth || '');
+                Vue.set(Vue.prototype.$state, 'auth', res.data.auth || '');
 
-            res.data.token && Vue.set(Vue.prototype.$state, 'token', res.data.token);
-            localStorage.setItem('token', Vue.prototype.$state.token);
+                res.data.token && Vue.set(Vue.prototype.$state, 'token', res.data.token);
+                localStorage.setItem('token', Vue.prototype.$state.token);
 
-            if (res.data.redirect_remote) {
-                window.location.replace(res.data.redirect.remote);
-                return;
-            }
-
-            if (res.data.redirect_local) {
-                let path = res.data.redirect_local.replace(Vue.prototype.$state.base, '');
-
-                name = path;
-
-                if(Vue.prototype.$state.path === path) {
-                    Vue.prototype.$page(path, true);
+                if (res.data.redirect_remote) {
+                    window.location.replace(res.data.redirect.remote);
+                    return;
                 }
-                else router.push(path);
+
+                if (res.data.redirect_local) {
+                    let path = res.data.redirect_local.replace(Vue.prototype.$state.base, '');
+
+                    name = path;
+
+                    if (Vue.prototype.$state.path === path) {
+                        Vue.prototype.$page(path, true);
+                    }
+                    else router.push(path);
+                }
+
+                cache[name] = res.data.component || cache[name];
+
+                res.data.data && Vue.set(Vue.prototype.$state.data, name, res.data.data);
+
+                return cache[name];
             }
-
-            cache[name] = res.data.component || cache[name];
-
-            res.data.data && Vue.set(Vue.prototype.$state.data, name, res.data.data);
-
-/*
+            else {
+                console.log(res.data);
+                return res.data;
+                /*
             //ОБЪЕДИНИТЬ ТОЛЬКО ТО ЧТО НОВОЕ! пример сделан в проекте
 
             setTimeout(function () {
@@ -168,7 +174,7 @@ Vue.prototype.$request = async function(url, data, method) {
             parsed.action === 'entities' && res.data.entities && Vue.set(Vue.prototype.$state, 'entities', res.data.entities);
 */
 
-            return cache[name];
+            }
         })
         .catch(function(err) {
             Vue.prototype.$bus.$emit('snackbar', `ERROR: ${err.message}. ${err.code ? 'CODE: ' + err.code + '.': ''}`);
