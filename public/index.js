@@ -20,7 +20,8 @@ Vue.prototype.$state = {
     route: route(window.location.pathname.replace(`/${service}/`, '') || 'about'),
     entities: {},
     data: {},
-    token: sessionStorage.getItem('token'),
+    locationToggle: false,
+    token: localStorage.getItem('token'),
     auth: void 0
     //token: '{user_id:1010010, user_name:"bob dilan", container_id:"pdqwp08qfu", token:"qfefw98we7ggwvv7s"}',
 };
@@ -82,9 +83,10 @@ axios.interceptors.response.use(
 );
 
 Vue.prototype.$page = function(path, force) {
-
     if(force || Vue.prototype.$state.path !== path) {
+        //force && (Vue.prototype.$state.path = '');
         !cache[path] && httpVueLoader.register(Vue, path);
+        Vue.prototype.$state.locationToggle = !Vue.prototype.$state.locationToggle;
         Vue.prototype.$state.path = route(path).name;
     }
 };
@@ -95,34 +97,30 @@ Vue.prototype.$bus = new Vue({});
 Vue.prototype.$request = async function(url, data, method) {
     let name = url.replace('/index.vue', '');
 
-    url = router.options.base + name;
+    let parsed = route(name);
+    name = parsed.name;
 
-    let response = !data && cache[name];
+    //url = router.options.base + name;
+
+    let response = !data && !parsed.action && cache[name];
 
     if(response)
         return response;
-
-/*
-    let search = window.location.search.slice(1);
-    search = search.split('&');
-
-    search = search.reduce(function (memo, item) {
-        let [key, value] = item.split('=');
-        memo[key] = value;
-
-        return memo;
-    }, {});
-
-    let referer = search && search['from'];
-*/
 
     let config = {
         url: url,
         method: data ? method || 'post' : 'get',
         headers: {
-            'Authorization': Vue.prototype.$state.token ? `Bearer ${Vue.prototype.$state.token}` : '',
-            'x-service': router.options.base,
-            //'Access-Control-Allow-Origin': '*'
+            //'content-type': 'application/x-www-form-urlencoded',
+            //'Authorization': Vue.prototype.$state.token ? `Bearer ${Vue.prototype.$state.token}` : '',
+            'token': Vue.prototype.$state.token || '',
+            'location': data ? data.location || window.location.pathname : window.location.pathname
+        },
+        transformRequest: function(obj) {
+            let str = [];
+            for(let key in obj)
+                str.push(encodeURIComponent(key) + "=" + encodeURIComponent(obj[key]));
+            return str.join("&");
         }
     };
 
@@ -132,39 +130,48 @@ Vue.prototype.$request = async function(url, data, method) {
     return axios(config)
         .then(function(res) {
             let redirected = decodeURIComponent(window.location.origin + res.config.url) !== decodeURIComponent(res.request.responseURL);
-            if(false) {
-                //window.location.href = res.request.responseURL;
-                //window.history.pushState(null, null, res.request.responseURL);
+
+            //res.data.token && Vue.set(Vue.prototype.$state, 'token', res.data.token);
+
+            Vue.set(Vue.prototype.$state, 'auth', res.data.auth || '');
+
+            res.data.token && Vue.set(Vue.prototype.$state, 'token', res.data.token);
+            localStorage.setItem('token', Vue.prototype.$state.token);
+
+            if (res.data.redirect_remote) {
+                window.location.replace(res.data.redirect.remote);
+                return;
             }
-            else {
-                res.data.token && Vue.set(Vue.prototype.$state, 'token', res.data.token);
-                sessionStorage.setItem('token', Vue.prototype.$state.token);
 
-                if (res.data.redirect) {
-                    if(res.data.redirect.local) {
-                        let path = res.data.redirect.replace(Vue.prototype.$state.base, '');
+            if (res.data.redirect_local) {
+                let path = res.data.redirect_local.replace(Vue.prototype.$state.base, '');
 
-                        Vue.prototype.$page(path);
+                name = path;
 
-                        name = path;
-                    }
-                    else {
-                        window.location.replace(res.data.redirect.remote);
-                        return;
-                    }
+                if(Vue.prototype.$state.path === path) {
+                    Vue.prototype.$page(path, true);
                 }
-
-                cache[name] = res.data.component || cache[name];
-
-                res.data.data && Vue.set(Vue.prototype.$state.data, name, res.data.data);
-                //ОБЪЕДИНИТЬ ТОЛЬКО ЧТО НОВОЕ! пример сделан в проекте
-                res.data.entities && Vue.set(Vue.prototype.$state, 'entities', res.data.entities);
-
-                return cache[name];
+                else router.push(path);
             }
+
+            cache[name] = res.data.component || cache[name];
+
+            res.data.data && Vue.set(Vue.prototype.$state.data, name, res.data.data);
+
+/*
+            //ОБЪЕДИНИТЬ ТОЛЬКО ТО ЧТО НОВОЕ! пример сделан в проекте
+
+            setTimeout(function () {
+                !parsed.action && parsed.action !== 'entities' && Vue.prototype.$request(`${parsed.ident}.entities`);
+            }, 0);
+
+            parsed.action === 'entities' && res.data.entities && Vue.set(Vue.prototype.$state, 'entities', res.data.entities);
+*/
+
+            return cache[name];
         })
         .catch(function(err) {
-            Vue.prototype.$bus.$emit('snackbar', err);
+            Vue.prototype.$bus.$emit('snackbar', `ERROR: ${err.message}. ${err.code ? 'CODE: ' + err.code + '.': ''}`);
             return '';// Promise.reject(err);
         });
 
@@ -179,20 +186,29 @@ let component = {
         },
         location() {
             return this.$state.path
+        },
+        auth() {
+            return this.$state.auth
         }
     },
     data() {
         let data = {
-            state: this.$state,
+            state: this.$state
         };
 
-        Object.assign(data, this.$state.data[this.$options.name || this.$options._componentTag]);
+        data.name = this.$options.name || this.$options._componentTag;
+        Object.assign(data, this.$state.data[data.name]);
 
         return data;
     },
+    created() {
+        console.log(this.state.path);
+        //this.state.route.name === this.name && this.$request(`${this.state.route.ident}.data`);
+    },
     watch: {
-        'state.path': function () {
-            this.visible && this.cancel && this.cancel();
+        'state.locationToggle': function () {
+            this.visible && this.cancel && this.cancel();//close dialogs
+            this.visible && this.emptyData && this.emptyData();
         }
     }
 };

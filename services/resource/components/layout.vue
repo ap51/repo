@@ -47,12 +47,12 @@
                     </v-tabs>
 
                     <v-toolbar-items v-if="location !== 'external-signin'">
-                        <v-btn v-if="!state.auth" flat @click="signin = true">
+                        <v-btn v-if="!auth" flat @click="signin = true">
                             <v-icon class="mr-1 mb-1">fas fa-user-circle</v-icon>SIGN IN
                         </v-btn>
 
-                        <v-btn v-if="state.auth"  flat @click="signout = true">
-                            <v-icon class="mr-1 mb-1">fas fa-sign-out-alt</v-icon>{{state.auth}}
+                        <v-btn v-if="auth"  flat @click="signout = true">
+                            <v-icon class="mr-1 mb-1">fas fa-sign-out-alt</v-icon>{{auth}}
                         </v-btn>
 
                         <!--
@@ -124,10 +124,10 @@
                     visible: false,
                     message: ''
                 },
-/* GET FROM server
-                    }
-                ]
-*/
+                /* GET FROM server
+                                    }
+                                ]
+                */
             }
         },
         created() {
@@ -160,30 +160,42 @@
     //# sourceURL=layout.js
 </script>
 
-<component-data>
-    {
-        title: 'My Tiny Social Network',
-        icon: 'fab fa-empire',
-        signin: false,
-        tabs: [
-            {
-                name: 'about',
-                icon: 'far fa-question-circle'
-            },
-            {
-                name: 'profile',
-                icon: 'fas fa-user-circle'
-            },
-            {
-                name: 'find phone',
-                to: 'find-phone',
-                icon: 'fas fa-mobile'
-            },
-            {
-                name: 'phones db',
-                to: 'phones-database',
-                icon: 'fas fa-database'
+<server-script>
+    const Component = require('./component');
+
+    module.exports = class Layout extends Component {
+        constructor(router) {
+            super(router);
+
+        }
+
+        get data() {
+            return {
+                title: this.service,
+                icon: 'fab fa-empire',
+                signin: false,
+
+                tabs: [
+                    {
+                        name: 'about',
+                        icon: 'far fa-question-circle'
+                    },
+                    {
+                        name: 'profile',
+                        icon: 'fas fa-user-circle'
+                    },
+                    {
+                        name: 'find phone',
+                        to: 'find-phone',
+                        icon: 'fas fa-mobile'
+                    },
+                    {
+                        name: 'phones db',
+                        to: 'phones-database',
+                        icon: 'fas fa-database'
+                    }
+                ]
             }
-        ]
+        }
     }
-</component-data>
+</server-script>

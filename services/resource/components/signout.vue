@@ -51,14 +51,42 @@
             },
             signout() {
                 let data = {
-                    location: window.location.pathname
                 };
 
                 cache = {};
-                this.$request('signout', data);
+                this.$request('signout.submit', data);
             }
         }
     }
 
-    //# sourceURL=signin.js
+    //# sourceURL=signout.js
 </script>
+
+<server-script>
+    const Component = require('./component');
+
+    module.exports = class SignOut extends Component {
+        constructor(router) {
+            super(router);
+
+        }
+
+        async submit(req, res) {
+            //debugger;
+            try {
+                //debugger
+                await this.router.database.remove('token', {accessToken: req.token.access[this.router.service]});
+
+                req.token.access[this.router.service] = void 0;
+                req.token.auth = void 0;
+                delete req.token.data.user_id;
+                res.redirect_local = req.headers.location;
+            }
+            catch (err) {
+                let {code, message} = err;
+                res.locals.error = {code, message};
+            }
+        }
+    }
+
+</server-script>

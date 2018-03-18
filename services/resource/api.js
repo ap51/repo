@@ -1,12 +1,53 @@
 //fill res.locals.entities then normalize it and send to user agent or client app
 
-let routes = [
+let d = {
+    'entities': {
+        public: false,
+        'get.profile.entity': function (req, res) {
+
+        },
+        'get.phones.entity': function (req, res) {
+
+        }
+    },
+    'profile': {
+        'get.profile.email': function (req, res) {
+
+        },
+        'post.profile.save': function (req, res) {
+
+        },
+        'get.profile.create': function (req, res) {
+
+        },
+        'post.profile.create': function (req, res) {
+
+        },
+        'get.profile.delete': function (req, res) {
+
+        },
+        'post.profile.delete': function (req, res) {
+
+        },
+    }
+};
+
+let api = [
+    {
+        scope: 'profile.email',
+    },
+    {
+        scope: 'phones',
+    }
+];
+
+let routes1 = [
     {
         category: 'Profile',
         name: 'profile',
         actions: [
             {
-                '*.get': function (req, res) {
+                'data.get': function (req, res) {
                     return {
                         email: 'joe@dou.com',
                         name: 'Joe Dou'

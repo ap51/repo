@@ -1,6 +1,6 @@
 <template>
     <v-dialog v-model="visible" persistent max-width="500px">
-        <signin @cancel="cancel"></signin>
+        <signin :reset="!visible" @cancel="cancel"></signin>
     </v-dialog>
 </template>
 

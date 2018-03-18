@@ -47,6 +47,27 @@ let apiCall = async function(config, token) {
 let external = [
     {
         '*.*': async function (req, res, router) {
+            let oauth = {
+                "server": {
+                    "protocol": "https",
+                    "host": "localhost:5000",
+                    "callback": "/token",
+                    "state": true
+                },
+                "tsn": {
+                    "key": "one",
+                    "secret": "one_secret",
+                    "scope": ["scope1", "scope2"],
+                }
+            };
+
+            let Grant = require('grant').express();
+            let tsn = new Grant(oauth);
+
+            tsn(req, res, function (...args) {
+                console.log(req, res);
+            });
+
             router.credential = router.credential || await router.database.findOne('credential', {provider: 'tsn'});
             let apiPoint = router.credential.resource_endpoint;
 
@@ -76,6 +97,10 @@ let external = [
                         redirect_uri: router.credential.redirect_uri,
                         scope: router.credential.scope,
                         state: 'some_state'
+                    };
+
+                    config.headers = {
+                        'Authorization': `Bearer ${token}`,
                     };
 
                     response = await apiCall(config);

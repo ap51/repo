@@ -43,7 +43,17 @@ model.getAuthorizationCode = async function(authorizationCode, callback) {
 };
 
 model.getUser = async function(username, password, callback) {
-    return await new Promise('works!');
+    db.user.find({email:  username}, function(err, users) {
+        if (err || !users.length)
+            return callback(err);
+
+        let user = users[0];
+
+        if (password !== null && user.password !== password)
+            return callback();
+
+        callback(null, user);
+    });
 };
 
 model.getClient = async function(clientId, clientSecret, callback) {
@@ -62,8 +72,9 @@ model.getClient = async function(clientId, clientSecret, callback) {
 };
 
 model.saveToken = async function(token, client, user, callback) {
-    token.client = {id: client.client_id};
-    token.user = user;
+    token.client = {_id: client._id};//{id: client.client_id};
+    let {_id, name} = user;
+    token.user = {_id, name};
     db.token.insert(token, function (err, inserted) {
         callback(err, inserted);
     });
@@ -105,10 +116,13 @@ model.revokeToken = async function(token, callback) {
     return await new Promise('revokeToken!');
 };
 
-model.getAccessToken = async function(accessToken, callback) {
-    db.token.find({accessToken}, function(err, tokens) {
+model.getAccessToken = function(accessToken, callback) {
+    db.token.find({accessToken}, async function(err, tokens) {
         let token = tokens[0];
-        //callback(null, token);
+        if(token) {
+            token.user = await db.findOne('user', token.user);
+            token.client = await db.findOne('client', token.client);
+        }
         tokens.length ? callback(null, token) : callback(err || new OAuth2Server.InvalidTokenError());
     });
 };

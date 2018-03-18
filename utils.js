@@ -2,6 +2,8 @@ const fs = require('fs');
 const path = require('path');
 const cheerio = require('cheerio');
 const JSON5 = require('json5');
+const requireFromString = require('require-from-string');
+
 
 let readFile = function(path, callback){
     return new Promise(function (resolve, reject) {
@@ -41,8 +43,9 @@ let parseRoute = function (param) {
     };
 };
 
-const crypto = require('crypto');
+const crypto = require('crypto2');
 const jwt = require('jsonwebtoken');
+const Component = require('./component');
 
 let _router = function(service) {
     const express = require('express');
@@ -52,40 +55,10 @@ let _router = function(service) {
     let patterns = config.route_patterns;
 
     let router = express.Router();
+    router.service = service;
+    router.database = require(path.join(__dirname, 'services', service, 'database', 'db'));
 
-    router.jwt = jwt;
-
-    let keys = {
-        ECDH: crypto.createECDH('secp521r1')
-    };
-
-    keys = {...keys,
-        public: keys.ECDH.generateKeys('hex'),
-        private: keys.ECDH.getPrivateKey('hex')
-    };
-
-
-    router.encode = function (token) {
-        token.verified = true;
-        let encoded = jwt.sign(token, keys.private);
-        return encoded;
-    };
-
-    router.decode = function (token) {
-        token = token.replace(/bearer/i, '').trim();
-        let decoded = {};
-        try {
-            decoded = token ? jwt.verify(token, keys.private) : {};
-        }
-        catch (err) {
-            decoded = jwt.decode(token);
-            decoded.verified = false;
-        }
-
-        decoded.count = decoded.count + 1 || 1;
-        return decoded;
-    };
-
+/*
     class RequestError extends Error {
         constructor(options) {
             super(options.message);
@@ -93,7 +66,9 @@ let _router = function(service) {
             this.redirect = options.redirect;
         }
     }
+*/
 
+/*
     class Api {
         constructor(routes, router) {
             this.routes = routes;
@@ -103,6 +78,38 @@ let _router = function(service) {
         }
 
         check(req) {
+            let route = function (path) {
+                let [route, action] = path.split('.');
+                let [name, id] = route.split(':');
+
+                return {
+                    name,
+                    id,
+                    action,
+                    ident: route
+                };
+            };
+
+            req.isAPI = this.routes.find(function (item) {
+
+                let result = name === item.name;
+
+                result = result && item.actions.find(function (item) {
+                    return item[`${action}.${method}`] || item[`*.${method}`] || item[`*.*`];
+                });
+
+                let key = Object.keys(result || {})[0];
+                key && (self.map[JSON5.stringify(route)] = result[key]);
+
+                return !!key;
+            });
+
+            req.isAPI = !!req.isAPI;
+
+            return req
+        }
+
+        check1(req) {
             let self = this;
             let route = req.params;
             let method = req.method.toLowerCase();
@@ -146,85 +153,148 @@ let _router = function(service) {
     router.database = require(path.join(__dirname, 'services', service, 'database', 'db'));
 
     router.api = new Api(routes || [], router);
+*/
 
     router.use(bodyParser.urlencoded({extended: false}));
     router.use(bodyParser.json());
 
+    router.token = jwt;
+
+
+/*
     router.get('/public-key', function (req, res, next) {
-        //const sectet = router.keys.ECDH.computeSecret(body);
         res.setHeader(200).end(router.keys.public);
     });
+*/
+
+/*
+    let generateKeys = async function (force) {
+        keys = (keys && !force) || await crypto.createKeyPair();
+    };
+*/
+
+    let encryptRSA = async function(data, publicKey) {let buffer = new Buffer(data);
+        let encrypted = await crypto.encrypt.rsa(data, publicKey);
+        return encrypted;
+    };
+
+    let decryptRSA = async function(data, privateKey) {
+        let decrypted = await crypto.decrypt.rsa(data, privateKey);
+        return decrypted;
+    };
+
+    router.encode = async function (token) {
+        token.verified = true;
+
+        token.data = token.data || {session: await crypto.createPassword()};
+        token.data = JSON5.stringify(token.data);
+
+        token.data = await encryptRSA(token.data, token.public || keys.publicKey);
+
+        let encoded = jwt.sign(token, keys.privateKey);
+        return encoded;
+    };
+
+    router.decode = async function (token) {
+        let decoded = {};
+        try {
+            decoded = token ? jwt.verify(token, keys.privateKey) : {};
+        }
+        catch (err) {
+            decoded = jwt.decode(token);
+            decoded.verified = false;
+        }
+
+        decoded.data = await decryptRSA(decoded.data, keys.privateKey);
+        decoded.data = JSON5.parse(decoded.data);
+
+        decoded.count = decoded.count + 1 || 1;
+        return decoded;
+    };
 
     router.beginHandler = function(options) {
+        getKeys(service, true);
 
         return async function (req, res, next) {
             console.log('BEGIN - ', req.originalUrl);
+            router.req = req;
+            router.res = res;
 
-            if(req.headers.referer) {
-                let query = req.headers.referer.split('?').pop();
-                query = query.split('&');
+            let token = req.headers['token'];
+            req.token = token ? await router.decode(token) : {};
+            req.headers['authorization'] = req.token.access && `Bearer ${req.token.access[router.service]}`;
 
-                query = query.reduce(function (memo, item) {
-                    let [key, value] = item.split('=');
-                    memo[key] = value;
+            let name = req.params.name;
 
-                    return memo;
-                }, {});
+            let content = name && await loadContent(name, res, service);
+            router.$ = cheerio.load(content);
 
-                req.query = query;
-                //query.from && (req.headers.referer = query.from);
-            }
+            let selector = router.$('server-script');
 
-            let route = {...req.params};
-            route.ident = `${route.name}${route.id ? ':' + route.id : ''}`;
-            route.url = `${route.name}${route.id ? ':' + route.id : ''}${route.action ? '.' + route.action : ''}`;
+            router.component = router.component || void 0;
+            selector.each(function(i, element) {
+                if(i === 0) {
+                    let code = router.$(element).text();
+                    let Class = requireFromString(code, `server-${name}.js`);
+                    router.component = Class && new Class(router);
+                }
+            });
 
-            res.locals.route = route;
+            selector.remove();
 
-            let authorization = req.headers['authorization'];
-            res.locals.token = authorization ? router.decode(authorization) : {};
+            router.component = router.component || new Component(router);
 
             next();
         }
     };
 
-
     router.endHandler = function(options) {
 
         return async function (req, res) {
+            req.params.action && await router.component[req.params.action](req, res);
+
             let response = {
                 error: res.locals.error,
-                redirect: res.locals.redirect,
-                token: router.encode(res.locals.token)
+                redirect_remote: res.redirect_remote,
+                redirect_local: res.redirect_local,
+                token: await router.encode(req.token),
+                auth: req.token.auth,
+                data: router.component.data
             };
 
+            if(res.redirect_remote || res.redirect_local) {
+                return res.end(JSON.stringify(response));
+            }
+
+/*
+            let route = res.redirect_local || req.params.name;
+
+            let content = route && await loadContent(route, res, service);
+            let $ = cheerio.load(content);
+
+            let selector = $('server-script');
+
+            let component = void 0;
+            selector.each(function(i, element) {
+                if(i === 0) {
+                    let code = $(element).text();
+                    let Class = requireFromString(code, `server-${route}.js`);
+                    component = new Class(route, service, {});
+                }
+            });
+
+            selector.remove();
+*/
+
+
             if (!req.isAPI && req.method === 'GET') {
-                let route = res.locals.redirect || req.params.name;
+                res.locals.data = router.component.data;
 
-                let content = route && await loadContent(route, res, service);
-                let $ = cheerio.load(content);
-
-                let componentData = {};
-
-                let selector = $('component-data');
-
-                selector.each(function(i, element) {
-                    let json = $(element).text();//.replace(/\n/g, '').replace(/\r/g, '');
-                    let data = JSON5.parse(json);
-                    componentData = Object.assign(componentData, data);
-                });
-
-                res.locals.data = (router.onComponentData && router.onComponentData(req, res, response, componentData)) || componentData;
-
-                selector.remove();
-
-                //res.locals.component = content.toString();
-                res.locals.component = $.html();
+                res.locals.component = router.$.html();
             }
 
             if(!response.error) {
                 response = {...response,
-                    data: res.locals.data,
                     entities: res.locals.entities,
                     component: res.locals.component,
                 };
@@ -232,7 +302,7 @@ let _router = function(service) {
 
             delete res.locals.redirect;
 
-            res.end(JSON.stringify(response));
+            return res.end(JSON.stringify(response));
 
             console.log('END - ', req.originalUrl);
 
@@ -242,7 +312,26 @@ let _router = function(service) {
     return router;
 };
 
+let keys = void 0;
+
+let getKeys = async function (service) {
+    let file_path = path.join(__dirname, 'services', service);
+
+    try {
+        let privateKey = fs.readFileSync(path.join(file_path, 'private.pem'), 'utf8');
+        let publicKey = fs.readFileSync(path.join(file_path, 'public.pem'), 'utf8');
+        keys = privateKey && publicKey ? {privateKey, publicKey} : void 0;
+    }
+    catch (err) {
+        if (!keys) {
+            keys = {privateKey, publicKey} = await crypto.createKeyPair();
+
+            fs.writeFileSync(path.join(file_path, 'private.pem'), privateKey, 'utf-8');
+            fs.writeFileSync(path.join(file_path, 'public.pem'), publicKey, 'utf-8');
+        }
+    }
+};
 
 module.exports = {
-    router: _router
+    router: _router,
 };

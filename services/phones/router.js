@@ -61,35 +61,6 @@ function apiHandler(options) {
 
             res.locals = {...res.locals, ...data};
 
-/*            if(data.error) {
-
-                if(data.error.redirect) {
-                    //data.error.redirect = '';
-                    //res.locals.route.name = 'unauthorized';
-                    //data.error.redirect = 'unauthorized';
-                    res.locals.error = data.error;
-                }
-                else {
-
-                    let credential = await router.database.findOne('credential', {});
-
-                    let config = {
-                        url: credential.authorize_endpoint,
-                        method: 'POST',
-                        data: {
-                            client_id: credential.client_id,
-                            response_type: 'code',
-                            redirect_uri: credential.redirect_uri,
-                            scope: ['profile', 'phones'],
-                            state: 'some_state'
-                        }
-                    };
-
-                    let token = await router.api.request(config);
-                    console.log(token);
-                }
-            }
-            else res.locals.entities = data;*/
         }
         next();
     }

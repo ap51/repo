@@ -48,8 +48,8 @@ db.user.find({email: 'user@user.com'}, function (err, users) {
 });
 
 class NotFoundError extends Error {
-    constructor() {
-        super('Nothing has been found.');
+    constructor(collection) {
+        super(`Nothing has been found in "${collection}".`);
         this.code = 404;
     }
 }
@@ -57,14 +57,14 @@ db.find = function(collenction, query) {
     return new Promise(function (resolve, reject) {
         db[collenction].find(query, function (err, results) {
             if(!results || err) {
-                reject(err || new Error('Nothings found.'));
+                reject(err || new NotFoundError(collenction));
             }
             else {
                 results && results.length && resolve(results);
 
-                results && !results.length && reject(new NotFoundError());
+                results && !results.length && reject(new NotFoundError(collenction));
 
-                !results && reject(new NotFoundError());
+                !results && reject(new NotFoundError(collenction));
             }
         })
     });
@@ -80,4 +80,19 @@ db.findOne = function(collenction, query) {
             reject(err);
         }
     })
+};
+
+db.remove = function(collenction, query) {
+    return new Promise(function (resolve, reject) {
+        db[collenction].remove(query, {}, function (err, results) {
+            console.log(results);
+            if(!results || err) {
+                reject(err || new NotFoundError(collenction));
+            }
+            else {
+                results && resolve(results);
+            }
+        });
+
+    });
 };

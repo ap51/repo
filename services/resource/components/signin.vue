@@ -51,10 +51,15 @@
 <script>
     module.exports = {
         extends: component,
+        props: [
+            'reset'
+        ],
         data() {
             return {
+/*
                 email: '',
                 password: ''
+*/
             }
         },
         methods: {
@@ -66,15 +71,76 @@
                     let data = {
                         email: this.email,
                         password: md5(`${this.email}.${this.password}`),
-                        location: window.location.pathname
+                        location: 'about'
                     };
 
-                    this.$request('signin', data);
+                    this.$request('signin.submit', data);
                 }
                 else this.$bus.$emit('snackbar', 'Data entered doesn\'t match validation rules');
+            }
+        },
+        watch: {
+            'reset': function (newValue) {
+                newValue && this.$refs.form.reset();
             }
         }
     }
 
     //# sourceURL=signin.js
 </script>
+
+<server-script>
+    const Component = require('./component');
+
+    module.exports = class SignIn extends Component {
+        constructor(router) {
+            super(router);
+
+        }
+
+        get data() {
+            return {
+                email: 'ap@gmail.com',
+                password: '123'
+            }
+        }
+
+        get entity() {
+            return `select * from user`
+        }
+
+        async submit(req, res) {
+            console.log(req.jwt);
+            //debugger;
+            try {
+                req.body.username = req.body.email;
+
+                await this.router.authenticateHandler({})(req, res);
+                if (res.locals.error) {
+                    res.locals.error = void 0;
+                    let {client_id, client_secret, scope} = await this.router.database.findOne('client', {client_id: 'authentificate'});
+
+                    req.body.client_id = client_id;
+                    req.body.client_secret = client_secret;
+                    req.body.grant_type = 'password';
+                    req.body.scope = scope.join(',');
+
+                    await this.router.tokenHandler({})(req, res);
+                }
+
+                res.locals.data = {
+                    email: '',
+                    password: ''
+                };
+
+                res.redirect_local = req.headers.location;
+            }
+            catch (err) {
+                debugger
+                let {code, message} = err;
+                res.locals.error = {code, message};
+            }
+        }
+    }
+
+</server-script>
