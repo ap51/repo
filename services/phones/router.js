@@ -9,7 +9,7 @@ let router = utils.router(service);
 let begin = router.beginHandler();
 let end = router.endHandler();
 
-const config = require('../../config');
+const config = require('./config');
 let patterns = config.route_patterns;
 
 let ensureSignedIn = function(req, res, next) {

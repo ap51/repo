@@ -5,17 +5,26 @@ const JSON5 = require('json5');
 
 
 module.exports = class Component {
-    constructor(router) {
+    constructor(router, req, res) {
         this.router = router;
         this.service = router.service;
-        this.name = router.req.params.name;
-        this.user = router.res.locals.user;
+        this.name = req.params.name;
+        this.auth = req.token.auth;
 
+        //console.log('CONSTRUCTOR: ', this.name);
+        
+/*         this.user = router.user;
+        this.user && console.log('USER EXISTS: ', this.name, this.user);
+ */
         let module = path.join(__dirname, this.service, 'database', 'schema');
-        this.schema = fs.existsSync(`${module}.js`) ? require(module) : void 0;
+        //this.schema = fs.existsSync(`${module}.js`) ? require(module) : void 0;
     }
 
     get data() {
+        return {}
+    }
+
+    shared(req, res) {
         return {}
     }
 

@@ -81,7 +81,7 @@
         },
         watch: {
             'reset': function (newValue) {
-                newValue && this.$refs.form.reset();
+                //newValue && this.$refs.form.reset();
             }
         }
     }
@@ -93,8 +93,8 @@
     const Component = require('./component');
 
     module.exports = class SignIn extends Component {
-        constructor(router) {
-            super(router);
+        constructor(router, req, res) {
+            super(router, req, res);
 
         }
 
@@ -131,7 +131,17 @@
                     await this.router.tokenHandler({})(req, res);
                 }
 
-                res.redirect_local = req.headers.location;
+                //res.redirect_local = req.headers.location;
+
+/*                 res.locals.shared = {
+                    layout_tabs: [
+                        {
+                            name: 'clients',
+                            icon: 'fas fa-users'
+                        }
+                    ]
+                }
+ */
             }
             catch (err) {
                 debugger;

@@ -15,20 +15,22 @@ let route = function (path) {
 
 Vue.prototype.$state = {
     service: service || 'stub',
-    base: `/${service}/ui/`,
+    base: `/${service}/`,
+    base_ui: `/${service}/ui/`,
+    base_api: `/${service}/api/`,
     path: window.location.pathname.replace(`/${service}/ui/`, '') || 'about',
-    route: route(window.location.pathname.replace(`/${service}/ui/`, '') || 'about'),
     entities: {},
     data: {},
+    shared: {},
     locationToggle: false,
     token: localStorage.getItem('token'),
-    auth: void 0
+    auth: {}
     //token: '{user_id:1010010, user_name:"bob dilan", container_id:"pdqwp08qfu", token:"qfefw98we7ggwvv7s"}',
 };
 
 let router = new VueRouter(
     {
-        base: Vue.prototype.$state.base,
+        base: Vue.prototype.$state.base_ui,
         mode: 'history',
         routes: [
             {
@@ -101,8 +103,6 @@ Vue.prototype.$request = async function(url, data, method) {
     let parsed = route(name);
     name = parsed.name;
 
-    //url = router.options.base + name;
-
     let response = !data && !parsed.action && cache[name];
 
     if(response)
@@ -133,8 +133,6 @@ Vue.prototype.$request = async function(url, data, method) {
             if(res.status === 200) {
                 let redirected = decodeURIComponent(window.location.origin + res.config.url) !== decodeURIComponent(res.request.responseURL);
 
-                //res.data.token && Vue.set(Vue.prototype.$state, 'token', res.data.token);
-
                 Vue.set(Vue.prototype.$state, 'auth', res.data.auth || '');
 
                 res.data.token && Vue.set(Vue.prototype.$state, 'token', res.data.token);
@@ -146,7 +144,7 @@ Vue.prototype.$request = async function(url, data, method) {
                 }
 
                 if (res.data.redirect_local) {
-                    let path = res.data.redirect_local.replace(Vue.prototype.$state.base, '');
+                    let path = res.data.redirect_local.replace(Vue.prototype.$state.base_ui, '');
 
                     name = path;
 
@@ -159,6 +157,10 @@ Vue.prototype.$request = async function(url, data, method) {
                 cache[name] = res.data.component || cache[name];
 
                 res.data.data && Vue.set(Vue.prototype.$state.data, name, res.data.data);
+            
+                Object.assign(Vue.prototype.$state.shared, res.data.shared);
+
+                Vue.prototype.$request(`${Vue.prototype.$state.base_api}${name}.get`);
 
                 return cache[name];
             }
@@ -192,10 +194,13 @@ let component = {
             return this.$state.entities;
         },
         location() {
-            return this.$state.path
+            return this.$state.path;
         },
         auth() {
-            return this.$state.auth
+            return this.$state.auth;
+        },
+        shared() {
+            return this.$state.shared;
         }
     },
     data() {
@@ -209,7 +214,7 @@ let component = {
         return data;
     },
     created() {
-        console.log(this.state.path);
+        //console.log(this.state.path);
         //this.state.route.name === this.name && this.$request(`${this.state.route.ident}.data`);
     },
     watch: {

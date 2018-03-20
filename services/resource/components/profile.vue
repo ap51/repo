@@ -59,3 +59,32 @@
 
     //# sourceURL=profile.js
 </script>
+
+<server-script>
+    const Component = require('./component');
+
+    module.exports = class Profile extends Component {
+        constructor(router, req, res) {
+            super(router, req, res);
+
+        }
+/* 
+        get shared() {
+            if(this.user && this.user.group === 'admin') {
+                return {
+                    layout_tabs: [
+                        {
+                            name: 'clients',
+                            icon: 'fas fa-users'
+                        }
+                    ]
+                }
+            }
+            else return {}
+        }
+ */
+        get data() {
+            return {};
+        }
+    }
+</server-script>

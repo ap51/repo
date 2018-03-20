@@ -28,9 +28,7 @@
         justify-content: center;
         align-items: center;
     }
-    .modal {
 
-    }
 </style>
 
 <script>
@@ -66,8 +64,8 @@
     const Component = require('./component');
 
     module.exports = class SignOut extends Component {
-        constructor(router) {
-            super(router);
+        constructor(router, req, res) {
+            super(router, req, res);
 
         }
 
@@ -84,10 +82,11 @@
 */
             }
 
+            req.token.user = void 0;
             req.token.access = void 0;
-            req.token.auth = void 0;
+            req.token.auth = {};
 
-            res.redirect_local = req.headers.location;
+            //res.redirect_local = req.headers.location;
         }
     }
 

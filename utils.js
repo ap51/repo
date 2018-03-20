@@ -50,13 +50,17 @@ const Component = require('./component');
 let _router = function(service) {
     const express = require('express');
     const bodyParser = require('body-parser');
+    const merge = require('deepmerge');
 
-    const config = require('./config');
+    let service_path = path.join(__dirname, 'services', service);
+/*
+    const config = require(path.join(service_path, `config`));
     let patterns = config.route_patterns;
+*/
 
     let router = express.Router();
     router.service = service;
-    router.database = require(path.join(__dirname, 'services', service, 'database', 'db'));
+    router.database = require(path.join(service_path, 'database', 'db'));
 
     router.use(bodyParser.urlencoded({extended: false}));
     router.use(bodyParser.json());
@@ -115,58 +119,52 @@ let _router = function(service) {
 
         return async function (req, res, next) {
 
-            let token = req.headers['token'];
-            if(token) {
-                req._token = token;
+            let token = req.headers['token'] || '';
 
-                req._token = await router.decode(req._token);
-                req.token = req._token[router.service];
+            req._token = token;
 
-                req.headers['authorization'] = req.token.access && `Bearer ${req.token.access}`;
-            }
+            req._token = await router.decode(req._token);
+            req.token = req._token[router.service];
+
+            req.headers['authorization'] = req.token.access && `Bearer ${req.token.access}`;
+
             next();
         }
     };
 
     router.beginHandler = function(options) {
         return async function (req, res, next) {
-            console.log('BEGIN - ', req.originalUrl);
-            router.req = req;
-            router.res = res;
+            //console.log('BEGIN - ', req.originalUrl);
 
-            /*
-                        router.req = req;
-                        router.res = res;
-
-                        let token = req.headers['token'];
-                        req._token = token;
-
-                        req._token = await router.decode(req._token);
-                        req.token = req._token[router.service];
-
-                        req.headers['authorization'] = req.token.access && `Bearer ${req.token.access}`;
-            */
-
-            let params = res.locals.params || req.params;
-            let name = params.name;
+            req.params = res.locals.params || req.params;
+            let name = req.params.name;
 
             let content = name && await loadContent(name, res, service);
-            router.$ = cheerio.load(content);
+            res.$ = cheerio.load(content);
 
-            let selector = router.$('server-script');
+            router.components = router.components || {};
+            res.component = router.components[name];
 
-            res.component = res.component || void 0;
-            selector.each(function(i, element) {
-                if(i === 0) {
-                    let code = router.$(element).text();
-                    let Class = requireFromString(code, `server-${name}.js`);
-                    res.component = Class && new Class(router);
-                }
-            });
+            if(!res.component) {
+                let selector = res.$('server-script');
 
-            selector.remove();
+                //res.component = res.component || void 0;
+                selector.each(function (i, element) {
+                    if (i === 0) {
+                        let code = res.$(element).text();
+                        let Class = requireFromString(code, `server-${name}.js`);
+                        res.component = Class && new Class(router, req, res);
+                    }
+                });
 
-            res.component = res.component || new Component(router);
+                selector.remove();
+
+                res.component = res.component || new Component(router, req, res);
+
+                router.components[name] = res.component;
+            }
+
+            //console.log('FLOW CONSTRUCTOR: ', name);
 
             next();
         }
@@ -185,21 +183,51 @@ let _router = function(service) {
                 redirect_local: res.redirect_local,
                 token: await router.encode(req._token),
                 auth: req.token.auth,
-                data: res.component.data
             };
 
             if(res.redirect_remote || res.redirect_local) {
                 return res.end(JSON.stringify(response));
             }
 
-            if (!req.isAPI && req.method === 'GET') {
-                //res.locals.data = res.component.data;
+            if (!req.params.action && !req.isAPI && req.method === 'GET') {
+                res.locals.data = res.component.data;
+                //res.locals.shared = res.component.shared;
 
-                res.locals.component = router.$.html();
+                res.locals.component = res.$.html();
+            }
+
+            router.shared = {};
+
+            for(let name in router.components) {
+                let component = router.components[name];
+
+                Object.assign(router.shared, merge(router.shared, component.shared(req, res), {
+                    arrayMerge: function (destinationArray, sourceArray, options) {
+
+                        let convert = function (item) {
+                            typeof item === 'object' && (item = JSON5.stringify(item));
+                            return item;
+                        };
+
+                        let destination = destinationArray.map(convert);
+
+                        let source = sourceArray.map(convert);
+
+                        let a = new Set(destination);
+                        let b = new Set(source);
+                        let union = Array.from(new Set([...a, ...b]));
+
+                        union = union.map(item => JSON5.parse(item));
+
+                        return union;
+                    }
+                }));
             }
 
             if(!response.error) {
                 response = {...response,
+                    data: res.locals.data,
+                    shared: router.shared,
                     entities: res.locals.entities,
                     component: res.locals.component,
                 };
@@ -211,7 +239,7 @@ let _router = function(service) {
             return res.end();
             //res.send(JSON.stringify(response));
 
-            console.log('END - ', req.originalUrl);
+            //console.log('END - ', req.originalUrl);
 
         }
     };

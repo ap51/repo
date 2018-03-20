@@ -21,7 +21,7 @@ app.use('/:service/ui', staticFileMiddleware);
 
 app.use('/:service/ui', history({
     disableDotRule: true,
-    verbose: true
+    verbose: false
 }));
 
 app.use('/:service/ui', staticFileMiddleware);
@@ -56,3 +56,7 @@ fs.readdir('./services/', (err, dirs) => {
 });
 
 
+process.on('unhandledRejection', err => {
+    throw err;
+    //console.log('Unhandled rejection:', err);
+});

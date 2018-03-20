@@ -10,12 +10,12 @@
                     </v-toolbar-items>
 -->
 
-                    <v-tabs v-if="location !== 'external-signin'" color="blue darken-2"
+                    <v-tabs v-model="active" v-if="location !== 'external-signin'" color="blue darken-2"
                             :right="false">
 
                         <v-tabs-slider color="yellow"></v-tabs-slider>
 
-                        <v-tab v-for="tab in tabs"
+                        <v-tab v-for="tab in shared.layout_tabs"
                              :key="tab.name"
                              :to="tab.to || tab.name"
                              v-if="!tab.right">
@@ -50,15 +50,19 @@
 
                     <v-toolbar-items v-if="location !== 'external-signin'">
                         <v-btn flat @click="apiCall">
-                            <v-icon class="mr-1 mb-1">fas fa-plus</v-icon>API CALL
+                            <v-icon class="mr-1 mb-1">fas fa-plus</v-icon>API+
                         </v-btn>
 
-                        <v-btn v-if="!auth" flat @click="signin = true">
+                        <v-btn flat @click="apiCallRestricted">
+                            <v-icon class="mr-1 mb-1">fas fa-plus</v-icon>API-
+                        </v-btn>
+
+                        <v-btn v-if="!auth.name" flat @click="signin = true">
                             <v-icon class="mr-1 mb-1">fas fa-user-circle</v-icon>SIGN IN
                         </v-btn>
 
-                        <v-btn v-if="auth"  flat @click="signout = true">
-                            <v-icon class="mr-1 mb-1">fas fa-sign-out-alt</v-icon>{{auth}}
+                        <v-btn v-if="auth.name"  flat @click="signout = true">
+                            <v-icon class="mr-1 mb-1">fas fa-sign-out-alt</v-icon>{{auth.name}}
                         </v-btn>
 
                         <!--
@@ -120,6 +124,7 @@
         },
         data() {
             return {
+                active: void 0,
                 //signin: false,
                 signout: false,
                 snackbar: {
@@ -150,11 +155,20 @@
         methods: {
             apiCall(data) {
                 this.$request(`${window.location.origin}/${this.state.service}/api/profile.get`, data);
+            },
+            apiCallRestricted(data) {
+                this.$request(`${window.location.origin}/${this.state.service}/api/client.get`, data);
             }
+
         },
         watch: {
-            'state.auth': function (newValue) {
-                newValue && (delete cache[this.location]);
+            'shared.layout_tabs': function (newValue, oldValue) {
+                let found = newValue.filter(tab => this.active == (tab.to || tab.name)).length;
+                !found && this.$router.replace('about');
+            },
+            'state.auth.name': function (newValue, oldValue) {
+                //newValue && (delete cache[this.location]);
+                newValue && (cache = {});
                 //newValue && (delete cache['layout']);
                 this.$page(this.location, true);
                 //!newValue && this.$request(this.location);//this.$page(this.location, true);
@@ -171,18 +185,14 @@
     const Component = require('./component');
 
     module.exports = class Layout extends Component {
-        constructor(router) {
-            super(router);
+        constructor(router, req, res) {
+            super(router, req, res);
 
         }
-
-        get data() {
-            let init = {
-                title: this.service,
-                icon: 'fab fa-empire',
-                signin: false,
-
-                tabs: [
+        
+        shared(req, res) {
+            let _data = {
+                layout_tabs: [
                     {
                         name: 'about',
                         icon: 'far fa-question-circle'
@@ -200,21 +210,25 @@
                         name: 'phones db',
                         to: 'phones-database',
                         icon: 'fas fa-database'
-                    },
-                    {
-                        name: 'action profile.get',
-                        to: 'profile.get?access_token=19e09bf54f25fe6c44be01d8035903fb4e97ca74',
-                        icon: 'fas fa-user'
                     }
                 ]
             };
 
-            debugger;
-            this.user && this.user.group === 'admin' && init.tabs.push({
+            //debugger;
+            req.token.auth && req.token.auth.group === 'admin' && _data.layout_tabs.push({
                 name: 'clients',
                 icon: 'fas fa-users'
             });
-            return init;
+
+            return _data;
+        }
+
+        get data() {
+            return {
+                title: this.service,
+                icon: 'fab fa-empire',
+                signin: false,
+            };
         }
     }
 </server-script>

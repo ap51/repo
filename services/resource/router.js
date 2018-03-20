@@ -6,8 +6,9 @@ const database = require('./database/db');
 
 let router = utils.router(service);
 
-const config = require('../../config');
-let patterns = config.route_patterns;
+const config = require('./config');
+let patterns = config.ui_patterns;
+let api_patterns = config.api_patterns;
 
 const OAuth2Server = require('oauth2-server');
 const Request = OAuth2Server.Request;
@@ -19,22 +20,24 @@ oauth = new OAuth2Server({
 
 router.authenticateHandler = function(options) {
     return async function(req, res, next) {
-        try {
-            let request = new Request(req);
-            let response = new Response(res);
+        if(req.params.name === 'clients' || req.params.name === 'signin') {
+            try {
+                let request = new Request(req);
+                let response = new Response(res);
 
-            options.scope = req.path;
-            let token = await oauth.authenticate(request, response, options);
-            res.locals.user = token.user;
-        }
-        catch (err) {
-            if(req.token) {
-                req.token.access = void 0;
-                req.token.auth = void 0;
+                options.scope = req.path;
+                let token = await oauth.authenticate(request, response, options);
+                //req.token.user = token.user;
             }
+            catch (err) {
+                if (req.token) {
+                    req.token.access = void 0;
+                    req.token.auth = void 0;
+                }
 
-            let {code, message} = err;
-            res.locals.error = {code, message};
+                let {code, message} = err;
+                res.locals.error = {code, message};
+            }
         }
 
         next && next();
@@ -87,7 +90,11 @@ router.tokenHandler = function(options) {
             let token = await oauth.token(request, response, options);
 
             req.token.access = token.accessToken;
-            req.token.auth = token.user.name;
+            req.token.auth = {
+                name: token.user.name,
+                group: token.user.group
+            }
+
             //req.token.data.user_id = token.user._id;
         }
         catch (err) {
@@ -106,12 +113,12 @@ router.onComponentData = async function(req, res, response, data) {
 
 router.all('*', router.jwtHandler());
 
-router.all('/api/:name\.:action', router.authenticateHandler({allowBearerTokensInQueryString: true}), function (req, res, next) {
-    res.locals.error ? res.status(res.locals.error.code).send(res.locals.error.message) : res.status(222).json({api: 'v.1.0'});
+router.all(api_patterns, router.authenticateHandler({allowBearerTokensInQueryString: true}), function (req, res, next) {
+    res.locals.error ? res.status(res.locals.error.code).send(res.locals.error.message) : res.status(222).json({api: 'v.1.0', request: req.params});
     return res.end();
 });
 
-router.all('/ui/profile', router.authenticateHandler({allowBearerTokensInQueryString: true}), function (req, res, next) {
+router.all(['/ui/profile', '/ui/clients'], router.authenticateHandler({allowBearerTokensInQueryString: true}), function (req, res, next) {
     if(res.locals.error && res.locals.error.code === 401) {
         //res.redirect_local = 'unauthenticate';
         res.locals.params = {name: 'unauthenticate'};
@@ -125,7 +132,7 @@ router.all(patterns, router.beginHandler());
 //router.all(patterns, authenticateHandler());
 
 router.all(patterns, function(req, res, next) {
-    console.log(req.params);
+    //console.log(req.params);
     next();
 });
 
