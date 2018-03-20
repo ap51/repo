@@ -40,12 +40,14 @@ db.client.find({client_id: 'one'}, function (err, clients) {
     );
 });
 
+/*
 db.user.find({email: 'user@user.com'}, function (err, users) {
     !users.length && db.user.insert({
         email: 'user@user.com',
         password: 'hash'
     });
 });
+*/
 
 class NotFoundError extends Error {
     constructor(collection) {

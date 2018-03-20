@@ -114,8 +114,6 @@ let _router = function(service) {
         keys = _keys[service];
 
         return async function (req, res, next) {
-            router.req = req;
-            router.res = res;
 
             let token = req.headers['token'];
             if(token) {
@@ -133,38 +131,42 @@ let _router = function(service) {
     router.beginHandler = function(options) {
         return async function (req, res, next) {
             console.log('BEGIN - ', req.originalUrl);
-/*
             router.req = req;
             router.res = res;
 
-            let token = req.headers['token'];
-            req._token = token;
+            /*
+                        router.req = req;
+                        router.res = res;
 
-            req._token = await router.decode(req._token);
-            req.token = req._token[router.service];
+                        let token = req.headers['token'];
+                        req._token = token;
 
-            req.headers['authorization'] = req.token.access && `Bearer ${req.token.access}`;
-*/
+                        req._token = await router.decode(req._token);
+                        req.token = req._token[router.service];
 
-            let name = req.params.name;
+                        req.headers['authorization'] = req.token.access && `Bearer ${req.token.access}`;
+            */
+
+            let params = res.locals.params || req.params;
+            let name = params.name;
 
             let content = name && await loadContent(name, res, service);
             router.$ = cheerio.load(content);
 
             let selector = router.$('server-script');
 
-            router.component = router.component || void 0;
+            res.component = res.component || void 0;
             selector.each(function(i, element) {
                 if(i === 0) {
                     let code = router.$(element).text();
                     let Class = requireFromString(code, `server-${name}.js`);
-                    router.component = Class && new Class(router);
+                    res.component = Class && new Class(router);
                 }
             });
 
             selector.remove();
 
-            router.component = router.component || new Component(router);
+            res.component = res.component || new Component(router);
 
             next();
         }
@@ -173,7 +175,7 @@ let _router = function(service) {
     router.endHandler = function(options) {
 
         return async function (req, res, next) {
-            req.params.action && router.component[req.params.action] && await router.component[req.params.action](req, res);
+            req.params.action && res.component[req.params.action] && await res.component[req.params.action](req, res);
 
             req._token[router.service] = req.token;
 
@@ -183,7 +185,7 @@ let _router = function(service) {
                 redirect_local: res.redirect_local,
                 token: await router.encode(req._token),
                 auth: req.token.auth,
-                data: router.component.data
+                data: res.component.data
             };
 
             if(res.redirect_remote || res.redirect_local) {
@@ -191,7 +193,7 @@ let _router = function(service) {
             }
 
             if (!req.isAPI && req.method === 'GET') {
-                res.locals.data = router.component.data;
+                //res.locals.data = res.component.data;
 
                 res.locals.component = router.$.html();
             }

@@ -9,6 +9,7 @@ module.exports = class Component {
         this.router = router;
         this.service = router.service;
         this.name = router.req.params.name;
+        this.user = router.res.locals.user;
 
         let module = path.join(__dirname, this.service, 'database', 'schema');
         this.schema = fs.existsSync(`${module}.js`) ? require(module) : void 0;

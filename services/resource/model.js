@@ -61,8 +61,8 @@ model.getClient = async function(clientId, clientSecret, callback) {
 
 model.saveToken = async function(token, client, user, callback) {
     token.client = {_id: client._id};//{id: client.client_id};
-    let {_id, name} = user;
-    token.user = {_id, name};
+    let {_id, name, group} = user;
+    token.user = {_id, name, group};
     db.token.insert(token, function (err, inserted) {
         callback(err, inserted);
     });

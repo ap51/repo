@@ -123,7 +123,7 @@
                 //signin: false,
                 signout: false,
                 snackbar: {
-                    timeout: 3000,
+                    timeout: 4000,
                     color: 'red darken-2',
                     multiline: false,
                     vertical: false,
@@ -154,10 +154,12 @@
         },
         watch: {
             'state.auth': function (newValue) {
-                !newValue && (delete cache[this.location]);
-                !newValue && this.$page(this.location, true);
+                newValue && (delete cache[this.location]);
+                //newValue && (delete cache['layout']);
+                this.$page(this.location, true);
                 //!newValue && this.$request(this.location);//this.$page(this.location, true);
                 !newValue && (this.signout = false);
+                newValue && (this.signin = false);
             }
         }
     }
@@ -175,7 +177,7 @@
         }
 
         get data() {
-            return {
+            let init = {
                 title: this.service,
                 icon: 'fab fa-empire',
                 signin: false,
@@ -205,7 +207,14 @@
                         icon: 'fas fa-user'
                     }
                 ]
-            }
+            };
+
+            debugger;
+            this.user && this.user.group === 'admin' && init.tabs.push({
+                name: 'clients',
+                icon: 'fas fa-users'
+            });
+            return init;
         }
     }
 </server-script>

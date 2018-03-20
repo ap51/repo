@@ -78,6 +78,7 @@ axios.interceptors.response.use(
         return response;
     },
     function (error) {
+        //error.response.status === 401 && (Vue.prototype.$state.auth = void 0);
         return Promise.reject(error);
     }
 );

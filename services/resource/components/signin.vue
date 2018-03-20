@@ -71,7 +71,7 @@
                     let data = {
                         email: this.email,
                         password: md5(`${this.email}.${this.password}`),
-                        location: 'about'
+                        //location: 'about'
                     };
 
                     this.$request('signin.submit', data);
@@ -99,10 +99,12 @@
         }
 
         get data() {
-            return {
+            let _data = {
                 email: 'ap@gmail.com',
                 password: '123'
-            }
+            };
+
+            return _data;
         }
 
         get entity() {

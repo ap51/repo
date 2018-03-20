@@ -25,6 +25,7 @@ router.authenticateHandler = function(options) {
 
             options.scope = req.path;
             let token = await oauth.authenticate(request, response, options);
+            res.locals.user = token.user;
         }
         catch (err) {
             if(req.token) {
@@ -87,7 +88,6 @@ router.tokenHandler = function(options) {
 
             req.token.access = token.accessToken;
             req.token.auth = token.user.name;
-
             //req.token.data.user_id = token.user._id;
         }
         catch (err) {
@@ -107,9 +107,17 @@ router.onComponentData = async function(req, res, response, data) {
 router.all('*', router.jwtHandler());
 
 router.all('/api/:name\.:action', router.authenticateHandler({allowBearerTokensInQueryString: true}), function (req, res, next) {
-    res.locals.error ? res.status(res.locals.error.code).send(res.locals.error.message) : res.status(201).json({api: 'v.1.0'});
+    res.locals.error ? res.status(res.locals.error.code).send(res.locals.error.message) : res.status(222).json({api: 'v.1.0'});
     return res.end();
-    //next(false);
+});
+
+router.all('/ui/profile', router.authenticateHandler({allowBearerTokensInQueryString: true}), function (req, res, next) {
+    if(res.locals.error && res.locals.error.code === 401) {
+        //res.redirect_local = 'unauthenticate';
+        res.locals.params = {name: 'unauthenticate'};
+        res.locals.error = void 0;
+    }
+    next();
 });
 
 router.all(patterns, router.beginHandler());
