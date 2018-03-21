@@ -104,8 +104,8 @@ let _router = function(service) {
             verified = false;
         }
 
+        decoded.verified = verified;
         decoded[router.service] = decoded[router.service] || {};
-        decoded[router.service].verified = verified;
 
         decoded[router.service].access && (decoded[router.service].access = await decryptRSA(decoded[router.service].access, keys.privateKey));
 
@@ -124,6 +124,10 @@ let _router = function(service) {
             req._token = token;
 
             req._token = await router.decode(req._token);
+            
+            if(!req._token.verified)
+                return res.status(401).end();
+
             req.token = req._token[router.service];
 
             req.headers['authorization'] = req.token.access && `Bearer ${req.token.access}`;

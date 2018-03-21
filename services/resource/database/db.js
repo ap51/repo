@@ -87,7 +87,7 @@ db.findOne = function(collenction, query) {
 db.remove = function(collenction, query) {
     return new Promise(function (resolve, reject) {
         db[collenction].remove(query, {}, function (err, results) {
-            console.log(results);
+            //console.log(results);
             if(!results || err) {
                 reject(err || new NotFoundError(collenction));
             }

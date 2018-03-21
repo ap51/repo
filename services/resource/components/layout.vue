@@ -134,11 +134,7 @@
                     vertical: false,
                     visible: false,
                     message: ''
-                },
-                /* GET FROM server
-                                    }
-                                ]
-                */
+                }
             }
         },
         created() {
@@ -191,6 +187,7 @@
         }
         
         shared(req, res) {
+
             let _data = {
                 layout_tabs: [
                     {
@@ -208,14 +205,13 @@
                     },
                     {
                         name: 'phones db',
-                        to: 'phones-database',
+                        to: 'phones',
                         icon: 'fas fa-database'
                     }
                 ]
             };
 
-            //debugger;
-            req.token.auth && req.token.auth.group === 'admin' && _data.layout_tabs.push({
+            req.token.auth && req.token.auth.group === 'admins' && _data.layout_tabs.push({
                 name: 'clients',
                 icon: 'fas fa-users'
             });

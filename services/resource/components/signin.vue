@@ -112,12 +112,12 @@
         }
 
         async submit(req, res) {
-            console.log(req.jwt);
+            //console.log(req.jwt);
             //debugger;
             try {
                 req.body.username = req.body.email;
 
-                await this.router.authenticateHandler({})(req, res);
+                await this.router.authenticateHandler({force: true})(req, res);
                 if (res.locals.error) {
                     res.locals.error = void 0;
 

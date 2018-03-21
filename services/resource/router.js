@@ -9,6 +9,7 @@ let router = utils.router(service);
 const config = require('./config');
 let patterns = config.ui_patterns;
 let api_patterns = config.api_patterns;
+let endpoints = config.endpoints;
 
 const OAuth2Server = require('oauth2-server');
 const Request = OAuth2Server.Request;
@@ -20,23 +21,34 @@ oauth = new OAuth2Server({
 
 router.authenticateHandler = function(options) {
     return async function(req, res, next) {
-        if(req.params.name === 'clients' || req.params.name === 'signin') {
+        //if(req.params.name === 'clients' || req.params.name === 'signin') {
+        if(options.force || endpoints.secured(options.endpoint, req.params)) {
             try {
                 let request = new Request(req);
                 let response = new Response(res);
 
                 options.scope = req.path;
                 let token = await oauth.authenticate(request, response, options);
-                //req.token.user = token.user;
+
+                let granted = endpoints.access(options.endpoint, req.params, token.user.group);
+                if(!!!granted) {
+                    throw new OAuth2Server.AccessDeniedError('Access denied.');
+                }
+                else {
+                    console.log(granted);
+                    res.locals.unit = granted;
+                }
             }
             catch (err) {
-                if (req.token) {
+
+                let {code, message} = err;
+                res.locals.error = {code, message};
+
+                if (code === 401 && req.token) {
                     req.token.access = void 0;
                     req.token.auth = void 0;
                 }
 
-                let {code, message} = err;
-                res.locals.error = {code, message};
             }
         }
 
@@ -113,6 +125,36 @@ router.onComponentData = async function(req, res, response, data) {
 
 router.all('*', router.jwtHandler());
 
+router.all(endpoints.patterns('api'), router.authenticateHandler({endpoint:'api', allowBearerTokensInQueryString: true}), function (req, res, next) {
+    if(res.locals.error) {
+        res.status(res.locals.error.code).send(res.locals.error.message)
+    }
+    else {
+        let action = endpoints.action('api', req.params, res.locals.unit);
+        let response = {api: 'v.1.0', request: req.params};
+        response = {...response, ...action()};
+        res.status(222).json(response);
+    }
+    return res.end();
+});
+
+router.all(endpoints.patterns('ui'), router.authenticateHandler({endpoint:'ui'}), function (req, res, next) {
+    if(res.locals.error) {
+        switch(res.locals.error.code) {
+            case 400: 
+                res.locals.params = {name: 'access-denied'};
+                break;
+            case 401: 
+                res.locals.params = {name: 'unauthenticate'};
+                break;
+        };
+
+        res.locals.error = void 0;
+    }
+    next();
+});
+
+/* 
 router.all(api_patterns, router.authenticateHandler({allowBearerTokensInQueryString: true}), function (req, res, next) {
     res.locals.error ? res.status(res.locals.error.code).send(res.locals.error.message) : res.status(222).json({api: 'v.1.0', request: req.params});
     return res.end();
@@ -126,7 +168,7 @@ router.all(['/ui/profile', '/ui/clients'], router.authenticateHandler({allowBear
     }
     next();
 });
-
+ */
 router.all(patterns, router.beginHandler());
 
 //router.all(patterns, authenticateHandler());

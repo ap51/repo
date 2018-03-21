@@ -1,16 +1,10 @@
 <template>
     <div class="layout-view">
-        <v-dialog v-model="frame" max-width="500px">
-            <v-card>
-                <iframe v-if="frame" style="width: 100%;height: 100%;border: none;" src="https://localhost:5000/phones/about"></iframe>
-            </v-card>
-        </v-dialog>
-        <v-btn flat @click="frame = !frame"></v-btn>
         <h1>OAuth resource server:</h1>
 
         <div>
             <p>
-                ПРОФИЛЬ ПОЛЬЗОВАТЕЛЯ
+                Менеджер сторонних клиентских приложений
             </p>
         </div>
     </div>

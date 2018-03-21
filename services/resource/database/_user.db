@@ -1,2 +1,2 @@
-{"name":"Will Smith","email":"ap@gmail.com","password":"d3c7d3e90fd6f75b8c8ea3296e7c54e1","group":"admin","_id":"NXlHTrgrYBEp7JZX"}
-{"name":"Joe Dou","email":"123","password":"46ddc40585caa8abc07c460b3485781e","group":"user","_id":"ZBz7mTBDBoWfUZcw"}
+{"name":"Will Smith","email":"ap@gmail.com","password":"d3c7d3e90fd6f75b8c8ea3296e7c54e1","group":"admins","_id":"NXlHTrgrYBEp7JZX"}
+{"name":"Joe Dou","email":"123","password":"46ddc40585caa8abc07c460b3485781e","group":"users","_id":"ZBz7mTBDBoWfUZcw"}
