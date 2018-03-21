@@ -125,14 +125,18 @@ router.onComponentData = async function(req, res, response, data) {
 
 router.all('*', router.jwtHandler());
 
-router.all(endpoints.patterns('api'), router.authenticateHandler({endpoint:'api', allowBearerTokensInQueryString: true}), function (req, res, next) {
+router.all(endpoints.patterns('api'), router.authenticateHandler({endpoint:'api', allowBearerTokensInQueryString: true}), async function (req, res, next) {
     if(res.locals.error) {
         res.status(res.locals.error.code).send(res.locals.error.message)
     }
     else {
         let action = endpoints.action('api', req.params, res.locals.unit);
         let response = {api: 'v.1.0', request: req.params};
-        response = {...response, ...action()};
+
+        let apiCall = await action();
+        apiCall = Array.isArray(apiCall) ? apiCall : [apiCall];
+
+        response.data = apiCall;
         res.status(222).json(response);
     }
     return res.end();

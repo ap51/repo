@@ -2,11 +2,48 @@
     <div class="layout-view">
         <h1>OAuth resource server:</h1>
 
-        <div>
-            <p>
-                Менеджер сторонних клиентских приложений
-            </p>
-        </div>
+        <v-data-table
+                :headers="headers"
+                :items="items"
+                class="table elevation-1 mt-2 ma-1"
+                :search="search"
+                v-model="selected"
+                item-key="number"
+                select-all
+                class="elevation-1"
+                next-icon="fas fa-chevron-right"
+                prev-icon="fas fa-chevron-left"
+                sort-icon="fas fa-arrow-up"
+                :pagination.sync="pagination"
+                hide-actions
+        >
+            <template slot="items" slot-scope="props">
+                <tr>
+                    <td>
+                        <v-checkbox
+                                primary
+                                hide-details
+                                v-model="props.selected"
+                                color="blue darken-2"
+                        ></v-checkbox>
+                    </td>
+                    <td @click="edit(props.item)">
+                        <v-icon class="data-icon pb-1 mr-1">fas fa-mobile</v-icon>
+                        <a>{{ props.item.phone }}</a>
+                    </td>
+                    <td @click="edit(props.item)">
+                        <v-icon class="data-icon pb-1 mr-1">fas fa-user</v-icon>
+                        <a>{{ props.item.owner }}</a>
+                    </td>
+                </tr>
+            </template>
+
+            <template slot="footer">
+                <td colspan="100%">
+                    <strong>total records: {{entities.phones.length}}</strong>
+                </td>
+            </template>
+        </v-data-table>
     </div>
 </template>
 

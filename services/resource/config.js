@@ -1,5 +1,6 @@
 const fs = require('fs');
 const path = require('path');
+const database = require('./database/db');
 
 let config = module.exports;
 
@@ -43,7 +44,10 @@ let matrix = {
             actions: {
                 'profile.get': function() {
                     return {text: 'ПРОФИЛЬ ПОЛЬЗОВАТЕЛЯ'};
-                }
+                },
+                'phones.get': function() {
+                    return [100,101,102];
+                },
             }
         },
         {
@@ -52,7 +56,7 @@ let matrix = {
             access: ['admins'],
             actions: {
                 'clients.get': function() {
-                    return {action: 'clients.get'}
+                    return database.find('client', {});
                 }
             }
         }
@@ -80,7 +84,7 @@ config.endpoints = {
                 let match = regexp.test(value);
                 
                 return match && unit.secured;
-            })
+            });
 
             return patterns;
         });
@@ -103,7 +107,7 @@ config.endpoints = {
                 let match = regexp.test(value);
                 
                 return match && unit.access.some(group => group === '*' || access_group === group);
-            })
+            });
 
             patterns && (found = unit);
             return patterns;
@@ -116,9 +120,11 @@ config.endpoints = {
         
         let value = `${name}${action ? '.' + action : ''}`;
 
-        return unit ? unit.actions[value] : function() {
+        let notFound = function () {
             return {action: 'not found'};
         };
+
+        return unit ? unit.actions[value] || notFound: notFound;
     }
-}
+};
 
