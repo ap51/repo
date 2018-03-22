@@ -1,7 +1,8 @@
-let collections = ['token', 'client', 'user', 'code', 'scope', 'client_user'];
+let collections = ['token', 'client', 'user', 'code', 'scope', 'client_user', 'phone'];
 
 const path = require('path');
 const Datastore = require('nedb');
+const normalizer = require('normalizr');
 
 let db = module.exports;
 
@@ -9,6 +10,22 @@ for(let inx in collections) {
     let conn = collections[inx];
     db[conn] = new Datastore({filename: path.join(__dirname, `_${conn}.db`), autoload: true});
 }
+
+db.phone.find({}, function (err, phones) {
+    if(!phones.length) {
+        for (let i = 0; i < 9; i++) {
+            let digits = Math.floor(Math.random() * 90000000000) + 10000000000;
+
+            db._phone.insert(
+                {
+                    "owner": "Owner: " + new Date(),
+                    "number": digits,
+                    "user": "000000",
+                }
+            );
+        }
+    }
+});
 
 db.client.find({client_id: 'one'}, function (err, clients) {
     !clients.length && db.client.insert(
@@ -55,6 +72,7 @@ class NotFoundError extends Error {
         this.code = 404;
     }
 }
+
 db.find = function(collenction, query) {
     return new Promise(function (resolve, reject) {
         db[collenction].find(query, function (err, results) {
@@ -62,7 +80,7 @@ db.find = function(collenction, query) {
                 reject(err || new NotFoundError(collenction));
             }
             else {
-                results && results.length && resolve(results);
+                results && results.length && resolve(results.map(record => {record.id = record._id; return record}));
 
                 results && !results.length && reject(new NotFoundError(collenction));
 

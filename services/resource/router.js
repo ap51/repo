@@ -29,13 +29,14 @@ router.authenticateHandler = function(options) {
 
                 options.scope = req.path;
                 let token = await oauth.authenticate(request, response, options);
+                res.locals.token = token;
 
                 let granted = endpoints.access(options.endpoint, req.params, token.user.group);
                 if(!!!granted) {
-                    throw new OAuth2Server.AccessDeniedError('Access denied.');
+                    throw new OAuth2Server.InsufficientScopeError('Access denied.');
                 }
                 else {
-                    console.log(granted);
+                    //console.log(granted);
                     res.locals.unit = granted;
                 }
             }
@@ -131,13 +132,11 @@ router.all(endpoints.patterns('api'), router.authenticateHandler({endpoint:'api'
     }
     else {
         let action = endpoints.action('api', req.params, res.locals.unit);
-        let response = {api: 'v.1.0', request: req.params};
+        let response = {api: 'v1', ...await action(res.locals.token)};
 
-        let apiCall = await action();
-        apiCall = Array.isArray(apiCall) ? apiCall : [apiCall];
+        let entities = {...endpoints.entities(response), method: req.method};
 
-        response.data = apiCall;
-        res.status(222).json(response);
+        res.status(222).json(entities);
     }
     return res.end();
 });
@@ -145,7 +144,7 @@ router.all(endpoints.patterns('api'), router.authenticateHandler({endpoint:'api'
 router.all(endpoints.patterns('ui'), router.authenticateHandler({endpoint:'ui'}), function (req, res, next) {
     if(res.locals.error) {
         switch(res.locals.error.code) {
-            case 400: 
+            case 403: 
                 res.locals.params = {name: 'access-denied'};
                 break;
             case 401: 

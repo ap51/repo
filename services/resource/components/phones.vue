@@ -1,6 +1,6 @@
 <template>
     <div class="layout-view">
-        <v-data-table v-if="entity"
+        <v-data-table v-if="this.database.user"
                 :headers="headers"
                 :items="entity"
                 :search="search"
@@ -28,11 +28,8 @@
                         v-model="props.selected">
                     </v-checkbox>
                 </td>
-                <td>{{ props.item.app_name }}</td>
-                <td>{{ props.item.client_id }}</td>
-                <td>{{ props.item.grants }}</td>
-                <td>{{ props.item.scope }}</td>
-                <td>{{ props.item.redirectUris }}</td>
+                <td>{{ props.item.number}}</td>
+                <td>{{ props.item.owner }}</td>
             </template>
         </v-data-table>
     </div>
@@ -79,22 +76,19 @@
                 search: '',
                 selected: [],
                 headers: [
-                    { text: 'Application name', value: 'app_name' },
-                    { text: 'Client ID', value: 'client_id' },
-                    { text: 'Allowed Grants', value: 'grants' },
-                    { text: 'Allowed Scopes', value: 'scope' },
-                    { text: 'Redirects', value: 'redirectUris' }
+                    { text: 'Number', value: 'number' },
+                    { text: 'Owner', value: 'owner' }
                 ]
             }
         },
         computed: {
             entity() {
-                return this.database.client ? this.database.client.map(client => this.entities.client[client]) : [];
+                return this.database.user ? this.entities.user.current.phone.map(phone => this.entities.phone[phone]).map(phone => {phone.number = (phone.number + '').replace(/(\d{1})(\d{3})(\d{3})(\d{2})(\d{2})/, '+$1 ($2) $3 - $4 - $5'); return phone}) : [];
             }
         }
     }
 
-    //# sourceURL=clients.js
+    //# sourceURL=phones.js
 </script>
 
 <server-script>
@@ -105,21 +99,7 @@
             super(router, req, res);
 
         }
-/* 
-        get shared() {
-            if(this.user && this.user.group === 'admin') {
-                return {
-                    layout_tabs: [
-                        {
-                            name: 'clients',
-                            icon: 'fas fa-users'
-                        }
-                    ]
-                }
-            }
-            else return {}
-        }
- */
+
         get data() {
             return {};
         }

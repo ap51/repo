@@ -165,18 +165,34 @@ Vue.prototype.$request = async function(url, data, method) {
                 return cache[name];
             }
             else {
-                console.log(res.data);
-                return res.data;
-                /*
-            //ОБЪЕДИНИТЬ ТОЛЬКО ТО ЧТО НОВОЕ! пример сделан в проекте
+                //console.log(res.data);
+                let api = res.data.result;
+                let entry = res.data.entry;
+                let database = res.data.entities[entry][api];
 
-            setTimeout(function () {
-                !parsed.action && parsed.action !== 'entities' && Vue.prototype.$request(`${parsed.ident}.entities`);
-            }, 0);
+                //Vue.prototype.$state.entities
+                let merge = deepmerge(Vue.prototype.$state.entities, res.data.entities, {
+                    arrayMerge: function (destination/*entities*/, source/*data*/, options) {
+                        //ALL ARRAYS MUST BE SIMPLE IDs HOLDER AFTER NORMALIZE
+                        if(res.data.method === 'DELETE') {
+                            return destination.filter(id => source.indexOf(id) === -1);
+                        }
+                        
+                        let a = new Set(destination);
+                        let b = new Set(source);
+                        let union = Array.from(new Set([...a, ...b]));
 
-            parsed.action === 'entities' && res.data.entities && Vue.set(Vue.prototype.$state, 'entities', res.data.entities);
-*/
+                        return union;
+                    }
+                });
+                
+                //console.log(merge);
+                
+                Vue.set(Vue.prototype.$state, 'api', api);
+                Vue.set(Vue.prototype.$state, 'entry', entry);
+                Vue.set(Vue.prototype.$state, 'entities', merge);
 
+                //return Vue.prototype.$state;
             }
         })
         .catch(function(err) {
@@ -192,6 +208,9 @@ let component = {
     computed: {
         entities() {
             return this.$state.entities;
+        },
+        database() {
+            return (this.$state.entities[this.$state.entry] && this.$state.entities[this.$state.entry][this.$state.api]) || {};
         },
         location() {
             return this.$state.path;
@@ -225,8 +244,23 @@ let component = {
     }
 };
 
+/*
+Vue.use(Vuetify, {
+});
+*/
+
+const theme = {
+    primary: '#3f51b5',
+    secondary: '#b0bec5',
+    accent: '#1976D2',
+    error: '#b71c1c'
+};
+
 window.vm = new Vue({
     el: '#app',
-    router: router
+    router: router,
+    created() {
+        this.$vuetify.theme = theme
+    }
 });
 

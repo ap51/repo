@@ -1,6 +1,7 @@
 const fs = require('fs');
 const path = require('path');
 const database = require('./database/db');
+const normalizer = require('normalizr');
 
 let config = module.exports;
 
@@ -15,7 +16,7 @@ let matrix = {
             access: ['users']
         },
         {
-            patterns: ['clients'],
+            patterns: ['clients', 'users'],
             secured: true,
             access: ['admins']
         },
@@ -26,37 +27,26 @@ let matrix = {
         }
     ],
     'api': [
-/*         {
-            patterns: ['about.*'],
-            secured: true,
-            access: ['users'],
-            actions: {
-                'about.get': function() {
-                    return {action: 'about.get'}
-                }
-            }
-        },
- */
         {
             patterns: ['profile.*', 'phones*'],
             secured: true,
             access: ['*'],
             actions: {
                 'profile.get': function() {
-                    return {text: 'ПРОФИЛЬ ПОЛЬЗОВАТЕЛЯ'};
+                    return {profile: {id: 2121, text: 'ПРОФИЛЬ ПОЛЬЗОВАТЕЛЯ'}};
                 },
-                'phones.get': function() {
-                    return [100,101,102];
-                },
+                'phones.get': async function(token) {
+                    return {user: [{id: 'current', phone: await database.find('phone', {user: token.user._id})}]};
+                }
             }
         },
         {
-            patterns: ['clients.*'],
+            patterns: ['clients.*', 'users.*'],
             secured: true,
             access: ['admins'],
             actions: {
-                'clients.get': function() {
-                    return database.find('client', {});
+                'clients.get': async function() {
+                    return {client: await database.find('client', {})};
                 }
             }
         }
@@ -121,10 +111,44 @@ config.endpoints = {
         let value = `${name}${action ? '.' + action : ''}`;
 
         let notFound = function () {
-            return {action: 'not found'};
+            return {action: {name: 'not found', id: 1, request: params}};
         };
 
         return unit ? unit.actions[value] || notFound: notFound;
+    },
+    entities(data) {
+        return normalize(data);
     }
 };
 
+let normalize = function(data) {
+    let schema = normalizer.schema;
+    
+    const _action = new schema.Entity('action', {});
+
+    const _profile = new schema.Entity('profile', {});
+
+    const _phone = new schema.Entity('phone', {});
+
+    const _user = new schema.Entity('user', {
+        phone: [ _phone ]
+    });
+
+    const _client = new schema.Entity('client', {}, {
+        //idAttribute: '_id' // to use not standard ID
+    });
+    
+    const db = new schema.Entity('database', { 
+        action: _action,
+        client: [ _client ],
+        user: [ _user ],
+        profile: _profile
+      }, {
+        idAttribute: 'api'
+      });
+    
+    let entities = normalizer.normalize(data, db);
+    entities = {...entities, entry: 'database'};
+
+    return entities;
+}

@@ -159,12 +159,13 @@
         },
         watch: {
             'shared.layout_tabs': function (newValue, oldValue) {
-                let found = newValue.filter(tab => this.active == (tab.to || tab.name)).length;
-                !found && this.$router.replace('about');
+                //let found = newValue.filter(tab => this.active == (tab.to || tab.name)).length;
+                //!found && this.$router.replace('about');
             },
             'state.auth.name': function (newValue, oldValue) {
                 //newValue && (delete cache[this.location]);
                 newValue && (cache = {});
+                !newValue && Vue.set(Vue.prototype.$state, 'entities', {});
                 //newValue && (delete cache['layout']);
                 this.$page(this.location, true);
                 //!newValue && this.$request(this.location);//this.$page(this.location, true);
@@ -211,10 +212,18 @@
                 ]
             };
 
-            req.token.auth && req.token.auth.group === 'admins' && _data.layout_tabs.push({
-                name: 'clients',
-                icon: 'fas fa-users'
-            });
+            if(req.token.auth && req.token.auth.group === 'admins') {
+                _data.layout_tabs.push(
+                    {
+                        name: 'clients',
+                        icon: 'fas fa-users'
+                    },
+                    {
+                        name: 'users',
+                        icon: 'fas fa-users'
+                    },
+                );
+            };
 
             return _data;
         }
