@@ -62,8 +62,8 @@ let _router = function(service) {
     router.service = service;
     router.database = require(path.join(service_path, 'database', 'db'));
 
-    router.use(bodyParser.urlencoded({extended: false}));
     router.use(bodyParser.json());
+    router.use(bodyParser.urlencoded({extended: false}));
 
     router.token = jwt;
 

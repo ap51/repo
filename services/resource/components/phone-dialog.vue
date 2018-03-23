@@ -11,6 +11,7 @@
                         <v-form ref="form" lazy-validation @submit.prevent>
                             <v-flex xs12>
                                 <v-text-field v-model="phone.number"
+                                              validate-on-blur
                                               label="Number"
                                               required
                                               prepend-icon="fas fa-mobile"
@@ -26,6 +27,7 @@
                             </v-flex>
                             <v-flex xs12>
                                 <v-text-field v-model="phone.owner"
+                                              validate-on-blur
                                               label="Owner"
                                               required
                                               prepend-icon="fas fa-user"

@@ -1,3 +1,5 @@
+'use strict'
+
 const fs = require('fs');
 const path = require('path');
 const database = require('./database/db');
@@ -46,30 +48,30 @@ let matrix = {
                     return {user: [{id: 'current', phone: await database.find('phone', {user: token.user.id})}]};
                 },
                 'phones.save': async function(token, data) {
-                    data = Array.isArray(data) ? data : [data];
-
-                    if(data.find(phone => phone.number === '00000000000')) {
-                    //if(data.number === '00000000000') {
+                    if(data.number === '00000000000') {
                         throw new CustomError(406, 'Not allowed phone number.');
                     }
                     else {
-                        //data.user = token.user.id;
-                        data = data.map(phone => {
-                            phone.user = token.user.id;
-                            return phone;
-                        });
+                        data.user = token.user.id;
 
-                        let ids = data.map(phone => phone.id);
-
-                        let updates = await database.update('phone', {_id: {$in: ids}}, data);
+                        let updates = await database.update('phone', {_id: data.id}, data);
                         return {user: [{id: 'current', phone: updates}]};
                     }
                 },
                 'phones.remove': async function(token, data) {
+/*
+                    let ids = [];
+                    for(let inx in data) {
+                        ids.push(data[inx].id);
+                    }
+*/
+
                     data = Array.isArray(data) ? data : [data];
 
-                    let updates = await database.update('phone', {_id: data.id}, data);
-                    return {user: [{id: 'current', phone: updates}]};
+                    let ids = data.map(phone => phone.id);
+
+                    let updates = await database.remove('phone', {_id: { $in: ids }}, data);
+                    return {user: [{id: 'current', phone: data}]};
                 }
 
             }

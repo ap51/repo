@@ -65,7 +65,8 @@
     }
 
     .table {
-        width: 50vw;
+        min-width: 60vw;
+        max-width: 60vw;
     }
 
 </style>
@@ -123,10 +124,14 @@
                 this.dialog.object = {...phone};
                 this.dialog.visible = true;
             },
+            remove() {
+                this.$request(`${this.$state.base_api}phones.remove`, this.selected, {method: 'delete', callback: this.cancel});
+            },
             save(phone) {
                 this.$request(`${this.$state.base_api}phones.save`, phone, {callback: this.cancel});
             },
-            cancel() {
+            cancel(response) {
+                response && response.data.method === 'DELETE' && (this.selected = []);
                 this.dialog.visible = false;
             }
         }

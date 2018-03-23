@@ -98,6 +98,7 @@ Vue.prototype.$page = function(path, force) {
 
 Vue.prototype.$bus = new Vue({});
 
+axios.defaults.headers['post'] = {};
 
 Vue.prototype.$request = async function(url, data, options) {
     let name = url.replace('/index.vue', '');
@@ -105,7 +106,7 @@ Vue.prototype.$request = async function(url, data, options) {
     let parsed = route(name);
     name = parsed.name;
 
-    let {method, callback} = options || {};
+    let {method, callback, encode} = options || {};
 
     let response = !data && !parsed.action && cache[name];
 
@@ -116,20 +117,24 @@ Vue.prototype.$request = async function(url, data, options) {
         url: url,
         method: data ? method || 'post' : 'get',
         headers: {
-            //'content-type': 'application/x-www-form-urlencoded',
+            'content-type': encode ? 'application/x-www-form-urlencoded' : 'application/json',
             //'Authorization': Vue.prototype.$state.token ? `Bearer ${Vue.prototype.$state.token}` : '',
             'token': Vue.prototype.$state.token || '',
             'location': data ? data.location || window.location.pathname : window.location.pathname
         },
         transformRequest: function(obj) {
+            let transformed = encode ? Qs.stringify(obj) : JSON.stringify(obj);
+            return transformed;
+/*
             let str = [];
-            for(let key in obj)
+            for (let key in obj)
                 str.push(encodeURIComponent(key) + "=" + encodeURIComponent(obj[key]));
             return str.join("&");
+*/
         }
     };
 
-    //referer && (config.headers['x-referer'] = referer);
+    //encode && (config.headers['content-type'] = 'application/x-www-form-urlencoded');
     data && (config.data = data);
 
     return axios(config)
@@ -256,9 +261,9 @@ Vue.use(Vuetify, {
 */
 
 const theme = {
-    primary: '#3f51b5',
+    primary: '#1976D2',
     secondary: '#b0bec5',
-    accent: '#1976D2',
+    accent: '#388E3C',
     error: '#b71c1c'
 };
 

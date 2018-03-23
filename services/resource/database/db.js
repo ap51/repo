@@ -75,7 +75,7 @@ class NotFoundError extends Error {
 
 db.find = function(collection, query) {
     return new Promise(function (resolve, reject) {
-        db[collection].find(query, function (err, results) {
+        db[collection].find(query).sort({created: 1}).exec(function (err, results) {
             if(!results || err) {
                 reject(err || new NotFoundError(collection));
             }
@@ -108,7 +108,7 @@ db.findOne = function(collection, query) {
 
 db.remove = function(collection, query) {
     return new Promise(function (resolve, reject) {
-        db[collection].remove(query, {}, function (err, results) {
+        db[collection].remove(query, {multi: true}, function (err, results) {
             //console.log(results);
             if(!results || err) {
                 reject(err || new NotFoundError(collection));
@@ -123,6 +123,10 @@ db.remove = function(collection, query) {
 
 db.update = function(collection, query, body) {
     return new Promise(function (resolve, reject) {
+
+        body.created = body.created || new Date() / 1;
+        body.updatetd = new Date() / 1;
+
         db[collection].update(query, body, { upsert: true }, async function (err, results, upsert) {
             if(!results || err) {
                 reject(err || new NotFoundError(collection));

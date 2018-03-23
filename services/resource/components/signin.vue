@@ -74,7 +74,7 @@
                         //location: 'about'
                     };
 
-                    this.$request('signin.submit', data);
+                    this.$request('signin.submit', data, { encode: true });
                 }
                 else this.$bus.$emit('snackbar', 'Data entered doesn\'t match validation rules');
             }
