@@ -81,6 +81,8 @@ axios.interceptors.response.use(
     },
     function (error) {
         //error.response.status === 401 && (Vue.prototype.$state.auth = void 0);
+        error.message = error.response.data || error.message;
+        error.code = error.response.status || error.code;
         return Promise.reject(error);
     }
 );
@@ -97,11 +99,13 @@ Vue.prototype.$page = function(path, force) {
 Vue.prototype.$bus = new Vue({});
 
 
-Vue.prototype.$request = async function(url, data, method) {
+Vue.prototype.$request = async function(url, data, options) {
     let name = url.replace('/index.vue', '');
 
     let parsed = route(name);
     name = parsed.name;
+
+    let {method, callback} = options || {};
 
     let response = !data && !parsed.action && cache[name];
 
@@ -192,11 +196,13 @@ Vue.prototype.$request = async function(url, data, method) {
                 Vue.set(Vue.prototype.$state, 'entry', entry);
                 Vue.set(Vue.prototype.$state, 'entities', merge);
 
+                callback && callback(res);
+
                 //return Vue.prototype.$state;
             }
         })
         .catch(function(err) {
-            Vue.prototype.$bus.$emit('snackbar', `ERROR: ${err.message}. ${err.code ? 'CODE: ' + err.code + '.': ''}`);
+            Vue.prototype.$bus.$emit('snackbar', `ERROR: ${err.message} ${err.code ? 'CODE: ' + err.code + '.': ''}`);
             return '';// Promise.reject(err);
         });
 

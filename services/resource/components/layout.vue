@@ -159,8 +159,9 @@
         },
         watch: {
             'shared.layout_tabs': function (newValue, oldValue) {
-                //let found = newValue.filter(tab => this.active == (tab.to || tab.name)).length;
-                //!found && this.$router.replace('about');
+                let found = newValue.find(tab => this.active.replace(this.state.base_ui, '') == (tab.to || tab.name));
+            
+                !found && this.$router.replace('about');
             },
             'state.auth.name': function (newValue, oldValue) {
                 //newValue && (delete cache[this.location]);

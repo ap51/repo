@@ -1,15 +1,30 @@
 <template>
     <div class="layout-view">
+        <!-- <h1>phones database:</h1> -->
+
+        <div>
+            <v-btn color="red darken-2" flat="flat" :disabled="selected.length === 0" @click.stop="remove"><v-icon class="mr-1 mb-1">fas fa-times</v-icon>remove selected</v-btn>
+            <v-btn color="green darken-2" flat="flat" @click.stop="append"><v-icon class="mr-1 mb-1">fas fa-plus</v-icon>append phone</v-btn>
+        </div>
+
+        <div class="text-xs-center pt-2">
+            <v-pagination v-model="pagination.page" :length="pages" :total-visible="pages"></v-pagination>
+        </div>
+        
         <v-data-table v-if="this.database.user"
+                item-key="id"
+                disable-initial-sort
+
                 :headers="headers"
                 :items="entity"
                 :search="search"
                 v-model="selected"
-                item-key="_id"
                 select-all
                 class="elevation-1"
-                disable-initial-sort
-        >
+                :pagination.sync="pagination"
+                hide-actions>
+
+<!--
             <template slot="headerCell" slot-scope="props">
                 <v-tooltip bottom>
                     <span slot="activator">
@@ -19,7 +34,9 @@
                       {{ props.header.text }}
                     </span>
                 </v-tooltip>
+
             </template>
+ -->            
             <template slot="items" slot-scope="props">
                 <td>
                     <v-checkbox
@@ -28,40 +45,27 @@
                         v-model="props.selected">
                     </v-checkbox>
                 </td>
-                <td>{{ props.item.number}}</td>
-                <td>{{ props.item.owner }}</td>
+                <td><a @click="edit(props.item.id)">{{ props.item.number }}</a></td>
+                <td><a @click="edit(props.item.id)">{{ props.item.owner }}</a></td>
             </template>
         </v-data-table>
+
+         <phone-dialog :visible="dialog.visible" :phone="dialog.object" @save="save" @cancel="cancel"></phone-dialog>
     </div>
 </template>
 
 <style scoped>
-    iframe {
-        width: 100%;
-        height: 100%;
-        border: none;
-    }
-
     .layout-view {
         display: flex;
-        justify-content: center;
+        justify-content: flex-start;
         align-items: center;
         overflow: auto;
         height: 100%;
-    }
-
-    .layout-view {
         flex-direction: column;
     }
 
-    .layout-view p {
+    .table {
         width: 50vw;
-        text-align: center;
-    }
-
-    .layout-view h1 {
-        margin-top: 8px;
-        margin-bottom: 8px;
     }
 
 </style>
@@ -69,9 +73,21 @@
 <script>
     module.exports = {
         extends: component,
+        components: {
+            'phone-dialog': httpVueLoader('phone-dialog')
+        },
         data() {
             return {
                 frame: false,
+
+                dialog: {
+                    visible: false,
+                    object: {}
+                },
+
+                pagination: {
+                    rowsPerPage: 12
+                },
 
                 search: '',
                 selected: [],
@@ -84,6 +100,34 @@
         computed: {
             entity() {
                 return this.database.user ? this.entities.user.current.phone.map(phone => this.entities.phone[phone]).map(phone => {phone.number = (phone.number + '').replace(/(\d{1})(\d{3})(\d{3})(\d{2})(\d{2})/, '+$1 ($2) $3 - $4 - $5'); return phone}) : [];
+            },
+            pages () {
+                if (this.pagination.rowsPerPage == null || this.pagination.totalItems == null)
+                    return 0;
+
+                if(this.entities.user)
+                    return Math.ceil(this.entities.user.current.phone.length / this.pagination.rowsPerPage);
+            }
+        },
+        methods: {
+            append() {
+                this.dialog.object = {
+                    number: Math.floor(Math.random() * 90000000000) + 10000000000,
+                    owner: 'Owner: ' + new Date()
+                };
+                this.dialog.visible = true;
+            },
+            edit(id) {
+                let phone = this.entities.phone[id];
+                console.log(phone);
+                this.dialog.object = {...phone};
+                this.dialog.visible = true;
+            },
+            save(phone) {
+                this.$request(`${this.$state.base_api}phones.save`, phone, {callback: this.cancel});
+            },
+            cancel() {
+                this.dialog.visible = false;
             }
         }
     }

@@ -132,11 +132,16 @@ router.all(endpoints.patterns('api'), router.authenticateHandler({endpoint:'api'
     }
     else {
         let action = endpoints.action('api', req.params, res.locals.unit);
-        let response = {api: 'v1', ...await action(res.locals.token)};
+        try {
+            let response = {api: 'v1', ...await action(res.locals.token, req.body)};
 
-        let entities = {...endpoints.entities(response), method: req.method};
+            let entities = {...endpoints.entities(response), method: req.method};
 
-        res.status(222).json(entities);
+            res.status(222).json(entities);
+        }
+        catch(err) {
+            res.status(err.code).send(err.message);
+        }
     }
     return res.end();
 });

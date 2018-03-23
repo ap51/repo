@@ -8,6 +8,13 @@ let config = module.exports;
 config.api_patterns = ['/api/:name\::id\.:action', '/api/:name\.:action', '/api/:name\::id', '/api/:name'];
 config.ui_patterns = ['/ui/:name\::id\.:action', '/ui/:name\.:action', '/ui/:name\::id', '/ui/:name'];
 
+class CustomError extends Error {
+    constructor(code, message) {
+        super(message);
+        this.code = code;
+    }
+}
+
 let matrix = {
     'ui': [
         {
@@ -36,8 +43,35 @@ let matrix = {
                     return {profile: {id: 2121, text: 'ПРОФИЛЬ ПОЛЬЗОВАТЕЛЯ'}};
                 },
                 'phones.get': async function(token) {
-                    return {user: [{id: 'current', phone: await database.find('phone', {user: token.user._id})}]};
+                    return {user: [{id: 'current', phone: await database.find('phone', {user: token.user.id})}]};
+                },
+                'phones.save': async function(token, data) {
+                    data = Array.isArray(data) ? data : [data];
+
+                    if(data.find(phone => phone.number === '00000000000')) {
+                    //if(data.number === '00000000000') {
+                        throw new CustomError(406, 'Not allowed phone number.');
+                    }
+                    else {
+                        //data.user = token.user.id;
+                        data = data.map(phone => {
+                            phone.user = token.user.id;
+                            return phone;
+                        });
+
+                        let ids = data.map(phone => phone.id);
+
+                        let updates = await database.update('phone', {_id: {$in: ids}}, data);
+                        return {user: [{id: 'current', phone: updates}]};
+                    }
+                },
+                'phones.remove': async function(token, data) {
+                    data = Array.isArray(data) ? data : [data];
+
+                    let updates = await database.update('phone', {_id: data.id}, data);
+                    return {user: [{id: 'current', phone: updates}]};
                 }
+
             }
         },
         {

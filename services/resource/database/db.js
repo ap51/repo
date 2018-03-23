@@ -73,27 +73,31 @@ class NotFoundError extends Error {
     }
 }
 
-db.find = function(collenction, query) {
+db.find = function(collection, query) {
     return new Promise(function (resolve, reject) {
-        db[collenction].find(query, function (err, results) {
+        db[collection].find(query, function (err, results) {
             if(!results || err) {
-                reject(err || new NotFoundError(collenction));
+                reject(err || new NotFoundError(collection));
             }
             else {
-                results && results.length && resolve(results.map(record => {record.id = record._id; return record}));
+                results && results.length && resolve(results.map(record => {
+                    record.id = record._id; 
+                    let {_id, ...clean} = record; 
+                    return clean
+                }));
 
-                results && !results.length && reject(new NotFoundError(collenction));
+                results && !results.length && reject(new NotFoundError(collection));
 
-                !results && reject(new NotFoundError(collenction));
+                !results && reject(new NotFoundError(collection));
             }
         })
     });
 };
 
-db.findOne = function(collenction, query) {
+db.findOne = function(collection, query) {
     return new Promise(async function (resolve, reject) {
         try {
-            let results = await db.find(collenction, query);
+            let results = await db.find(collection, query);
             resolve(results[0]);
         }
         catch (err) {
@@ -102,15 +106,31 @@ db.findOne = function(collenction, query) {
     })
 };
 
-db.remove = function(collenction, query) {
+db.remove = function(collection, query) {
     return new Promise(function (resolve, reject) {
-        db[collenction].remove(query, {}, function (err, results) {
+        db[collection].remove(query, {}, function (err, results) {
             //console.log(results);
             if(!results || err) {
-                reject(err || new NotFoundError(collenction));
+                reject(err || new NotFoundError(collection));
             }
             else {
                 results && resolve(results);
+            }
+        });
+
+    });
+};
+
+db.update = function(collection, query, body) {
+    return new Promise(function (resolve, reject) {
+        db[collection].update(query, body, { upsert: true }, async function (err, results, upsert) {
+            if(!results || err) {
+                reject(err || new NotFoundError(collection));
+            }
+            else {
+                results = upsert ? await db.find(collection, {_id: upsert._id}) : await db.find(collection, query);
+                results && resolve(results);
+                //reject(err || new NotFoundError(collection));
             }
         });
 
