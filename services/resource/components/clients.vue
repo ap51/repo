@@ -89,7 +89,7 @@
         },
         computed: {
             entity() {
-                return this.database.client ? this.database.client.map(client => this.entities.client[client]) : [];
+                return this.database.client ? this.database.clients.map(client => this.entities.client[client]) : [];
             }
         }
     }

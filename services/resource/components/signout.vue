@@ -52,42 +52,10 @@
                 };
 
                 cache = {};
-                this.$request('signout.submit', data);
+                this.$request(`${Vue.prototype.$state.base_api}signout.submit`, data);
             }
         }
     }
 
     //# sourceURL=signout.js
 </script>
-
-<server-script>
-    const Component = require('./component');
-
-    module.exports = class SignOut extends Component {
-        constructor(router, req, res) {
-            super(router, req, res);
-
-        }
-
-        async submit(req, res) {
-            //debugger;
-            try {
-                //debugger
-                await this.router.database.remove('token', {accessToken: req.token.access});
-            }
-            catch (err) {
-/*
-                let {code, message} = err;
-                res.locals.error = {code, message};
-*/
-            }
-
-            req.token.user = void 0;
-            req.token.access = void 0;
-            req.token.auth = {};
-
-            //res.redirect_local = req.headers.location;
-        }
-    }
-
-</server-script>

@@ -5,8 +5,12 @@ const utils = require('../../utils');
 const database = require('./database/db');
 
 let router = utils.router(service);
+const CustomError = require('./error');
 
 const config = require('./config');
+const api = require('./api');
+api.init({router});
+
 let patterns = config.ui_patterns;
 let api_patterns = config.api_patterns;
 let endpoints = config.endpoints;
@@ -22,15 +26,16 @@ oauth = new OAuth2Server({
 router.authenticateHandler = function(options) {
     return async function(req, res, next) {
         //if(req.params.name === 'clients' || req.params.name === 'signin') {
-        if(options.force || endpoints.secured(options.endpoint, req.params)) {
+        if(options.force || api.secured(req, res)) {
             try {
                 let request = new Request(req);
                 let response = new Response(res);
 
                 options.scope = req.path;
                 let token = await oauth.authenticate(request, response, options);
-                res.locals.token = token;
+                //req.locals.token = token;
 
+/*
                 let granted = endpoints.access(options.endpoint, req.params, token.user.group);
                 if(!!!granted) {
                     throw new OAuth2Server.InsufficientScopeError('Access denied.');
@@ -39,6 +44,7 @@ router.authenticateHandler = function(options) {
                     //console.log(granted);
                     res.locals.unit = granted;
                 }
+*/
             }
             catch (err) {
 
@@ -63,8 +69,8 @@ let authorizeOptions = {
             let user = void 0;
 
             try {
-                let token = await router.database.findOne('token', {accessToken: req.token.access});
-                user = await router.database.findOne('user', {_id: token.user._id});
+                let token = await database.findOne('token', {accessToken: req.token.access});
+                user = await database.findOne('user', {_id: token.user._id});
             }
             catch (err) {
                 res.redirect_remote = 'https://localhost:5000/resource/external-signin';
@@ -82,7 +88,7 @@ function authorizeHandler(options) {
 
         return oauth.authorize(request, response, options)
             .then(function (code) {
-                response.locals.token.code = code.authorizationCode;
+                //response.locals.token.code = code.authorizationCode;
                 next();
             })
             .catch(function (err) {
@@ -103,9 +109,10 @@ router.tokenHandler = function(options) {
             let token = await oauth.token(request, response, options);
 
             req.token.access = token.accessToken;
+
             req.token.auth = {
                 name: token.user.name,
-                group: token.user.group
+                //group: token.user.group
             }
 
             //req.token.data.user_id = token.user._id;
@@ -119,6 +126,31 @@ router.tokenHandler = function(options) {
     }
 };
 
+router.accessHandler = function(options) {
+    return async function(req, res, next) {
+        try {
+            //res.locals.token = token;
+            let access_group = (req.user && req.user.group) || '*';
+
+            let granted = api.access(req, res, access_group);
+
+            if (!!!granted && req.user) {
+                throw new CustomError(403, 'Access denied.');
+            }
+
+            if (!!!granted && !req.user) {
+                throw new CustomError(401, 'Unauthenticate.');
+            }
+        }
+        catch (err) {
+            let {code, message} = err;
+            res.locals.error = {code, message};
+        }
+
+        next && next();
+    }
+};
+
 router.onComponentData = async function(req, res, response, data) {
 
     return data;
@@ -126,7 +158,75 @@ router.onComponentData = async function(req, res, response, data) {
 
 router.all('*', router.jwtHandler());
 
-router.all(endpoints.patterns('api'), router.authenticateHandler({endpoint:'api', allowBearerTokensInQueryString: true}), async function (req, res, next) {
+router.all(config.patterns, router.authenticateHandler({allowBearerTokensInQueryString: true}), router.accessHandler(), async function (req, res, next) {
+    router.components = router.components || {};
+    router.components[req.params.name] = req.params;
+
+    let action = api.action(req, res);
+    
+    let data = await action(req, res);
+
+    switch (req.params.section) {
+        case 'ui':
+                if(res.locals.error) {
+                    switch(res.locals.error.code) {
+                        case 403:
+                            res.locals.params = {name: 'access-denied'};
+                            break;
+                        case 401:
+                            res.locals.params = {name: 'unauthenticate'};
+                            break;
+                    }
+
+                    res.locals.error = void 0;
+                }
+                next();
+            break;
+        case 'ui_api':
+                if(res.locals.error) {
+                    res.status(res.locals.error.code).send(res.locals.error.message)
+                }
+                else {
+                    try {
+                        let auth = req.token.auth;
+                        req._token[router.service] = req.token;
+                        let token = await router.encode(req._token);
+
+                        let response = {api: 'v1', ...data};
+
+                        let entities = {...api.entities(response), method: req.method, token, auth};
+
+                        res.status(222).json(entities);
+                    }
+                    catch(err) {
+                        res.status(err.code).send(err.message);
+                    }
+                }
+                return res.end();
+            break;
+        case 'api':
+                if(res.locals.error) {
+                    res.status(res.locals.error.code).send(res.locals.error.message)
+                }
+                else {
+                    try {
+                        res.status(222).json(data);
+                    }
+                    catch(err) {
+                        res.status(err.code).send(err.message);
+                    }
+                }
+                return res.end();
+            break;
+        default:
+            res.status(404);
+            res.end();
+            break;
+    }
+
+});
+
+/*router.all(endpoints.patterns('api'), router.authenticateHandler({endpoint:'api', allowBearerTokensInQueryString: true}), router.accessHandler({endpoint:'api'}), async function (req, res, next) {
     if(res.locals.error) {
         res.status(res.locals.error.code).send(res.locals.error.message)
     }
@@ -155,12 +255,12 @@ router.all(endpoints.patterns('ui'), router.authenticateHandler({endpoint:'ui'})
             case 401: 
                 res.locals.params = {name: 'unauthenticate'};
                 break;
-        };
+        }
 
         res.locals.error = void 0;
     }
     next();
-});
+});*/
 
 /* 
 router.all(api_patterns, router.authenticateHandler({allowBearerTokensInQueryString: true}), function (req, res, next) {
@@ -191,52 +291,6 @@ router.post('/oauthorize', authorizeHandler(authorizeOptions));
 router.post('/otoken', router.tokenHandler());
 
 router.post('/grant', function(req, res, next){
-    next();
-});
-
-router.post('/signin', async function(req, res, next){
-    console.log('SIGNIN');
-
-    try {
-        req.body.username = req.body.email;
-
-        req.body.client_id = 'authentificate';
-        req.body.client_secret = 'authentificate_secret';
-        //req.body.response_type = 'token';
-        req.body.grant_type = 'password';
-        req.body.scope = '*';
-
-        let request = new Request(req);
-        let response = new Response(res);
-
-        let token = await oauth.token(request, response, {});
-        res.locals.token = token.accessToken;
-
-        next();
-    }
-    catch (err) {
-
-        let {code, message} = err;
-        res.locals.error = {code, message};
-
-        next();
-    }
-
-/*
-    try {
-        let user = await router.database.findOne('user', {email: req.body.email, password: req.body.password});
-        res.locals.token.user_id = user._id;//'ZBz7mTBDBoWfUZcw';
-        res.locals.redirect = {remote: res.locals.token.redirect};
-        }
-    catch (err) {
-        res.locals.error = err;
-        res.locals.error.redirect = `${decodeURIComponent(req.query.from)}?client_id=${req.query.client_id}`;
-    }
-    next();
-*/
-});
-
-router.post('/signout', function(req, res, next){
     next();
 });
 

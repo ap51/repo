@@ -2,36 +2,50 @@
     <v-dialog v-model="isVisible" max-width="400px">
         <v-card>
             <v-card-title>
-                <v-icon class="mr-1">fas fa-mobile</v-icon>
-                <span class="headline">phone</span>
+                <v-icon class="mr-1">fas fa-user-circle</v-icon>
+                <span class="headline">sign up</span>
             </v-card-title>
             <v-card-text>
                 <v-container grid-list-md>
                     <v-layout wrap>
                         <v-form ref="form" lazy-validation @submit.prevent>
                             <v-flex xs12>
-                                <v-text-field v-model="phone.number"
+                                <v-text-field v-model="object.name"
                                               validate-on-blur
-                                              label="Number"
+                                              label="Name"
                                               required
-                                              prepend-icon="fas fa-mobile"
+                                              prepend-icon="fas fa-user"
                                               autofocus
                                               color="blue darken-2"
-                                              mask="+# (###) ### - ## - ##"
-                                              hint="for example, 79009000101"
-                                              :rules="rules(phone)"
+                                              hint="for example, Joe Dou"
+                                              :rules="[
+                                                  () => !!object.password || 'This field is required',
+                                              ]"
                                 ></v-text-field>
                             </v-flex>
                             <v-flex xs12>
-                                <v-text-field v-model="phone.owner"
+                                <v-text-field v-model="object.email"
                                               validate-on-blur
-                                              label="Owner"
+                                              label="EMail"
                                               required
-                                              prepend-icon="fas fa-user"
+                                              prepend-icon="fas fa-at"
                                               color="blue darken-2"
                                               hint="any string value"
                                               :rules="[
-                                                  () => !!phone.owner || 'This field is required',
+                                                  () => !!object.email || 'This field is required',
+                                              ]"
+                                ></v-text-field>
+                            </v-flex>
+                            <v-flex xs12>
+                                <v-text-field v-model="object.password"
+                                              validate-on-blur
+                                              label="Password"
+                                              required
+                                              prepend-icon="fas fa-key"
+                                              color="blue darken-2"
+                                              hint="any string value"
+                                              :rules="[
+                                                  () => !!object.password || 'This field is required',
                                               ]"
                                 ></v-text-field>
                             </v-flex>
@@ -43,7 +57,7 @@
             <v-card-actions>
                 <v-spacer></v-spacer>
                 <v-btn color="blue darken-2" flat @click.native="cancel">cancel</v-btn>
-                <v-btn color="blue darken-2" flat @click.native="save(phone)">save</v-btn>
+                <v-btn color="blue darken-2" flat @click.native="submit({...object})">submit</v-btn>
             </v-card-actions>
         </v-card>
     </v-dialog>
@@ -57,13 +71,13 @@
     module.exports = {
         props: [
             'visible',
-            'phone'
+            'object'
         ],
         computed: {
             copy: {
                 cache: false,
                 get: function () {
-                    return {...this.phone};
+                    return {...this.object};
                 }
             },
             isVisible: {
@@ -77,18 +91,16 @@
             }
         },
         methods: {
-            rules(phone) {
-                return  [
-                    () => !!phone.number || 'This field is required',
-                    () => !!phone.number && phone.number.length >= 11 || 'Phone number must be at least 11 digits'
-                ]
-            },
             cancel() {
                 this.$emit('cancel');
             },
-            save(phone) {
+            submit(user) {
                 if (this.$refs.form.validate()) {
-                    this.$emit('save', phone);
+
+                    user.password = md5(`${user.email}.${user.password}`);
+                    this.$request(`${this.$state.base_ui}signup.submit`, user, {callback: this.cancel});
+
+                    this.$emit('save', user);
                 }
                 else this.$bus.$emit('snackbar', 'Data entered doesn\'t match validation rules');
             }
@@ -99,5 +111,5 @@
         }
     }
 
-    //# sourceURL=phone-dialog.js
+    //# sourceURL=signup.js
 </script>

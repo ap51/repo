@@ -10,7 +10,7 @@
 
         <div>
             <p>
-                ПРОФИЛЬ ПОЛЬЗОВАТЕЛЯ
+                {{profile.text}}
             </p>
         </div>
     </div>
@@ -53,6 +53,11 @@
         data() {
             return {
                 frame: false
+            }
+        },
+        computed: {
+            profile() {
+                return (this.entities.profile && this.entities.profile.current) || {};
             }
         }
     }

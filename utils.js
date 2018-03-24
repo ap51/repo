@@ -53,6 +53,7 @@ let _router = function(service) {
     const merge = require('deepmerge');
 
     let service_path = path.join(__dirname, 'services', service);
+    const database = require(path.join(service_path, 'database', 'db'));
 /*
     const config = require(path.join(service_path, `config`));
     let patterns = config.route_patterns;
@@ -96,6 +97,8 @@ let _router = function(service) {
         decoded[router.service] = {};
         let verified = true;
 
+        decoded = token ? jwt.verify(token, keys.privateKey) : decoded;
+/*
         try {
             decoded = token ? jwt.verify(token, keys.privateKey) : decoded;
         }
@@ -103,6 +106,7 @@ let _router = function(service) {
             decoded = jwt.decode(token);
             verified = false;
         }
+*/
 
         decoded.verified = verified;
         decoded[router.service] = decoded[router.service] || {};
@@ -130,6 +134,9 @@ let _router = function(service) {
 
             req.token = req._token[router.service];
 
+            token = req.token.access && await database.findOne('token', {accessToken: req.token.access});
+            req.user = token && token.user;
+
             req.headers['authorization'] = req.token.access && `Bearer ${req.token.access}`;
 
             next();
@@ -146,6 +153,7 @@ let _router = function(service) {
             let content = name && await loadContent(name, res, service);
             res.$ = cheerio.load(content);
 
+/*
             router.components = router.components || {};
             res.component = router.components[name];
 
@@ -167,6 +175,7 @@ let _router = function(service) {
 
                 router.components[name] = res.component;
             }
+*/
 
             //console.log('FLOW CONSTRUCTOR: ', name);
 
@@ -177,7 +186,7 @@ let _router = function(service) {
     router.endHandler = function(options) {
 
         return async function (req, res, next) {
-            req.params.action && res.component[req.params.action] && await res.component[req.params.action](req, res);
+            //req.params.action && res.component[req.params.action] && await res.component[req.params.action](req, res);
 
             req._token[router.service] = req.token;
 
@@ -194,12 +203,13 @@ let _router = function(service) {
             }
 
             if (!req.params.action && !req.isAPI && req.method === 'GET') {
-                res.locals.data = res.component.data;
+                //res.locals.data = res.component.data;
                 //res.locals.shared = res.component.shared;
 
                 res.locals.component = res.$.html();
             }
 
+/*
             router.shared = {};
 
             for(let name in router.components) {
@@ -227,12 +237,13 @@ let _router = function(service) {
                     }
                 }));
             }
+*/
 
             if(!response.error) {
                 response = {...response,
                     data: res.locals.data,
-                    shared: router.shared,
-                    entities: res.locals.entities,
+                    shared: res.locals.shared,
+                    //entities: res.locals.entities,
                     component: res.locals.component,
                 };
             }

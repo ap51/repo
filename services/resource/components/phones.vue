@@ -87,33 +87,39 @@
                 },
 
                 pagination: {
-                    rowsPerPage: 12
+                    rowsPerPage: 14
                 },
 
                 search: '',
                 selected: [],
                 headers: [
-                    { text: 'Number', value: 'number' },
-                    { text: 'Owner', value: 'owner' }
-                ]
+                    { width: "30%", text: 'Number', value: 'number' },
+                    { width: "70%", text: 'Owner', value: 'owner' }
+                ],
+                activePage: void 0
             }
         },
         computed: {
             entity() {
-                return this.database.user ? this.entities.user.current.phone.map(phone => this.entities.phone[phone]).map(phone => {phone.number = (phone.number + '').replace(/(\d{1})(\d{3})(\d{3})(\d{2})(\d{2})/, '+$1 ($2) $3 - $4 - $5'); return phone}) : [];
+                this.pagination.page = this.activePage || this.pagination.page || 1;
+                return this.database.user ? this.entities.user.current.phones.map(phone => this.entities.phone[phone]).map(phone => {phone.number = (phone.number + '').replace(/(\d{1})(\d{3})(\d{3})(\d{2})(\d{2})/, '+$1 ($2) $3 - $4 - $5'); return phone}) : [];
             },
             pages () {
                 if (this.pagination.rowsPerPage == null || this.pagination.totalItems == null)
                     return 0;
 
-                if(this.entities.user)
-                    return Math.ceil(this.entities.user.current.phone.length / this.pagination.rowsPerPage);
+                if(this.entities.user) {
+                    let pages = Math.ceil(this.entities.user.current.phone.length / this.pagination.rowsPerPage);
+                    this.pagination.pages = this.pagination.pages !== pages ? pages : this.pagination.pages;
+                    return this.pagination.pages;
+                }
+
             }
         },
         methods: {
             append() {
                 this.dialog.object = {
-                    number: Math.floor(Math.random() * 90000000000) + 10000000000,
+                    number: '' + Math.floor(Math.random() * 90000000000) + 10000000000,
                     owner: 'Owner: ' + new Date()
                 };
                 this.dialog.visible = true;
@@ -128,6 +134,7 @@
                 this.$request(`${this.$state.base_api}phones.remove`, this.selected, {method: 'delete', callback: this.cancel});
             },
             save(phone) {
+                this.activePage = this.pagination.page;
                 this.$request(`${this.$state.base_api}phones.save`, phone, {callback: this.cancel});
             },
             cancel(response) {

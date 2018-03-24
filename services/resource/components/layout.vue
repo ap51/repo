@@ -2,7 +2,7 @@
         <v-app ref="layout">
             <v-content>
                 <v-toolbar color="blue darken-2" dark dense>
-                    <v-toolbar-title class="mr-2"><v-icon class="mr-1 mb-1">{{icon}}</v-icon><small>{{title + ': external signin'}}</small></v-toolbar-title>
+                    <v-toolbar-title class="mr-2"><v-icon class="mr-1 mb-1">{{icon}}</v-icon><small>{{title}}</small></v-toolbar-title>
 <!--
                     <v-toolbar-items>
 
@@ -49,13 +49,6 @@
 -->
 
                     <v-toolbar-items v-if="location !== 'external-signin'">
-                        <v-btn flat @click="apiCall">
-                            <v-icon class="mr-1 mb-1">fas fa-plus</v-icon>API+
-                        </v-btn>
-
-                        <v-btn flat @click="apiCallRestricted">
-                            <v-icon class="mr-1 mb-1">fas fa-plus</v-icon>API-
-                        </v-btn>
 
                         <v-btn v-if="!auth.name" flat @click="signin = true">
                             <v-icon class="mr-1 mb-1">fas fa-user-circle</v-icon>SIGN IN
@@ -178,63 +171,3 @@
 
     //# sourceURL=layout.js
 </script>
-
-<server-script>
-    const Component = require('./component');
-
-    module.exports = class Layout extends Component {
-        constructor(router, req, res) {
-            super(router, req, res);
-
-        }
-        
-        shared(req, res) {
-
-            let _data = {
-                layout_tabs: [
-                    {
-                        name: 'about',
-                        icon: 'far fa-question-circle'
-                    },
-                    {
-                        name: 'profile',
-                        icon: 'fas fa-user-circle'
-                    },
-                    {
-                        name: 'find phone',
-                        to: 'find-phone',
-                        icon: 'fas fa-mobile'
-                    },
-                    {
-                        name: 'phones db',
-                        to: 'phones',
-                        icon: 'fas fa-database'
-                    }
-                ]
-            };
-
-            if(req.token.auth && req.token.auth.group === 'admins') {
-                _data.layout_tabs.push(
-                    {
-                        name: 'clients',
-                        icon: 'fas fa-users'
-                    },
-                    {
-                        name: 'users',
-                        icon: 'fas fa-users'
-                    },
-                );
-            };
-
-            return _data;
-        }
-
-        get data() {
-            return {
-                title: this.service,
-                icon: 'fab fa-empire',
-                signin: false,
-            };
-        }
-    }
-</server-script>

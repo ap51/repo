@@ -17,7 +17,7 @@ Vue.prototype.$state = {
     service: service || 'stub',
     base: `/${service}/`,
     base_ui: `/${service}/ui/`,
-    base_api: `/${service}/api/`,
+    base_api: `/${service}/ui_api/`,
     path: window.location.pathname.replace(`/${service}/ui/`, '') || 'about',
     entities: {},
     data: {},
@@ -139,35 +139,35 @@ Vue.prototype.$request = async function(url, data, options) {
 
     return axios(config)
         .then(function(res) {
+            res.data.token && Vue.set(Vue.prototype.$state, 'token', res.data.token);
+            localStorage.setItem('token', Vue.prototype.$state.token);
+            Vue.set(Vue.prototype.$state, 'auth', res.data.auth || '');
+
+            if (res.data.redirect_remote) {
+                window.location.replace(res.data.redirect.remote);
+                return;
+            }
+
+            if (res.data.redirect_local) {
+                let path = res.data.redirect_local.replace(Vue.prototype.$state.base_ui, '');
+
+                name = path;
+
+                if (Vue.prototype.$state.path === path) {
+                    Vue.prototype.$page(path, true);
+                }
+                else router.push(path);
+                return;
+            }
+
+            res.data.data && Vue.set(Vue.prototype.$state.data, name, res.data.data);
+
+            Object.assign(Vue.prototype.$state.shared, res.data.shared);
+
             if(res.status === 200) {
                 let redirected = decodeURIComponent(window.location.origin + res.config.url) !== decodeURIComponent(res.request.responseURL);
 
-                Vue.set(Vue.prototype.$state, 'auth', res.data.auth || '');
-
-                res.data.token && Vue.set(Vue.prototype.$state, 'token', res.data.token);
-                localStorage.setItem('token', Vue.prototype.$state.token);
-
-                if (res.data.redirect_remote) {
-                    window.location.replace(res.data.redirect.remote);
-                    return;
-                }
-
-                if (res.data.redirect_local) {
-                    let path = res.data.redirect_local.replace(Vue.prototype.$state.base_ui, '');
-
-                    name = path;
-
-                    if (Vue.prototype.$state.path === path) {
-                        Vue.prototype.$page(path, true);
-                    }
-                    else router.push(path);
-                }
-
                 cache[name] = res.data.component || cache[name];
-
-                res.data.data && Vue.set(Vue.prototype.$state.data, name, res.data.data);
-            
-                Object.assign(Vue.prototype.$state.shared, res.data.shared);
 
                 Vue.prototype.$request(`${Vue.prototype.$state.base_api}${name}.get`);
 
@@ -177,6 +177,7 @@ Vue.prototype.$request = async function(url, data, options) {
                 //console.log(res.data);
                 let api = res.data.result;
                 let entry = res.data.entry;
+
                 let database = res.data.entities[entry][api];
 
                 //Vue.prototype.$state.entities
@@ -199,6 +200,9 @@ Vue.prototype.$request = async function(url, data, options) {
                 
                 Vue.set(Vue.prototype.$state, 'api', api);
                 Vue.set(Vue.prototype.$state, 'entry', entry);
+
+                //Vue.set(Vue.prototype.$state, 'auth', res.data.entities.auth || '');
+
                 Vue.set(Vue.prototype.$state, 'entities', merge);
 
                 callback && callback(res);

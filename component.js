@@ -3,9 +3,16 @@ const path = require('path');
 const cheerio = require('cheerio');
 const JSON5 = require('json5');
 
+class CustomError extends Error {
+    constructor(code, message) {
+        super(message);
+        this.code = code;
+    }
+}
 
 module.exports = class Component {
     constructor(router, req, res) {
+        this.error = CustomError;
         this.router = router;
         this.service = router.service;
         this.name = req.params.name;
