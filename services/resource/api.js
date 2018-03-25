@@ -372,20 +372,20 @@ let scopes = {
     site: {
         id: 'site',
         name: 'Web site user interface',
-        description: 'this.object.scope',
+        description: 'Access to UI and API of the project site',
         public: false
     },
     //api: 'Application programming interface',
     phones: {
         id: 'phones',
         name: 'Phones API',
-        description: 'PAPI',
+        description: 'Allow access to manipulate user phone book',
         public: true
     },
     profile: {
         id: 'profile',
-        name: 'Profile read only access',
-        description: 'PROA',
+        name: 'Profile public access',
+        description: 'Allow access to user profile public information',
         public: true
     },
 /*

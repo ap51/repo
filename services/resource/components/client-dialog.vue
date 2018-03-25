@@ -67,7 +67,6 @@
                                       :search="search"
                                       v-model="selected"
                                       select-all
-
                                       style="width: 100%; height: 100%;"
                         >
 
@@ -80,8 +79,15 @@
                                     </v-checkbox>
                                 </td>
                                 <td>
+                                    <div>
+                                        <div class="subheading">{{ props.item.name }}</div>
+                                        <div class="caption">{{ props.item.description }}</div>
+                                    </div>
+<!--
+                                    {{ props.item.name }}
+-->
+<!--
                                     <v-list-tile
-                                            avatar
                                             ripple
                                             :key="props.item.id"
                                     >
@@ -90,6 +96,7 @@
                                             <v-list-tile-sub-title class="caption">{{ props.item.description }}</v-list-tile-sub-title>
                                         </v-list-tile-content>
                                     </v-list-tile>
+-->
 
                                 </td>
                             </template>
@@ -129,7 +136,7 @@
                 search: '',
                 selected: [],
                 headers: [
-                    { width: "100%", text: 'Scope', value: 'name1' },
+                    { width: "100%", text: 'Scope', value: 'name' },
                 ],
 
             }
