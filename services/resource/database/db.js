@@ -29,6 +29,7 @@ db.phone.find({}, function (err, phones) {
 });
 */
 
+/*
 db.client.find({client_id: 'one'}, function (err, clients) {
     !clients.length && db.client.insert(
         {
@@ -58,6 +59,7 @@ db.client.find({client_id: 'one'}, function (err, clients) {
         },
     );
 });
+*/
 
 /*
 db.user.find({email: 'user@user.com'}, function (err, users) {

@@ -108,8 +108,8 @@ model.getAccessToken = function(accessToken, callback) {
     db.token.find({accessToken}, async function(err, tokens) {
         let token = tokens[0];
         if(token) {
-            token.user = await db.findOne('user', token.user);
-            token.client = await db.findOne('client', token.client);
+            token.user = await db.findOne('user', {_id: token.user._id});
+            token.client = await db.findOne('client', {_id: token.client._id});
         }
         tokens.length ? callback(null, token) : callback(err || new OAuth2Server.InvalidTokenError());
     });

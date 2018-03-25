@@ -4,6 +4,22 @@ const database = require('./database/db');
 const normalizer = require('normalizr');
 const merge = require('deepmerge');
 const JSON5 = require('json5');
+const crypto = require('crypto');
+const randomBytes = require('bluebird').promisify(crypto.randomBytes);
+
+let generateRandomToken = async function(bytes) {
+    const buffer = await randomBytes(bytes || 24);
+    const password = buffer.toString('base64');
+    return password;
+/*
+    return randomBytes(bytes || 256).then(function(buffer) {
+        return crypto
+            .createHash('sha1')
+            .update(buffer)
+            .digest('hex');
+    });
+*/
+};
 
 const CustomError = require('./error');
 
@@ -76,13 +92,18 @@ let actions = {
                                 to: 'find-phone',
                                 icon: 'fas fa-mobile'
                             },
+                        ]
+                    };
+
+                    if(req.user && req.user.group !== 'developers') {
+                        res.locals.shared.layout_tabs = [...res.locals.shared.layout_tabs, ...[
                             {
                                 name: 'phones db',
                                 to: 'phones',
                                 icon: 'fas fa-database'
-                            }
+                            }]
                         ]
-                    };
+                    }
 
                     if(req.user && req.user.group === 'admins') {
                         res.locals.shared.layout_tabs = [...res.locals.shared.layout_tabs, ...[
@@ -168,8 +189,11 @@ let actions = {
             }
         },
         profile:{
-            get: function (req, res) {
-                return {profile: {id: 'current', text: `ПРОФИЛЬ ПОЛЬЗОВАТЕЛЯ ${req.user && req.user.name}`}};
+            get: async function (req, res) {
+                let {password, id, _id, ...clean} = await actions.api.profile.get(req, res);
+                clean.id = 'current';
+                //return {profile: {id: 'current', text: `ПРОФИЛЬ ПОЛЬЗОВАТЕЛЯ ${req.user && req.user.name}`}};
+                return {profile: clean};
             }
         },
         users: {
@@ -179,20 +203,20 @@ let actions = {
                 };
             },
             remove: async function (req, res) {
-
                 let removed = await actions.api.users.remove(req, res);
                 return {users: removed};
             },
             save: async function (req, res) {
                 let data = req.body;
 
-                if (data.name === '123') {
-                    throw new CustomError(406, 'Not allowed user name.');
+                let user = await database.findOne('user', {email: data.email}, {allow_empty: true});
+
+                if(user && user.id !== data.id) {
+                    throw new CustomError(406, 'Choose another email/password.');
                 }
-                else {
-                    let updates = await actions.api.users.save(req, res);
-                    return {users: updates};
-                }
+
+                let updates = await actions.api.users.save(req, res);
+                return {users: updates};
             },
         },
         phones: {
@@ -221,8 +245,37 @@ let actions = {
                 return {user: {id: 'current', phones: removed}};
             },
         },
-        'clients.get': async function () {
-            return {client: await database.find('client', {})};
+        clients: {
+            get: async function (req, res) {
+                let scopes_array = [];
+                for(let name in scopes) {
+                    scopes[name].public && scopes_array.push(scopes[name]);
+                }
+
+                return {
+                    clients: await actions.api.clients.get(req, res),
+                    scopes: scopes_array
+                };
+            },
+            remove: async function (req, res) {
+                let removed = await actions.api.clients.remove(req, res);
+                return {clients: removed};
+            },
+            save: async function (req, res) {
+                let data = req.body;
+
+                if(!data.scope.length) {
+                    throw new CustomError(406, 'Choose at least one scope to continue.');
+                }
+
+                if(!data.id) {
+                    data.client_id = await generateRandomToken(12);
+                    data.client_secret = await generateRandomToken(24);
+                }
+
+                let updates = await actions.api.clients.save(req, res);
+                return {clients: updates};
+            },
         },
         'signin.submit': async function () {
             return {};
@@ -242,6 +295,9 @@ let actions = {
     },
     api: {
         profile: {
+            get: async function (req, res) {
+                return await database.findOne('user', {_id: req.user._id});
+            },
             public: async function () {
                 return {};
             },
@@ -263,6 +319,29 @@ let actions = {
                 let data = req.body;
 
                 return await database.update('user', {_id: data.id}, data);
+            },
+        },
+        clients: {
+            get: async function (req, res) {
+                return await database.find('client', {}, {allow_empty: true});
+            },
+            remove: async function (req, res) {
+                let data = req.body;
+                data = Array.isArray(data) ? data : [data];
+
+                if(data.some(client => client.trusted)) {
+                    throw new CustomError(406, 'It\'s now forbidden to remove trusted clients.');
+                }
+
+                let ids = data.map(client => client.id);
+
+                await database.remove('client', {_id: {$in: ids}});
+                return ids;
+            },
+            save: async function (req, res) {
+                let data = req.body;
+
+                return await database.update('client', {_id: data.id}, data);
             },
         },
         phones: {
@@ -291,18 +370,45 @@ let actions = {
 
 let scopes = {
     site: {
+        id: 'site',
         name: 'Web site user interface',
+        description: 'this.object.scope',
         public: false
     },
     //api: 'Application programming interface',
     phones: {
+        id: 'phones',
         name: 'Phones API',
+        description: 'PAPI',
         public: true
     },
     profile: {
+        id: 'profile',
         name: 'Profile read only access',
+        description: 'PROA',
+        public: true
+    },
+/*
+    site1: {
+        id: 11,
+        name: 'Web site user interface',
+        description: 'WSUI',
+        public: false
+    },
+    //api: 'Application programming interface',
+    phones1: {
+        id: 21,
+        name: 'Phones API',
+        description: 'PAPI',
+        public: true
+    },
+    profile1: {
+        id: 31,
+        name: 'Profile read only access',
+        description: 'PROA',
         public: true
     }
+*/
 };
 
 //просмотр сверху до первого совпадения!!!
@@ -325,10 +431,18 @@ let matrix = [
     {
         scopes: ['site'],
         actions: {
-            ui: ['profile', 'phones'],
-            ui_api: ['profile.get', 'phones.*']
+            ui: ['profile'],
+            ui_api: ['profile.get']
         },
         access: ['*']
+    },
+    {
+        scopes: ['site'],
+        actions: {
+            ui: ['phones'],
+            ui_api: ['phones.*']
+        },
+        access: ['users', 'admins']
     },
     {
         scopes: ['site'],
@@ -454,19 +568,27 @@ let entities = function (data) {
     const _phone = new schema.Entity('phone', {});
 
     const _user = new schema.Entity('user', {
-        phones: [ _phone ]
+        phones: [ _phone ],
     });
 
-    const _client = new schema.Entity('client', {}, {
+    const _scope = new schema.Entity('scope', {});
+
+    const _client = new schema.Entity('client', {
+        users: [ _user ],
+        scopes: [ _scope ]
+    }, {
         //idAttribute: '_id' // to use not standard ID
     });
+
+    _user.define({applications: [ _client ]});
 
     const db = new schema.Entity('database', {
         action: _action,
         clients: [ _client ],
         user: _user,
         users: [ _user ],
-        profile: _profile
+        profile: _profile,
+        scopes: [ _scope ]
     }, {
         idAttribute: 'api'
     });

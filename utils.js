@@ -133,10 +133,13 @@ let _router = function(service) {
 
             req.token = req._token[router.service];
 
-            token = req.token.access && await database.findOne('token', {accessToken: req.token.access});
+            let access = req.token.access || req.query.access_token;
+            req.query.access_token = void 0;
+
+            token = access && await database.findOne('token', {accessToken: access}, {allow_empty: true});
             req.user = token && token.user;
 
-            req.headers['authorization'] = req.token.access && `Bearer ${req.token.access}`;
+            req.headers['authorization'] = access && `Bearer ${access}`;
 
             next();
         }

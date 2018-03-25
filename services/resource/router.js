@@ -215,7 +215,7 @@ router.all(config.patterns, router.authenticateHandler({allowBearerTokensInQuery
                         res.status(222).json(entities);
                     }
                     catch(err) {
-                        res.status(err.code).send(err.message);
+                        res.status(err.code || 406).send(err.message);
                     }
                 }
                 return res.end();
