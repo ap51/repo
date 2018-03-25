@@ -2,6 +2,8 @@
 
 const database = require('./database/db');
 const normalizer = require('normalizr');
+const merge = require('deepmerge');
+const JSON5 = require('json5');
 
 const CustomError = require('./error');
 
@@ -9,6 +11,40 @@ let router = void 0;
 
 let init = function (options) {
     router = options.router;
+};
+
+let updateDefaults = function (req, res) {
+    let shared = {};
+    for(let name in router.components) {
+
+        if(actions.ui[name] && actions.ui[name].default) {
+            actions.ui[name].default(req, res);
+
+            Object.assign(shared, merge(shared, res.locals.shared || {}, {
+                arrayMerge: function (destinationArray, sourceArray, options) {
+
+                    let convert = function (item) {
+                        typeof item === 'object' && (item = JSON5.stringify(item));
+                        return item;
+                    };
+
+                    let destination = destinationArray.map(convert);
+
+                    let source = sourceArray.map(convert);
+
+                    let a = new Set(destination);
+                    let b = new Set(source);
+                    let union = Array.from(new Set([...a, ...b]));
+
+                    union = union.map(item => JSON5.parse(item));
+
+                    return union;
+                }
+            }));
+
+            res.locals.shared = shared;
+        }
+    }
 };
 
 let actions = {
@@ -52,7 +88,7 @@ let actions = {
                         res.locals.shared.layout_tabs = [...res.locals.shared.layout_tabs, ...[
                             {
                                 name: 'clients',
-                                icon: 'fas fa-users'
+                                icon: 'fas fa-cogs'
                             },
                             {
                                 name: 'users',
@@ -75,72 +111,60 @@ let actions = {
     ui_api: {
         signup: {
             submit: async function (req, res) {
-                try {
-                    let data = req.body;
+                let data = req.body;
 
-                    if(!data.password) {
-                        throw new CustomError(406, 'Not allowed empty password.');
-                    }
-
-                    let user = await database.find('user', {email: data.email}, {allow_empty: true});
-
-                    if(user && user.length) {
-                        throw new this.error(406, 'Choose another email/password.');
-                    }
-
-                    data.group = 'users';
-
-                    let updates = await database.update('user', {_id: data.id}, data);
+                if(!data.password) {
+                    throw new CustomError(406, 'Not allowed empty password.');
                 }
-                catch (err) {
-                    debugger;
-                    let {code, message} = err;
-                    res.locals.error = {code, message};
+
+                let user = await database.find('user', {email: data.email}, {allow_empty: true});
+
+                if(user && user.length) {
+                    throw new CustomError(406, 'Choose another email/password.');
                 }
+
+                data.group = 'users';
+
+                let updates = await database.update('user', {_id: data.id}, data);
+                return {};
             }
         },
         signin: {
             submit: async function (req, res) {
-                try {
-                    req.body.username = req.body.email;
 
-                    await router.authenticateHandler({force: true})(req, res);
-                    if (res.locals.error) {
-                        res.locals.error = void 0;
+                req.body.username = req.body.email;
 
-                        let {client_id, client_secret, scope} = await database.findOne('client', {client_id: 'authentificate'});
+                await router.authenticateHandler({force: true})(req, res);
+                if (res.locals.error) {
+                    res.locals.error = void 0;
 
-                        req.body.client_id = client_id;
-                        req.body.client_secret = client_secret;
-                        req.body.grant_type = 'password';
-                        req.body.scope = scope.join(',');
+                    let {client_id, client_secret, scope} = await database.findOne('client', {client_id: 'authentificate'});
 
-                        await router.tokenHandler({})(req, res);
+                    req.body.client_id = client_id;
+                    req.body.client_secret = client_secret;
+                    req.body.grant_type = 'password';
+                    req.body.scope = scope.join(',');
 
-                        return {auth: req.token.auth};
-                    }
+                    await router.tokenHandler({})(req, res);
+
+                    !res.locals.error && updateDefaults(req, res);
+
+                    return {auth: req.token.auth};
                 }
-                catch (err) {
-                    let {code, message} = err;
-                    res.locals.error = {code, message};
-                }
-
             }
         },
         signout: {
             submit: async function (req, res) {
-                try {
-                    //debugger
-                    await database.remove('token', {accessToken: req.token.access});
+                await database.remove('token', {accessToken: req.token.access});
 
-                    req.token.user = void 0;
-                    req.token.access = void 0;
-                    req.token.auth = {};
-                }
-                catch (err) {
-                    let {code, message} = err;
-                    res.locals.error = {code, message};
-                }
+                req.token.user = void 0;
+                req.token.access = void 0;
+                req.token.auth = {};
+                req.user = void 0;
+
+                updateDefaults(req, res);
+
+                return {};
             }
         },
         profile:{
@@ -148,32 +172,53 @@ let actions = {
                 return {profile: {id: 'current', text: `ПРОФИЛЬ ПОЛЬЗОВАТЕЛЯ ${req.user && req.user.name}`}};
             }
         },
-        phones: {
-            get: async function (token) {
+        users: {
+            get: async function (req, res) {
                 return {
-                    user: [{
-                        id: 'current',
-                        phones: actions.api.phones.get(token)
-                    }]
+                    users: await actions.api.users.get(req, res)
                 };
             },
-            save: async function (token, data) {
+            remove: async function (req, res) {
+
+                let removed = await actions.api.users.remove(req, res);
+                return {users: removed};
+            },
+            save: async function (req, res) {
+                let data = req.body;
+
+                if (data.name === '123') {
+                    throw new CustomError(406, 'Not allowed user name.');
+                }
+                else {
+                    let updates = await actions.api.users.save(req, res);
+                    return {users: updates};
+                }
+            },
+        },
+        phones: {
+            get: async function (req, res) {
+                return {
+                    user: {
+                        id: 'current',
+                        phones: await actions.api.phones.get(req, res)
+                    }
+                };
+            },
+            save: async function (req, res) {
+                let data = req.body;
+
                 if (data.number === '00000000000') {
                     throw new CustomError(406, 'Not allowed phone number.');
                 }
                 else {
-                    let updates = actions.api.phones.save(token, data);
-                    return {user: [{id: 'current', phones: updates}]};
+                    let updates = await actions.api.phones.save(req, res);
+                    return {user: {id: 'current', phones: updates}};
                 }
             },
-            remove: async function (token, data) {
+            remove: async function (req, res) {
 
-                data = Array.isArray(data) ? data : [data];
-
-                let ids = data.map(phone => phone.id);
-
-                let updates = actions.api.phones.remove(token, data);
-                return {user: [{id: 'current', phones: data}]};
+                let removed = await actions.api.phones.remove(req, res);
+                return {user: {id: 'current', phones: removed}};
             },
         },
         'clients.get': async function () {
@@ -201,21 +246,44 @@ let actions = {
                 return {};
             },
         },
-        phones: {
-            get: async function (token) {
-                return await database.find('phone', {user: token.user.id}, {allow_empty: true});
+        users: {
+            get: async function (req, res) {
+                return await database.find('user', {}, {allow_empty: true});
             },
-            save: async function (token, data) {
-                data.user = token.user.id;
+            remove: async function (req, res) {
+                let data = req.body;
+                data = Array.isArray(data) ? data : [data];
+
+                let ids = data.map(user => user.id);
+
+                await database.remove('user', {_id: {$in: ids}});
+                return ids;
+            },
+            save: async function (req, res) {
+                let data = req.body;
+
+                return await database.update('user', {_id: data.id}, data);
+            },
+        },
+        phones: {
+            get: async function (req, res) {
+                return await database.find('phone', {user: req.user._id}, {allow_empty: true});
+            },
+            save: async function (req, res) {
+                let data = req.body;
+
+                data.user = req.user._id;
 
                 return await database.update('phone', {_id: data.id}, data);
             },
-            remove: async function (token, data) {
+            remove: async function (req, res) {
+                let data = req.body;
                 data = Array.isArray(data) ? data : [data];
 
                 let ids = data.map(phone => phone.id);
 
-                return await database.remove('phone', {_id: {$in: ids}}, data);
+                await database.remove('phone', {_id: {$in: ids}});
+                return ids;
             },
         }
     }
@@ -249,14 +317,16 @@ let matrix = [
     {
         scopes: ['site'],
         actions: {
-            ui: ['clients', 'users', 'clients.get'],
+            ui: ['clients', 'users'],
+            ui_api: ['clients.*', 'users.*']
         },
         access: ['admins']
     },
     {
         scopes: ['site'],
         actions: {
-            ui: ['profile', 'phones', 'profile.get', 'phones.*']
+            ui: ['profile', 'phones'],
+            ui_api: ['profile.get', 'phones.*']
         },
         access: ['*']
     },
@@ -357,7 +427,7 @@ let access = function (req, res, access_group) {
     //console.log(grants)
 
     let granted = grants.some(unit => {
-        return unit.access.some(group => group === '*' || group === access_group);
+        return unit.access.some(group => (req.user && group === '*') || group === access_group);
     });
 
     return granted || grants.length === 0;
@@ -394,6 +464,7 @@ let entities = function (data) {
     const db = new schema.Entity('database', {
         action: _action,
         clients: [ _client ],
+        user: _user,
         users: [ _user ],
         profile: _profile
     }, {

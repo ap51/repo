@@ -11,6 +11,7 @@ for(let inx in collections) {
     db[conn] = new Datastore({filename: path.join(__dirname, `_${conn}.db`), autoload: true});
 }
 
+/*
 db.phone.find({}, function (err, phones) {
     if(!phones.length) {
         for (let i = 0; i < 9; i++) {
@@ -26,6 +27,7 @@ db.phone.find({}, function (err, phones) {
         }
     }
 });
+*/
 
 db.client.find({client_id: 'one'}, function (err, clients) {
     !clients.length && db.client.insert(
@@ -96,10 +98,10 @@ db.find = function(collection, query, options) {
     });
 };
 
-db.findOne = function(collection, query) {
+db.findOne = function(collection, query, options) {
     return new Promise(async function (resolve, reject) {
         try {
-            let results = await db.find(collection, query);
+            let results = await db.find(collection, query, options);
             resolve(results[0]);
         }
         catch (err) {
@@ -124,10 +126,13 @@ db.remove = function(collection, query) {
 };
 
 db.update = function(collection, query, body) {
-    return new Promise(function (resolve, reject) {
+    return new Promise(async function (resolve, reject) {
 
         body.created = body.created || new Date() / 1;
         body.updatetd = new Date() / 1;
+
+        let object = await db.findOne(collection, query, {allow_empty: true});
+        object && (body = {...object, ...body});
 
         db[collection].update(query, body, { upsert: true }, async function (err, results, upsert) {
             if(!results || err) {

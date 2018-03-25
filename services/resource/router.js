@@ -107,6 +107,7 @@ router.tokenHandler = function(options) {
             let response = new Response(res);
 
             let token = await oauth.token(request, response, options);
+            req.user = token.user;
 
             req.token.access = token.accessToken;
 
@@ -130,7 +131,7 @@ router.accessHandler = function(options) {
     return async function(req, res, next) {
         try {
             //res.locals.token = token;
-            let access_group = (req.user && req.user.group) || '*';
+            let access_group = (req.user && req.user.group);
 
             let granted = api.access(req, res, access_group);
 
@@ -159,12 +160,25 @@ router.onComponentData = async function(req, res, response, data) {
 router.all('*', router.jwtHandler());
 
 router.all(config.patterns, router.authenticateHandler({allowBearerTokensInQueryString: true}), router.accessHandler(), async function (req, res, next) {
-    router.components = router.components || {};
-    router.components[req.params.name] = req.params;
+    let data = void 0;
 
-    let action = api.action(req, res);
-    
-    let data = await action(req, res);
+    if(!res.locals.error) {
+        router.components = router.components || {};
+        router.components[req.params.name] = req.params;
+
+        let action = api.action(req, res);
+
+        console.log('ACTION:', req.params);
+
+        try {
+            data = await action(req, res);
+        }
+        catch (err) {
+            let {code, message} = err;
+            code = code || 404;
+            res.locals.error = {code, message};
+        }
+    }
 
     switch (req.params.section) {
         case 'ui':
@@ -183,18 +197,20 @@ router.all(config.patterns, router.authenticateHandler({allowBearerTokensInQuery
                 next();
             break;
         case 'ui_api':
-                if(res.locals.error) {
-                    res.status(res.locals.error.code).send(res.locals.error.message)
+                if(res.locals.error && [401, 403].indexOf(res.locals.error.code) === -1) {
+                     res.status(res.locals.error.code).send(res.locals.error.message);
+                    //res.status(res.locals.error.code).send(res.locals.error.message);
                 }
                 else {
                     try {
                         let auth = req.token.auth;
                         req._token[router.service] = req.token;
                         let token = await router.encode(req._token);
+                        let shared = res.locals.shared;
 
                         let response = {api: 'v1', ...data};
 
-                        let entities = {...api.entities(response), method: req.method, token, auth};
+                        let entities = {...api.entities(response), method: req.method, token, auth, shared};
 
                         res.status(222).json(entities);
                     }

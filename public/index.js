@@ -139,32 +139,78 @@ Vue.prototype.$request = async function(url, data, options) {
 
     return axios(config)
         .then(function(res) {
-            res.data.token && Vue.set(Vue.prototype.$state, 'token', res.data.token);
-            localStorage.setItem('token', Vue.prototype.$state.token);
-            Vue.set(Vue.prototype.$state, 'auth', res.data.auth || '');
+            if(res.status > 220) {
+                res.data.token && Vue.set(Vue.prototype.$state, 'token', res.data.token);
+                localStorage.setItem('token', Vue.prototype.$state.token);
+                Vue.set(Vue.prototype.$state, 'auth', res.data.auth || '');
 
-            if (res.data.redirect_remote) {
-                window.location.replace(res.data.redirect.remote);
-                return;
-            }
-
-            if (res.data.redirect_local) {
-                let path = res.data.redirect_local.replace(Vue.prototype.$state.base_ui, '');
-
-                name = path;
-
-                if (Vue.prototype.$state.path === path) {
-                    Vue.prototype.$page(path, true);
+                if (res.data.redirect_remote) {
+                    window.location.replace(res.data.redirect.remote);
+                    return;
                 }
-                else router.push(path);
-                return;
+
+                if (res.data.redirect_local) {
+                    let path = res.data.redirect_local.replace(Vue.prototype.$state.base_ui, '');
+
+                    name = path;
+
+                    if (Vue.prototype.$state.path === path) {
+                        Vue.prototype.$page(path, true);
+                    }
+                    else router.push(path);
+                    return;
+                }
+
+                res.data.data && Vue.set(Vue.prototype.$state.data, name, res.data.data);
+
+                Object.assign(Vue.prototype.$state.shared, res.data.shared);
             }
 
-            res.data.data && Vue.set(Vue.prototype.$state.data, name, res.data.data);
+            switch (res.status) {
+                case 221:
+                        let redirected = decodeURIComponent(window.location.origin + res.config.url) !== decodeURIComponent(res.request.responseURL);
 
-            Object.assign(Vue.prototype.$state.shared, res.data.shared);
+                        cache[name] = res.data.component || cache[name];
 
-            if(res.status === 200) {
+                        Vue.prototype.$request(`${Vue.prototype.$state.base_api}${name}.get`);
+
+                        return cache[name];
+                    break;
+                case 222:
+                        let api = res.data.result;
+                        let entry = res.data.entry;
+
+                        let database = res.data.entities[entry][api];
+
+                        let merge = deepmerge(Vue.prototype.$state.entities, res.data.entities, {
+                            arrayMerge: function (destination/*entities*/, source/*data*/, options) {
+                                //ALL ARRAYS MUST BE SIMPLE IDs HOLDER AFTER NORMALIZE
+                                if(res.data.method === 'DELETE') {
+                                    return destination.filter(id => source.indexOf(id) === -1);
+                                }
+
+                                let a = new Set(destination);
+                                let b = new Set(source);
+                                let union = Array.from(new Set([...a, ...b]));
+
+                                return union;
+                            }
+                        });
+
+                        Vue.set(Vue.prototype.$state, 'api', api);
+                        Vue.set(Vue.prototype.$state, 'entry', entry);
+
+                        Vue.set(Vue.prototype.$state, 'entities', merge);
+
+                        callback && callback(res);
+                    break;
+                default:
+                    callback && callback(res);
+                    break;
+            }
+
+/*
+            if(res.status === 221) {
                 let redirected = decodeURIComponent(window.location.origin + res.config.url) !== decodeURIComponent(res.request.responseURL);
 
                 cache[name] = res.data.component || cache[name];
@@ -174,15 +220,13 @@ Vue.prototype.$request = async function(url, data, options) {
                 return cache[name];
             }
             else {
-                //console.log(res.data);
                 let api = res.data.result;
                 let entry = res.data.entry;
 
                 let database = res.data.entities[entry][api];
 
-                //Vue.prototype.$state.entities
                 let merge = deepmerge(Vue.prototype.$state.entities, res.data.entities, {
-                    arrayMerge: function (destination/*entities*/, source/*data*/, options) {
+                    arrayMerge: function (destination/!*entities*!/, source/!*data*!/, options) {
                         //ALL ARRAYS MUST BE SIMPLE IDs HOLDER AFTER NORMALIZE
                         if(res.data.method === 'DELETE') {
                             return destination.filter(id => source.indexOf(id) === -1);
@@ -196,19 +240,14 @@ Vue.prototype.$request = async function(url, data, options) {
                     }
                 });
                 
-                //console.log(merge);
-                
                 Vue.set(Vue.prototype.$state, 'api', api);
                 Vue.set(Vue.prototype.$state, 'entry', entry);
-
-                //Vue.set(Vue.prototype.$state, 'auth', res.data.entities.auth || '');
 
                 Vue.set(Vue.prototype.$state, 'entities', merge);
 
                 callback && callback(res);
-
-                //return Vue.prototype.$state;
             }
+*/
         })
         .catch(function(err) {
             Vue.prototype.$bus.$emit('snackbar', `ERROR: ${err.message} ${err.code ? 'CODE: ' + err.code + '.': ''}`);
@@ -278,4 +317,3 @@ window.vm = new Vue({
         this.$vuetify.theme = theme
     }
 });
-

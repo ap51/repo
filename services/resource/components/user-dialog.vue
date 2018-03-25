@@ -1,51 +1,64 @@
 <template>
-    <v-dialog v-model="isVisible" hide-overlay persistent max-width="400px">
+    <v-dialog v-model="isVisible" max-width="400px">
         <v-card>
             <v-card-title>
-                <v-icon class="mr-1">fas fa-user-circle</v-icon>
-                <span class="headline">sign up</span>
+                <v-icon class="mr-1">fas fa-user</v-icon>
+                <span class="headline">user</span>
             </v-card-title>
             <v-card-text>
                 <v-container grid-list-md>
                     <v-layout wrap>
                         <v-form ref="form" lazy-validation @submit.prevent>
                             <v-flex xs12>
-                                <v-text-field v-model="object.name"
-                                              validate-on-blur
-                                              label="Name"
-                                              required
-                                              prepend-icon="fas fa-user"
-                                              autofocus
-                                              color="blue darken-2"
-                                              hint="for example, Joe Dou"
-                                              :rules="[
-                                                  () => !!object.password || 'This field is required',
-                                              ]"
-                                ></v-text-field>
-                            </v-flex>
-                            <v-flex xs12>
                                 <v-text-field v-model="object.email"
                                               validate-on-blur
                                               label="EMail"
                                               required
                                               prepend-icon="fas fa-at"
+                                              autofocus
                                               color="blue darken-2"
                                               hint="any string value"
                                               :rules="[
                                                   () => !!object.email || 'This field is required',
                                               ]"
                                 ></v-text-field>
-                            </v-flex>
-                            <v-flex xs12>
                                 <v-text-field v-model="object.password"
+                                              :required="!!!object.id"
                                               validate-on-blur
                                               label="Password"
-                                              required
                                               prepend-icon="fas fa-key"
+                                              autofocus
+                                              color="blue darken-2"
+                                              hint="any string value"
+                                              placeholder="enter password to change"
+                                              :rules="[
+                                                  () => (!!!object.id && !!object.password) || ((!!object.id && !!!object.password)) || ((!!object.id && !!object.password)) || 'This field is required'
+                                              ]"
+                                ></v-text-field>
+                            </v-flex>
+                            <v-flex xs12>
+                                <v-text-field v-model="object.name"
+                                              validate-on-blur
+                                              label="Name"
+                                              required
+                                              prepend-icon="fas fa-user"
                                               color="blue darken-2"
                                               hint="any string value"
                                               :rules="[
-                                                  () => !!object.password || 'This field is required',
+                                                  () => !!object.name || 'This field is required',
+                                              ]"
+                                ></v-text-field>
+                            </v-flex>
+                            <v-flex xs12>
+                                <v-text-field v-model="object.group"
+                                              validate-on-blur
+                                              label="Group"
+                                              required
+                                              prepend-icon="fas fa-user-secret"
+                                              color="blue darken-2"
+                                              hint="any string value"
+                                              :rules="[
+                                                  () => !!object.group || 'This field is required',
                                               ]"
                                 ></v-text-field>
                             </v-flex>
@@ -57,7 +70,7 @@
             <v-card-actions>
                 <v-spacer></v-spacer>
                 <v-btn color="blue darken-2" flat @click.native="cancel">cancel</v-btn>
-                <v-btn color="blue darken-2" flat @click.native="submit({...object})">submit</v-btn>
+                <v-btn color="blue darken-2" flat @click.native="save(object)">save</v-btn>
             </v-card-actions>
         </v-card>
     </v-dialog>
@@ -73,16 +86,7 @@
             'visible',
             'object'
         ],
-        updated() {
-            console.log('ACTIVE');
-        },
         computed: {
-            copy: {
-                cache: false,
-                get: function () {
-                    return {...this.object};
-                }
-            },
             isVisible: {
                 get() {
                     return this.visible;
@@ -96,16 +100,9 @@
             cancel() {
                 this.$emit('cancel');
             },
-            submitted() {
-                this.$emit('save', this.object);
-            },
-            submit(user) {
+            save(user) {
                 if (this.$refs.form.validate()) {
-
-                    user.password = md5(`${user.email}.${user.password}`);
-                    this.$request(`${this.$state.base_api}signup.submit`, user, {callback: this.submitted});
-
-                    //this.$emit('save', user);
+                    this.$emit('save', user);
                 }
                 else this.$bus.$emit('snackbar', 'Data entered doesn\'t match validation rules');
             }
@@ -116,5 +113,5 @@
         }
     }
 
-    //# sourceURL=signup.js
+    //# sourceURL=user-dialog.js
 </script>

@@ -50,7 +50,6 @@ const Component = require('./component');
 let _router = function(service) {
     const express = require('express');
     const bodyParser = require('body-parser');
-    const merge = require('deepmerge');
 
     let service_path = path.join(__dirname, 'services', service);
     const database = require(path.join(service_path, 'database', 'db'));
@@ -250,7 +249,7 @@ let _router = function(service) {
 
             delete res.locals.redirect;
 
-            res.json(response);
+            res.status(221).json(response);
             return res.end();
             //res.send(JSON.stringify(response));
 

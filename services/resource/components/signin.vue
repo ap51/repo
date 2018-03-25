@@ -71,19 +71,32 @@
             }
         },
         methods: {
-            registrate() {
+            registrate(user) {
+                this.email = user.email;
+                this.password = user.password;
+
                 this.dialog.visible = false;
             },
             cancelRegistration() {
                 this.dialog.visible = false;
             },
+            onNames(res) {
+                let generated = res.data.results[0];
+
+                this.dialog.object = {
+                    email: generated.email,
+                    name: `${generated.name.first} ${generated.name.last}`,
+                    password: generated.login.password
+                };
+            },
             signup() {
                 this.dialog.object = {
                     email: '',
-                    name: 'Owner: ' + new Date(),
+                    name: '',
                     password: ''
                 };
                 this.dialog.visible = true;
+                this.$request('https://randomuser.me/api', null, {callback: this.onNames});
             },
             cancel() {
                 this.$emit('cancel');
