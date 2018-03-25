@@ -32,3 +32,17 @@
 {"$$deleted":true,"_id":"DzfBt6qWPAJAp0ep"}
 {"name":"miss. leah henderson","email":"leah.henderson@example.com","password":"770bd2d4cae448fd84a3e545366cc96e","group":"users","created":1522001733779,"updatetd":1522001733779,"_id":"KjbphtyNDZPh9J4w"}
 {"$$deleted":true,"_id":"KjbphtyNDZPh9J4w"}
+{"name":"mrs. karla janssen","email":"karla.janssen@example.com","password":"9f95b3a47451ab1d397e4f25aad4299b","group":"users","created":1522005030971,"updatetd":1522005030971,"_id":"QZth8WeUEM3t9rmh"}
+{"name":"mr. darius schramm","email":"darius.schramm@example.com","password":"942a1ba6b1c8676e5f5fa6db804468c2","group":"users","created":1522005035059,"updatetd":1522005035059,"_id":"YMYmCWC9A4QXSQOr"}
+{"$$deleted":true,"_id":"QZth8WeUEM3t9rmh"}
+{"$$deleted":true,"_id":"YMYmCWC9A4QXSQOr"}
+{"name":"mr. amado viana","email":"amado.viana@example.com","password":"02435925cbc817eca1919b4c949e3b53","group":"users","created":1522005261223,"updatetd":1522005261223,"_id":"4ugd1baSbj9MfwVs"}
+{"name":"ms. dounya luten","email":"dounya.luten@example.com","password":"2741a300f48b5f3142a32e32d66a84d1","group":"users","created":1522005263546,"updatetd":1522005263546,"_id":"s8MXDvaBhukN0cJk"}
+{"$$deleted":true,"_id":"4ugd1baSbj9MfwVs"}
+{"$$deleted":true,"_id":"s8MXDvaBhukN0cJk"}
+{"name":"mr. alvin alexander","email":"alvin.alexander@example.com","password":"ddf8ab5500daa10ac4324737c1e71c4b","group":"users","created":1522005351124,"updatetd":1522005351124,"_id":"hPgsBrmGOxSal4uy"}
+{"$$deleted":true,"_id":"hPgsBrmGOxSal4uy"}
+{"name":"mr. leonildo moreira","email":"leonildo.moreira@example.com","password":"25b15bed01ef2c8a318900b5d67b0d56","group":"users","created":1522006805712,"updatetd":1522006805712,"_id":"jXeRsK5AO0APmeN8"}
+{"name":"mr. allan rose","email":"allan.rose@example.com","password":"adfca6b21afb215ff867a71f95a55c47","group":"users","created":1522006815934,"updatetd":1522006815934,"_id":"9Yr6zqWVaZ4Cb5yt"}
+{"$$deleted":true,"_id":"jXeRsK5AO0APmeN8"}
+{"$$deleted":true,"_id":"9Yr6zqWVaZ4Cb5yt"}

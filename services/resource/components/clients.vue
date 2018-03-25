@@ -131,6 +131,8 @@
             save(client) {
                 this.activePage = this.pagination.page;
 
+                client.id && (this.entities.client[client.id] = client);
+
                 this.$request(`${this.$state.base_api}clients.save`, client, {callback: this.cancel});
             },
             cancel(response) {

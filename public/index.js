@@ -186,7 +186,12 @@ Vue.prototype.$request = async function(url, data, options) {
                             arrayMerge: function (destination/*entities*/, source/*data*/, options) {
                                 //ALL ARRAYS MUST BE SIMPLE IDs HOLDER AFTER NORMALIZE
                                 if(res.data.method === 'DELETE') {
-                                    return destination.filter(id => source.indexOf(id) === -1);
+                                    if(destination.length) {
+                                        return destination.filter(id => source.indexOf(id) === -1);
+                                    }
+                                    else {
+                                        return source;
+                                    }
                                 }
 
                                 let a = new Set(destination);

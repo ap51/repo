@@ -161,7 +161,7 @@
                 if (this.$refs.form.validate()) {
                     this.$emit('save', user);
                 }
-                else this.$bus.$emit('snackbar', 'Data entered doesn\'t match validation rules');
+                else this.$bus.$emit('snackbar', 'Data entered don\'t match validation rules');
             }
         },
         watch: {

@@ -113,7 +113,7 @@
                     this.$request(`${Vue.prototype.$state.base_api}signin.submit`, data, { callback: this.cancel, encode: true });
 
                 }
-                else this.$bus.$emit('snackbar', 'Data entered doesn\'t match validation rules');
+                else this.$bus.$emit('snackbar', 'Data entered don\'t match validation rules');
             }
         },
         watch: {
