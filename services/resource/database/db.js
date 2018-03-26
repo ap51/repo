@@ -1,4 +1,4 @@
-let collections = ['token', 'client', 'user', 'code', 'scope', 'client_user', 'phone'];
+let collections = ['token', 'client', 'user', 'code', 'scope', 'client_user', 'phone', 'profile', 'friend'];
 
 const path = require('path');
 const Datastore = require('nedb');
