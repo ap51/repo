@@ -168,7 +168,7 @@ router.all(config.patterns, router.authenticateHandler({allowBearerTokensInQuery
 
         let action = api.action(req, res);
 
-        console.log('ACTION:', req.params);
+        //console.log('ACTION:', req.params);
 
         try {
             data = await action(req, res);

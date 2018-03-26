@@ -177,6 +177,8 @@ Vue.prototype.$request = async function(url, data, options) {
                         return cache[name];
                     break;
                 case 222:
+                        callback && callback(res, data);
+
                         let api = res.data.result;
                         let entry = res.data.entry;
 
@@ -207,52 +209,12 @@ Vue.prototype.$request = async function(url, data, options) {
 
                         Vue.set(Vue.prototype.$state, 'entities', merge);
 
-                        callback && callback(res);
                     break;
                 default:
                     callback && callback(res);
                     break;
             }
 
-/*
-            if(res.status === 221) {
-                let redirected = decodeURIComponent(window.location.origin + res.config.url) !== decodeURIComponent(res.request.responseURL);
-
-                cache[name] = res.data.component || cache[name];
-
-                Vue.prototype.$request(`${Vue.prototype.$state.base_api}${name}.get`);
-
-                return cache[name];
-            }
-            else {
-                let api = res.data.result;
-                let entry = res.data.entry;
-
-                let database = res.data.entities[entry][api];
-
-                let merge = deepmerge(Vue.prototype.$state.entities, res.data.entities, {
-                    arrayMerge: function (destination/!*entities*!/, source/!*data*!/, options) {
-                        //ALL ARRAYS MUST BE SIMPLE IDs HOLDER AFTER NORMALIZE
-                        if(res.data.method === 'DELETE') {
-                            return destination.filter(id => source.indexOf(id) === -1);
-                        }
-                        
-                        let a = new Set(destination);
-                        let b = new Set(source);
-                        let union = Array.from(new Set([...a, ...b]));
-
-                        return union;
-                    }
-                });
-                
-                Vue.set(Vue.prototype.$state, 'api', api);
-                Vue.set(Vue.prototype.$state, 'entry', entry);
-
-                Vue.set(Vue.prototype.$state, 'entities', merge);
-
-                callback && callback(res);
-            }
-*/
         })
         .catch(function(err) {
             Vue.prototype.$bus.$emit('snackbar', `ERROR: ${err.message} ${err.code ? 'CODE: ' + err.code + '.': ''}`);
@@ -279,6 +241,9 @@ let component = {
         },
         shared() {
             return this.$state.shared;
+        },
+        document_title() {
+            return `${service} - ${this.name}`;
         }
     },
     data() {
@@ -294,6 +259,9 @@ let component = {
     created() {
         //console.log(this.state.path);
         //this.state.route.name === this.name && this.$request(`${this.state.route.ident}.data`);
+    },
+    activated() {
+        document.title = this.document_title;
     },
     watch: {
         'state.locationToggle': function () {

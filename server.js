@@ -21,7 +21,7 @@ app.use('/:service/ui', staticFileMiddleware);
 
 app.use('/:service/ui', history({
     disableDotRule: true,
-    verbose: true
+    verbose: false
 }));
 
 app.use('/:service/ui', staticFileMiddleware);

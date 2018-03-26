@@ -131,9 +131,11 @@
             save(client) {
                 this.activePage = this.pagination.page;
 
+                this.$request(`${this.$state.base_api}clients.save`, client, {callback: this.saved});
+            },
+            saved(response, client) {
                 client.id && (this.entities.client[client.id] = client);
-
-                this.$request(`${this.$state.base_api}clients.save`, client, {callback: this.cancel});
+                this.cancel(response);
             },
             cancel(response) {
                 response && response.data.method === 'DELETE' && (this.selected = []);

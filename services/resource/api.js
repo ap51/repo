@@ -159,7 +159,7 @@ let actions = {
                 if (res.locals.error) {
                     res.locals.error = void 0;
 
-                    let {client_id, client_secret, scope} = await database.findOne('client', {client_id: 'authentificate'});
+                    let {client_id, client_secret, scope} = await database.findOne('client', {client_id: 'authenticate'});
 
                     req.body.client_id = client_id;
                     req.body.client_secret = client_secret;
@@ -418,7 +418,7 @@ let matrix = [
         actions: {
             ui: ['about']
         },
-        access: ['users']
+        access: ['users', 'admins']
     },
     {
         scopes: ['site'],

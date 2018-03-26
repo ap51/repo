@@ -67,7 +67,8 @@ let _router = function(service) {
 
     router.token = jwt;
 
-    let encryptRSA = async function(data, publicKey) {let buffer = new Buffer(data);
+    let encryptRSA = async function(data, publicKey) {
+        let buffer = new Buffer(data);
         let encrypted = await crypto.encrypt.rsa(data, publicKey);
         return encrypted;
     };
