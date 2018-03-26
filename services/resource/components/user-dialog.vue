@@ -10,12 +10,24 @@
                     <v-layout wrap>
                         <v-form ref="form" lazy-validation @submit.prevent>
                             <v-flex xs12>
+                                <v-text-field v-model="object.name"
+                                              autofocus
+                                              validate-on-blur
+                                              label="Name"
+                                              required
+                                              prepend-icon="fas fa-user"
+                                              color="blue darken-2"
+                                              hint="any string value"
+                                              :rules="[
+                                                  () => !!object.name || 'This field is required',
+                                              ]"
+                                ></v-text-field>
                                 <v-text-field v-model="object.email"
                                               validate-on-blur
                                               label="EMail"
                                               required
                                               prepend-icon="fas fa-at"
-                                              autofocus
+
                                               color="blue darken-2"
                                               hint="any string value"
                                               :rules="[
@@ -27,7 +39,6 @@
                                               validate-on-blur
                                               label="Password"
                                               prepend-icon="fas fa-key"
-                                              autofocus
                                               color="blue darken-2"
                                               hint="any string value"
                                               placeholder="enter password to change"
@@ -35,21 +46,6 @@
                                                   () => (!!!object.id && !!object.password) || ((!!object.id && !!!object.password)) || ((!!object.id && !!object.password)) || 'This field is required'
                                               ]"
                                 ></v-text-field>
-                            </v-flex>
-                            <v-flex xs12>
-                                <v-text-field v-model="object.name"
-                                              validate-on-blur
-                                              label="Name"
-                                              required
-                                              prepend-icon="fas fa-user"
-                                              color="blue darken-2"
-                                              hint="any string value"
-                                              :rules="[
-                                                  () => !!object.name || 'This field is required',
-                                              ]"
-                                ></v-text-field>
-                            </v-flex>
-                            <v-flex xs12>
                                 <v-text-field v-model="object.group"
                                               validate-on-blur
                                               label="Group"

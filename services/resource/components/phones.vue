@@ -102,14 +102,14 @@
         computed: {
             entity() {
                 this.pagination.page = this.activePage || this.pagination.page || 1;
-                return this.database.user ? this.entities.user.current.phones.map(phone => this.entities.phone[phone]).map(phone => {phone.number = (phone.number + '').replace(/(\d{1})(\d{3})(\d{3})(\d{2})(\d{2})/, '+$1 ($2) $3 - $4 - $5'); return phone}) : [];
+                return this.database.user ? (this.entities.user.current.phones || []).map(phone => this.entities.phone[phone]).map(phone => {phone.number = (phone.number + '').replace(/(\d{1})(\d{3})(\d{3})(\d{2})(\d{2})/, '+$1 ($2) $3 - $4 - $5'); return phone}) : [];
             },
             pages () {
                 if (this.pagination.rowsPerPage == null || this.pagination.totalItems == null)
                     return 0;
 
                 if(this.entities.user) {
-                    let pages = Math.ceil(this.entities.user.current.phones.length / this.pagination.rowsPerPage);
+                    let pages = Math.ceil((this.entities.user.current.phones || []).length / this.pagination.rowsPerPage);
                     this.pagination.pages = this.pagination.pages !== pages ? pages : this.pagination.pages;
                     return this.pagination.pages;
                 }

@@ -83,14 +83,16 @@ let actions = {
                                 name: 'about',
                                 icon: 'far fa-question-circle'
                             },
+/*
                             {
                                 name: 'profile',
                                 icon: 'fas fa-user-circle'
                             },
+*/
                             {
-                                name: 'find phone',
-                                to: 'find-phone',
-                                icon: 'fas fa-mobile'
+                                name: 'public',
+                                to: 'public',
+                                icon: 'far fa-address-card'
                             },
                         ]
                     };
@@ -130,6 +132,17 @@ let actions = {
         }
     },
     ui_api: {
+        layout: {
+            async get(req, res) {
+                if(req.user) {
+                    let {password, id, _id, group, ...clean} = await database.findOne('user', {_id: req.user._id});
+                    clean.id = 'current';
+
+                    return {user: clean};
+                }
+                return {user: {}};
+            }
+        },
         signup: {
             submit: async function (req, res) {
                 let data = req.body;
@@ -170,7 +183,7 @@ let actions = {
 
                     !res.locals.error && updateDefaults(req, res);
 
-                    return {auth: req.token.auth};
+                    return {auth: req.token.auth, ...await actions.ui_api.layout.get(req, res)};
                 }
             }
         },
@@ -186,6 +199,22 @@ let actions = {
                 updateDefaults(req, res);
 
                 return {};
+            },
+            async save(req, res) {
+                let {id, _id, phones, ...clean} = req.body;
+                req.body = clean;
+                req.body.id = req.user._id;
+
+                let updates = await actions.api.users.save(req, res);
+                updates = updates.pop();
+
+                req.token.auth = {
+                    name: updates.name,
+                    //group: token.user.group
+                };
+
+
+                return await actions.ui_api.layout.get(req, res);
             }
         },
         profile:{

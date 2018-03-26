@@ -3,12 +3,6 @@
             <v-content>
                 <v-toolbar color="blue darken-2" dark dense>
                     <v-toolbar-title class="mr-2"><v-icon class="mr-1 mb-1">{{icon}}</v-icon><small>{{title}}</small></v-toolbar-title>
-<!--
-                    <v-toolbar-items>
-
-                        <v-btn flat to="about"><v-icon class="mr-1 mb-1">{{icon}}</v-icon>{{title}}</v-btn>
-                    </v-toolbar-items>
--->
 
                     <v-tabs v-model="active" v-if="location !== 'external-signin'" color="blue darken-2"
                             :right="false">
@@ -69,7 +63,7 @@
                 </v-toolbar>
 
                 <dialog-signin :visible="signin" @cancel="signin = false"></dialog-signin>
-                <signout :visible="signout" @cancel="signout = false"></signout>
+                <signout :visible="signout" :object="current_user" @cancel="signout = false"></signout>
 
                 <v-card class="base-layout">
                     <keep-alive>
@@ -140,6 +134,8 @@
                 self.snackbar.message = message;
                 self.snackbar.visible = true;
             })
+        },
+        computed: {
         },
         methods: {
             apiCall(data) {

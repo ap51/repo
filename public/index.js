@@ -173,6 +173,7 @@ Vue.prototype.$request = async function(url, data, options) {
                         cache[name] = res.data.component || cache[name];
 
                         Vue.prototype.$request(`${Vue.prototype.$state.base_api}${name}.get`);
+                        console.log('REQUEST:', `${Vue.prototype.$state.base_api}${name}.get`);
 
                         return cache[name];
                     break;
@@ -200,6 +201,7 @@ Vue.prototype.$request = async function(url, data, options) {
                                 let b = new Set(source);
                                 let union = Array.from(new Set([...a, ...b]));
 
+                                console.log('API DATA:', data);
                                 return union;
                             }
                         });
@@ -244,6 +246,9 @@ let component = {
         },
         document_title() {
             return `${service} - ${this.name}`;
+        },
+        current_user() {
+            return (this.entities.user && this.entities.user.current) || {name: 'unknown'};
         }
     },
     data() {

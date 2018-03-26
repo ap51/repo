@@ -131,7 +131,7 @@ db.update = function(collection, query, body) {
     return new Promise(async function (resolve, reject) {
 
         body.created = body.created || new Date() / 1;
-        body.updatetd = new Date() / 1;
+        body.updated = new Date() / 1;
 
         let object = await db.findOne(collection, query, {allow_empty: true});
         object && (body = {...object, ...body});

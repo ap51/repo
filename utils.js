@@ -52,6 +52,8 @@ let _router = function(service) {
     const bodyParser = require('body-parser');
 
     let service_path = path.join(__dirname, 'services', service);
+
+    const favicon = require('serve-favicon');
     const database = require(path.join(service_path, 'database', 'db'));
 /*
     const config = require(path.join(service_path, `config`));
@@ -61,6 +63,7 @@ let _router = function(service) {
     let router = express.Router();
     router.service = service;
     router.database = require(path.join(service_path, 'database', 'db'));
+    router.use(favicon(path.join(service_path, 'favicon.ico')));
 
     router.use(bodyParser.json());
     router.use(bodyParser.urlencoded({extended: false}));
