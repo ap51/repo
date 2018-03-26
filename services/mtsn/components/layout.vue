@@ -2,7 +2,7 @@
         <v-app ref="layout">
             <v-content>
                 <v-toolbar color="blue darken-2" dark dense>
-                    <v-toolbar-title class="mr-2"><v-icon class="mr-1 mb-1">{{icon}}</v-icon><small>{{title}}</small></v-toolbar-title>
+                    <v-toolbar-title class="mr-2"><v-icon class="mr-1 mb-1">{{icon}}</v-icon><small>{{title.toUpperCase() + ' (My Tiny Social Network)'}}</small></v-toolbar-title>
 
                     <v-tabs v-model="active" v-if="location !== 'external-signin'" color="blue darken-2"
                             :right="false">

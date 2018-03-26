@@ -10,18 +10,18 @@
                         <v-card color="blue darken-2" class="white--text">
                             <v-container fluid grid-list-lg>
                                 <v-layout row>
-                                    <v-flex xs7>
-                                        <div>
-                                            <div class="headline">{{current_user.name}}</div>
-                                            <div>{{current_user.status || 'anything...'}}</div>
-                                        </div>
-                                    </v-flex>
-                                    <v-flex xs5>
+                                    <v-flex xs3>
                                         <v-card-media
                                                 src="static/foster.jpg"
                                                 height="125px"
                                                 contain
                                         ></v-card-media>
+                                    </v-flex>
+                                    <v-flex xs9>
+                                        <div>
+                                            <div class="headline">{{current_user.name}}</div>
+                                            <div>{{current_user.status || 'anything...'}}</div>
+                                        </div>
                                     </v-flex>
                                 </v-layout>
                             </v-container>
