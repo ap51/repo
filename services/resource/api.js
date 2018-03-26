@@ -97,6 +97,7 @@ let actions = {
                         ]
                     };
 
+/*
                     if(req.user && req.user.group !== 'developers') {
                         res.locals.shared.layout_tabs = [...res.locals.shared.layout_tabs, ...[
                             {
@@ -106,6 +107,7 @@ let actions = {
                             }]
                         ]
                     }
+*/
 
                     if(req.user && req.user.group === 'admins') {
                         res.locals.shared.layout_tabs = [...res.locals.shared.layout_tabs, ...[

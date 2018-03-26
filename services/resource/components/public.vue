@@ -1,6 +1,6 @@
 <template>
     <div class="layout-view">
-        <v-card flat width="50vw">
+        <v-card flat width="60vw">
             <v-container
 
                     grid-list-lg
@@ -118,6 +118,7 @@
             'charts': httpVueLoader('charts'),
             'profile': httpVueLoader('profile'),
             'search': httpVueLoader('search'),
+            'phones': httpVueLoader('phones'),
         },
         data() {
             return {
@@ -143,6 +144,14 @@
                     {
                         name: 'search',
                         icon: 'fas fa-search'
+                    },
+                    {
+                        name: 'phones',
+                        icon: 'fas fa-mobile'
+                    },
+                    {
+                        name: 'applications',
+                        icon: 'fas fa-cogs'
                     },
                 ]
             }

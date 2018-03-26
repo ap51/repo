@@ -65,9 +65,16 @@
     }
 
     .table {
-        min-width: 60vw;
-        max-width: 60vw;
+        min-width: 100%;
+        max-width: 100%;
     }
+
+    /*
+        .table {
+            min-width: 60vw;
+            max-width: 60vw;
+        }
+    */
 
 </style>
 
@@ -87,7 +94,7 @@
                 },
 
                 pagination: {
-                    rowsPerPage: 14
+                    rowsPerPage: 8
                 },
 
                 search: '',
