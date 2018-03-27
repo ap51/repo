@@ -65,6 +65,51 @@ let updateDefaults = function (req, res) {
 
 let actions = {
     ui: {
+        public: {
+            default(req, res) {
+                res.locals.data = {
+                    tabs: [
+                        {
+                            name: 'feed',
+                            icon: 'fas fa-newspaper'
+                        },
+                    ]
+                };
+
+                if((req.user && req.user.public_id === req.params.id) || (req.user && !req.params.id)) {
+                    res.locals.data.tabs = [...res.locals.data.tabs, ...[
+                            {
+                                name: 'friends',
+                                icon: 'fas fa-users'
+                            },
+                            {
+                                name: 'charts',
+                                to: 'public',
+                                icon: 'far fa-comments'
+                            },
+                            {
+                                name: 'profile',
+                                icon: 'far fa-address-card'
+                            },
+                            {
+                                name: 'search',
+                                icon: 'fas fa-search'
+                            },
+                            {
+                                name: 'phones',
+                                icon: 'fas fa-mobile'
+                            },
+                            {
+                                name: 'applications',
+                                icon: 'fas fa-cogs'
+                            },
+                        ]
+                    ]
+                };
+
+                
+            }
+        },
         signin: {
             default: function (req, res) {
                 res.locals.data = {
@@ -89,25 +134,19 @@ let actions = {
                                 icon: 'fas fa-user-circle'
                             },
 */
-                            {
-                                name: 'public',
-                                to: 'public',
-                                icon: 'far fa-address-card'
-                            },
                         ]
                     };
 
-/*
-                    if(req.user && req.user.group !== 'developers') {
+                    if(req.user) {
                         res.locals.shared.layout_tabs = [...res.locals.shared.layout_tabs, ...[
-                            {
-                                name: 'phones db',
-                                to: 'phones',
-                                icon: 'fas fa-database'
-                            }]
+                                {
+                                    name: 'public',
+                                    to: 'public:' + req.user.public_id,
+                                    icon: 'far fa-address-card'
+                                },
+                            ]
                         ]
                     }
-*/
 
                     if(req.user && req.user.group === 'admins') {
                         res.locals.shared.layout_tabs = [...res.locals.shared.layout_tabs, ...[
@@ -220,11 +259,21 @@ let actions = {
                 return await actions.ui_api.layout.get(req, res);
             }
         },
+        public: {
+            async get(req, res) {
+                let profile = await actions.ui_api.profile.get(req, res);
+                return profile;
+            }
+        },
         profile:{
             async get(req, res) {
                 let {id, _id, user, updated, created, ...clean} = await actions.api.profile.get(req, res) || {};
-                clean.id = 'current';
+                user = await database.findOne('user', {_id: user});
+
+                //clean.id = 'current';
                 clean.public_id = clean.public_id || await generateRandomToken(10);
+                clean.name = user.name;
+
                 //return {profile: {id: 'current', text: `ПРОФИЛЬ ПОЛЬЗОВАТЕЛЯ ${req.user && req.user.name}`}};
                 return {profile: clean};
             },
@@ -238,12 +287,17 @@ let actions = {
                 }
 
                 let updates = await actions.api.profile.save(req, res);
+                
+                let {public_id} = req.body;
+                req.body = {id: req.user._id, public_id};
+
+                let user = await actions.api.users.save(req, res);
                 //updates = updates.pop();
                 //updates.id = 'current';
 
-                updates = await actions.api.profile.get(req, res);
+                updates = await actions.ui_api.profile.get(req, res);
 
-                return {profile: updates};
+                return updates;
             }
         },
         users: {
@@ -332,7 +386,8 @@ let actions = {
     api: {
         profile: {
             get: async function (req, res) {
-                return await database.findOne('profile', {user: req.user._id}, {allow_empty: true});
+                //return await database.findOne('profile', {user: req.user._id}, {allow_empty: true});
+                return await database.findOne('profile', {public_id: req.params.id || req.user.public_id}, {allow_empty: true});
             },
             public: async function (req, res) {
                 return {};
@@ -605,7 +660,9 @@ let entities = function (data) {
 
     const _action = new schema.Entity('action', {});
 
-    const _profile = new schema.Entity('profile', {});
+    const _profile = new schema.Entity('profile', {}, {
+        idAttribute: 'public_id' // to use not standard ID
+    });
 
     const _phone = new schema.Entity('phone', {});
 

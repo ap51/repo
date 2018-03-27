@@ -11,11 +11,11 @@
                             <v-container fluid grid-list-lg>
                                 <v-layout row>
                                     <v-avatar size="70px" slot="activator">
-                                        <img src="static/foster.jpg" :alt="current_user.name">
+                                        <img src="static/foster.jpg" :alt="current_profile.name">
                                     </v-avatar>
                                     <v-flex xs12>
                                         <div>
-                                            <div class="headline">{{current_user.name}}</div>
+                                            <div class="headline">{{current_profile.name}}</div>
                                             <div>{{current_profile.status || 'anything...'}}</div>
                                         </div>
                                     </v-flex>
@@ -122,7 +122,7 @@
         data() {
             return {
                 active: 0,
-                tabs: [
+/*                 tabs: [
                     {
                         name: 'feed',
                         icon: 'fas fa-newspaper'
@@ -153,7 +153,10 @@
                         icon: 'fas fa-cogs'
                     },
                 ]
-            }
+ */            }
+        },
+        created() {
+            console.log(this.active);
         },
         computed: {
 /*

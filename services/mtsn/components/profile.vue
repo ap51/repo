@@ -3,6 +3,7 @@
         <v-toolbar flat color="white lighten-2" dense class="elevation-1 ma-1">
             <v-toolbar-title>{{name}}:</v-toolbar-title>
             <v-spacer></v-spacer>
+            <v-btn flat to="public:jd"><v-icon color="green darken-2" class="mr-1 mb-1">far fa-check-circle</v-icon>go jd</v-btn>
             <!-- <v-btn flat="flat" :disabled="selected.length === 0" @click.stop="remove"><v-icon color="red darken-2" class="mr-1 mb-1">fas fa-times</v-icon>remove</v-btn> -->
             <v-btn :disabled="!changed" flat="flat" @click.stop="apply({...object})"><v-icon color="green darken-2" class="mr-1 mb-1">far fa-check-circle</v-icon>apply</v-btn>
         </v-toolbar>
@@ -121,14 +122,18 @@
             return {
                 frame: false,
                 changed: false,
+                internal_object: void 0
             }
+        },
+        created() {
         },
         computed: {
             object() {
-                return (this.entities.profile && this.entities.profile.current) || {};
-            },
-            profile() {
-                return (this.entities.profile && this.entities.profile.current) || {};
+                    this.internal_object = this.internal_object || this.current_profile;//(this.entities.profile && {...this.entities.profile[thi]});
+
+                    this.changed = JSON.stringify(this.internal_object) !== JSON.stringify(this.current_profile);
+
+                    return this.internal_object;
             }
         },
         methods: {
@@ -139,12 +144,6 @@
                 this.$request(`${this.$state.base_api}profile.save`, profile, {callback: this.applied});
             },
         },
-        watch: {
-            'entities': function(newValue, oldValue) {
-                this.changed = oldValue ? JSON.stringify(newValue) !== JSON.stringify(oldValue) : false;
-                //this.changed = newValue !== oldValue;
-            }
-        }
     }
 
     //# sourceURL=profile.js

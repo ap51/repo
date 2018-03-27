@@ -124,7 +124,7 @@ let _router = function(service) {
         keys = _keys[service];
 
         return async function (req, res, next) {
-
+            console.log('ORIGIN:', req.originalUrl);
             let token = req.headers['token'] || '';
 
             req._token = token;

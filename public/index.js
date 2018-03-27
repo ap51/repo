@@ -1,7 +1,10 @@
 
 let cache = {};
 let service = window.location.pathname.split('/')[1];
+
 let route = function (path) {
+    path = path.split('/').pop();
+
     let [route, action] = path.split('.');
     let [name, id] = route.split(':');
 
@@ -9,7 +12,9 @@ let route = function (path) {
         name,
         id,
         action,
-        ident: route
+        ident: route,
+        url: `${name}${id ? ':' + id : ''}${action ? '.' + action : ''}`,
+        component: `${name}${id ? '_' + id : ''}`
     };
 };
 
@@ -90,9 +95,13 @@ axios.interceptors.response.use(
 Vue.prototype.$page = function(path, force) {
     if(force || Vue.prototype.$state.path !== path) {
         //force && (Vue.prototype.$state.path = '');
-        !cache[path] && httpVueLoader.register(Vue, path);
+        let parsed = route(path);
+        let {ident, url, name, component} = parsed;
+
+        !cache[component] && httpVueLoader.register(Vue, component);
+
         Vue.prototype.$state.locationToggle = !Vue.prototype.$state.locationToggle;
-        Vue.prototype.$state.path = route(path).name;
+        Vue.prototype.$state.path = url;
     }
 };
 
@@ -101,14 +110,17 @@ Vue.prototype.$bus = new Vue({});
 axios.defaults.headers['post'] = {};
 
 Vue.prototype.$request = async function(url, data, options) {
-    let name = url.replace('/index.vue', '');
+    let name = url.replace('/index.vue', '').replace(/_/gi, ':');
 
     let parsed = route(name);
     name = parsed.name;
+    let {ident, component} = parsed;
+
+    url.indexOf(component) === 0 && (url = Vue.prototype.$state.base_ui + parsed.url);
 
     let {method, callback, encode} = options || {};
 
-    let response = !data && !parsed.action && cache[name];
+    let response = !data && !parsed.action && cache[component];
 
     if(response)
         return response;
@@ -161,7 +173,7 @@ Vue.prototype.$request = async function(url, data, options) {
                     return;
                 }
 
-                res.data.data && Vue.set(Vue.prototype.$state.data, name, res.data.data);
+                res.data.data && Vue.set(Vue.prototype.$state.data, component, res.data.data);
 
                 Object.assign(Vue.prototype.$state.shared, res.data.shared);
             }
@@ -170,12 +182,12 @@ Vue.prototype.$request = async function(url, data, options) {
                 case 221:
                         let redirected = decodeURIComponent(window.location.origin + res.config.url) !== decodeURIComponent(res.request.responseURL);
 
-                        cache[name] = res.data.component || cache[name];
+                        cache[component] = res.data.component || cache[component];
 
-                        Vue.prototype.$request(`${Vue.prototype.$state.base_api}${name}.get`);
-                        console.log('REQUEST:', `${Vue.prototype.$state.base_api}${name}.get`);
+                        Vue.prototype.$request(`${Vue.prototype.$state.base_api}${parsed.ident}.get`);
+                        console.log('REQUEST:', `${Vue.prototype.$state.base_api}${parsed.ident}.get`);
 
-                        return cache[name];
+                        return cache[component];
                     break;
                 case 222:
                         callback && callback(res, data);
@@ -211,6 +223,7 @@ Vue.prototype.$request = async function(url, data, options) {
 
                         Vue.set(Vue.prototype.$state, 'entities', merge);
 
+                        Vue.prototype.$bus.$emit('merged', merge);
                     break;
                 default:
                     callback && callback(res);
@@ -235,8 +248,11 @@ let component = {
         database() {
             return (this.$state.entities[this.$state.entry] && this.$state.entities[this.$state.entry][this.$state.api]) || {};
         },
+        parsed_route() {
+            return route(this.$state.path);
+        },
         location() {
-            return this.$state.path;
+            return route(this.$state.path).component;
         },
         auth() {
             return this.$state.auth;
@@ -251,7 +267,7 @@ let component = {
             return (this.entities.user && this.entities.user.current) || {name: 'unknown'};
         },
         current_profile() {
-            return (this.entities.profile && this.entities.profile.current) || {name: 'unknown'};
+            return (this.entities.profile && this.entities.profile[this.parsed_route.id]) || {name: 'unknown'};
         }
     },
     data() {
