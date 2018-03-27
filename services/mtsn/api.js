@@ -133,6 +133,7 @@ let actions = {
             }
         }
     },
+
     ui_api: {
         layout: {
             async get(req, res) {
@@ -140,9 +141,9 @@ let actions = {
                     let {password, id, _id, group, ...clean} = await database.findOne('user', {_id: req.user._id});
                     clean.id = 'current';
 
-                    return {user: clean};
+                    return {user: clean, ...await actions.ui_api.profile.get(req, res)};
                 }
-                return {user: {}};
+                return {user: {}, profile: {}};
             }
         },
         signup: {
@@ -220,11 +221,29 @@ let actions = {
             }
         },
         profile:{
-            get: async function (req, res) {
-                let {password, id, _id, ...clean} = await actions.api.profile.get(req, res);
+            async get(req, res) {
+                let {id, _id, user, updated, created, ...clean} = await actions.api.profile.get(req, res) || {};
                 clean.id = 'current';
+                clean.public_id = clean.public_id || await generateRandomToken(10);
                 //return {profile: {id: 'current', text: `ПРОФИЛЬ ПОЛЬЗОВАТЕЛЯ ${req.user && req.user.name}`}};
                 return {profile: clean};
+            },
+            async save(req, res) {
+                let data = req.body;
+
+                let profile = await database.findOne('profile', {public_id: data.public_id}, {allow_empty: true});
+
+                if(profile && profile.user !== req.user._id) {
+                    throw new CustomError(406, 'Choose another public ID.');
+                }
+
+                let updates = await actions.api.profile.save(req, res);
+                //updates = updates.pop();
+                //updates.id = 'current';
+
+                updates = await actions.api.profile.get(req, res);
+
+                return {profile: updates};
             }
         },
         users: {
@@ -308,30 +327,22 @@ let actions = {
                 return {clients: updates};
             },
         },
-        'signin.submit': async function () {
-            return {};
-        },
-        'signout.submit': async function () {
-            return {};
-        },
-        'signup.submit': async function () {
-            return {};
-        },
-        'layout.data': async function () {
-            return {};
-        },
-        'layout.shared': async function () {
-            return {};
-        },
     },
+
     api: {
         profile: {
             get: async function (req, res) {
-                return await database.findOne('user', {_id: req.user._id});
+                return await database.findOne('profile', {user: req.user._id}, {allow_empty: true});
             },
-            public: async function () {
+            public: async function (req, res) {
                 return {};
             },
+            async save(req, res) {
+                let data = req.body;
+                data.user = req.user._id;
+
+                return await database.update('profile', {user: req.user._id}, data);
+            }
         },
         users: {
             get: async function (req, res) {

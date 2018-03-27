@@ -16,7 +16,7 @@
                                     <v-flex xs12>
                                         <div>
                                             <div class="headline">{{current_user.name}}</div>
-                                            <div>{{current_user.status || 'anything...'}}</div>
+                                            <div>{{current_profile.status || 'anything...'}}</div>
                                         </div>
                                     </v-flex>
                                 </v-layout>

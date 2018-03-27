@@ -135,7 +135,8 @@ db.update = function(collection, query, body) {
 
         let object = await db.findOne(collection, query, {allow_empty: true});
         object && (body = {...object, ...body});
-
+        body && (delete body.id);
+        
         db[collection].update(query, body, { upsert: true }, async function (err, results, upsert) {
             if(!results || err) {
                 reject(err || new NotFoundError(collection));

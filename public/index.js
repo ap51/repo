@@ -249,6 +249,9 @@ let component = {
         },
         current_user() {
             return (this.entities.user && this.entities.user.current) || {name: 'unknown'};
+        },
+        current_profile() {
+            return (this.entities.profile && this.entities.profile.current) || {name: 'unknown'};
         }
     },
     data() {

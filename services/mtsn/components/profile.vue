@@ -1,11 +1,61 @@
 <template>
     <div class="layout-view">
-        <v-toolbar flat color="white lighten-2" dense >
+        <v-toolbar flat color="white lighten-2" dense class="elevation-1 ma-1">
             <v-toolbar-title>{{name}}:</v-toolbar-title>
-            <v-btn flat="flat" :disabled="false" @click.stop="remove"><v-icon color="red darken-2" class="mr-1 mb-1">fas fa-times</v-icon>remove</v-btn>
-            <v-btn flat="flat" @click.stop="append"><v-icon color="green darken-2" class="mr-1 mb-1">fas fa-plus</v-icon>append</v-btn>
             <v-spacer></v-spacer>
+            <!-- <v-btn flat="flat" :disabled="selected.length === 0" @click.stop="remove"><v-icon color="red darken-2" class="mr-1 mb-1">fas fa-times</v-icon>remove</v-btn> -->
+            <v-btn :disabled="!changed" flat="flat" @click.stop="apply({...object})"><v-icon color="green darken-2" class="mr-1 mb-1">far fa-check-circle</v-icon>apply</v-btn>
         </v-toolbar>
+        <v-card flat width="50%">
+            <v-card-text>
+                <v-container grid-list-md>
+                    <v-layout wrap>
+                        <v-form ref="form" lazy-validation @submit.prevent>
+                            <v-flex xs12>
+                                <v-text-field v-model="object.public_id"
+                                              validate-on-blur
+                                              label="Public ID"
+                                              required
+                                              prepend-icon="fas fa-mobile"
+                                              autofocus
+                                              color="blue darken-2"
+                                              hint="any string value"
+                                              :rules="[
+                                                  () => !!object.public_id || 'This field is required',
+                                              ]"
+                                ></v-text-field>
+                            </v-flex>
+                            <v-flex xs12>
+                                <v-text-field v-model="object.status"
+                                              validate-on-blur
+                                              label="Status text"
+                                              prepend-icon="fas fa-user"
+                                              color="blue darken-2"
+                                              hint="any string value"
+                                ></v-text-field>
+                            </v-flex>
+<!--  
+                            <v-flex xs12>
+                                <v-text-field v-model="object.avatar"
+                                              validate-on-blur
+                                              label="Owner"
+                                              required
+                                              prepend-icon="fas fa-user"
+                                              color="blue darken-2"
+                                              hint="any string value"
+                                              :rules="[
+                                                  () => !!object.avatar || 'This field is required',
+                                              ]"
+                                ></v-text-field>
+                            </v-flex>
+
+ -->                        
+                        </v-form>
+                    </v-layout>
+                </v-container>
+                <small>*indicates required field</small>
+            </v-card-text>
+        </v-card>
     </div>
 </template>
 
@@ -69,7 +119,8 @@
         extends: component,
         data() {
             return {
-                frame: false
+                frame: false,
+                changed: false,
             }
         },
         computed: {
@@ -78,6 +129,20 @@
             },
             profile() {
                 return (this.entities.profile && this.entities.profile.current) || {};
+            }
+        },
+        methods: {
+            applied(res) {
+                this.changed = false;
+            },
+            apply(profile) {
+                this.$request(`${this.$state.base_api}profile.save`, profile, {callback: this.applied});
+            },
+        },
+        watch: {
+            'entities': function(newValue, oldValue) {
+                this.changed = oldValue ? JSON.stringify(newValue) !== JSON.stringify(oldValue) : false;
+                //this.changed = newValue !== oldValue;
             }
         }
     }
