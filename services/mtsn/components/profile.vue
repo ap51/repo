@@ -13,16 +13,36 @@
                     <v-layout wrap>
                         <v-form ref="form" lazy-validation @submit.prevent>
                             <v-flex xs12>
+                                <picture-input
+                                        ref="pictureInput"
+                                        @change="onChange"
+                                        width="200"
+                                        height="200"
+                                        margin="0"
+                                        :plain="false"
+                                        accept="image/jpeg,image/png"
+                                        size="10"
+                                        :crop="false"
+                                        :removable="false"
+                                        :auto-toggle-aspect-ratio="true"
+                                        :hide-change-button="true"
+                                        :custom-strings="strings">
+                                </picture-input>
+                                <v-btn flat @click="$refs.pictureInput.removeImage()"><v-icon color="green darken-2" class="mr-1 mb-1">far fa-check-circle</v-icon>remove</v-btn>
+
+                            </v-flex>
+                            <v-flex xs12>
                                 <v-text-field v-model="object.public_id"
-                                              validate-on-blur
                                               label="Public ID"
                                               required
-                                              prepend-icon="fas fa-mobile"
+                                              prepend-icon="fas fa-id-card"
                                               autofocus
                                               color="blue darken-2"
-                                              hint="any string value"
+                                              hint="^[a-zA-Z0-9-]{5,}$"
                                               :rules="[
-                                                  () => !!object.public_id || 'This field is required',
+                                                  () => {
+                                                    return (!!object.public_id && /^[a-zA-Z0-9-]{5,}$/.test(object.public_id)) || 'This field must equals ^[a-zA-Z0-9-]{5,}$'
+                                                  }
                                               ]"
                                 ></v-text-field>
                             </v-flex>
@@ -30,7 +50,7 @@
                                 <v-text-field v-model="object.status"
                                               validate-on-blur
                                               label="Status text"
-                                              prepend-icon="fas fa-user"
+                                              prepend-icon="far fa-comment-alt"
                                               color="blue darken-2"
                                               hint="any string value"
                                 ></v-text-field>
@@ -67,6 +87,14 @@
         border: none;
     }
 
+    .picture-preview {
+        width: 100%;
+        height: 100%;
+        position: relative;
+        z-index: 10001;
+        box-sizing: border-box;
+        background-color: transparent!important;
+    }
     .profile-details {
         display: flex;
         align-items: center;
@@ -116,16 +144,25 @@
 </style>
 
 <script>
+
     module.exports = {
         extends: component,
+        components: {
+            PictureInput
+        },
         data() {
             return {
                 frame: false,
                 changed: false,
-                internal_object: void 0
+                internal_object: void 0,
+                strings: {
+                    upload: '<h1>Bummer!</h1>',
+                    drag: 'Drag a 😺 GIF or GTFO'
+                }
             }
         },
         created() {
+            //let fp = FilePond.create();
         },
         computed: {
             object() {
@@ -137,6 +174,15 @@
             }
         },
         methods: {
+            onChange (image) {
+                console.log('New picture selected!')
+                if (image) {
+                    console.log('Picture loaded.')
+                    this.image = image
+                } else {
+                    console.log('FileReader API not supported: use the <form>, Luke!')
+                }
+            },
             applied(res) {
                 this.changed = false;
             },

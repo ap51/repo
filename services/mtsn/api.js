@@ -21,6 +21,15 @@ let generateRandomToken = async function(bytes) {
 */
 };
 
+let generateRandomID = async function(bytes) {
+        return randomBytes(bytes || 24).then(function(buffer) {
+            return crypto
+                .createHash('sha1')
+                .update(buffer)
+                .digest('hex');
+        });
+};
+
 const CustomError = require('./error');
 
 let router = void 0;
@@ -268,10 +277,10 @@ let actions = {
         profile:{
             async get(req, res) {
                 let {id, _id, user, updated, created, ...clean} = await actions.api.profile.get(req, res) || {};
-                user = await database.findOne('user', {_id: user});
+                user = await database.findOne('user', {_id: user || req.user._id});
 
                 //clean.id = 'current';
-                clean.public_id = clean.public_id || await generateRandomToken(10);
+                clean.public_id = clean.public_id || await generateRandomID(10);
                 clean.name = user.name;
 
                 //return {profile: {id: 'current', text: `ПРОФИЛЬ ПОЛЬЗОВАТЕЛЯ ${req.user && req.user.name}`}};
@@ -292,6 +301,7 @@ let actions = {
                 req.body = {id: req.user._id, public_id};
 
                 let user = await actions.api.users.save(req, res);
+                req.user.public_id = public_id;
                 //updates = updates.pop();
                 //updates.id = 'current';
 
@@ -319,8 +329,19 @@ let actions = {
                     throw new CustomError(406, 'Choose another email/password.');
                 }
 
-                let updates = await actions.api.users.save(req, res);
-                return {users: updates};
+                let public_id = await generateRandomID(10);
+                req.body.public_id = public_id;
+
+                let users = await actions.api.users.save(req, res);
+
+                req.body = {
+                    user: users[0].id,
+                    public_id: public_id,
+                    status: 'any string'
+                };
+
+                let profiles = await actions.api.profile.save(req, res);
+                return {users: users};
             },
         },
         phones: {
@@ -394,9 +415,9 @@ let actions = {
             },
             async save(req, res) {
                 let data = req.body;
-                data.user = req.user._id;
+                data.user = data.user || req.user._id;
 
-                return await database.update('profile', {user: req.user._id}, data);
+                return await database.update('profile', {user: data.user}, data);
             }
         },
         users: {
@@ -410,6 +431,7 @@ let actions = {
                 let ids = data.map(user => user.id);
 
                 await database.remove('user', {_id: {$in: ids}});
+                await database.remove('profile', {user: {$in: ids}});
                 return ids;
             },
             save: async function (req, res) {
