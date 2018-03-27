@@ -10,14 +10,10 @@
                         <v-card color="blue darken-2" class="white--text">
                             <v-container fluid grid-list-lg>
                                 <v-layout row>
-                                    <v-flex xs3>
-                                        <v-card-media
-                                                src="static/foster.jpg"
-                                                height="125px"
-                                                contain
-                                        ></v-card-media>
-                                    </v-flex>
-                                    <v-flex xs9>
+                                    <v-avatar size="70px" slot="activator">
+                                        <img src="static/foster.jpg" :alt="current_user.name">
+                                    </v-avatar>
+                                    <v-flex xs12>
                                         <div>
                                             <div class="headline">{{current_user.name}}</div>
                                             <div>{{current_user.status || 'anything...'}}</div>
@@ -26,7 +22,8 @@
                                 </v-layout>
                             </v-container>
                             <v-card-actions>
-                                <v-tabs v-model="active" color="blue darken-2" dark dense :right="false">
+                                <v-toolbar flat color="blue darken-2" dense tabs="tabs">
+                                 <v-tabs v-model="active" color="blue darken-2" dark dense :right="false" show-arrows>
 
                                     <v-tabs-slider color="yellow"></v-tabs-slider>
 
@@ -40,6 +37,7 @@
                                     </v-tab>
 
                                 </v-tabs>
+                                </v-toolbar>
                             </v-card-actions>
                         </v-card>
                     </v-flex>
@@ -119,6 +117,7 @@
             'profile': httpVueLoader('profile'),
             'search': httpVueLoader('search'),
             'phones': httpVueLoader('phones'),
+            'applications': httpVueLoader('applications'),
         },
         data() {
             return {

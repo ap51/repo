@@ -2,11 +2,18 @@
     <div class="layout-view">
         <!-- <h1>phones database:</h1> -->
 
-        <div>
+<!--         <div>
             <v-btn color="red darken-2" flat="flat" :disabled="selected.length === 0" @click.stop="remove"><v-icon class="mr-1 mb-1">fas fa-times</v-icon>remove selected</v-btn>
             <v-btn color="green darken-2" flat="flat" @click.stop="append"><v-icon class="mr-1 mb-1">fas fa-plus</v-icon>append phone</v-btn>
         </div>
-
+ -->
+        <v-toolbar flat color="white lighten-2" dense >
+            <v-toolbar-title>{{name}}:</v-toolbar-title>
+            <v-btn flat="flat" :disabled="selected.length === 0" @click.stop="remove"><v-icon color="red darken-2" class="mr-1 mb-1">fas fa-times</v-icon>remove</v-btn>
+            <v-btn flat="flat" @click.stop="append"><v-icon color="green darken-2" class="mr-1 mb-1">fas fa-plus</v-icon>append</v-btn>
+            <v-spacer></v-spacer>
+        </v-toolbar>
+    
         <div class="text-xs-center pt-2">
             <v-pagination v-model="pagination.page" :length="pages" :total-visible="pages"></v-pagination>
         </div>

@@ -30,5 +30,5 @@
         }
     }
 
-    //# sourceURL=feed.js
+    //# sourceURL=applications.js
 </script>

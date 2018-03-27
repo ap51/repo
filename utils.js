@@ -100,8 +100,8 @@ let _router = function(service) {
         decoded[router.service] = {};
         let verified = true;
 
-        decoded = token ? jwt.verify(token, keys.privateKey) : decoded;
-/*
+        //decoded = token ? jwt.verify(token, keys.privateKey) : decoded;
+
         try {
             decoded = token ? jwt.verify(token, keys.privateKey) : decoded;
         }
@@ -109,7 +109,6 @@ let _router = function(service) {
             decoded = jwt.decode(token);
             verified = false;
         }
-*/
 
         decoded.verified = verified;
         decoded[router.service] = decoded[router.service] || {};
