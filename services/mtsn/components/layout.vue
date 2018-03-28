@@ -107,7 +107,8 @@
         extends: component,
         components: {
             'dialog-signin': httpVueLoader('dialog-signin'),
-            'signout': httpVueLoader('signout')
+            'signout': httpVueLoader('signout'),
+            'public': httpVueLoader('public'),
         },
         data() {
             return {

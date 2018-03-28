@@ -76,10 +76,13 @@ let actions = {
     ui: {
         public: {
             default(req, res) {
+                let id = `${req.params.id ? ':' + req.params.id : ''}`;
+
                 res.locals.data = {
                     tabs: [
                         {
                             name: 'feed',
+                            to: 'feed' + id,
                             icon: 'fas fa-newspaper'
                         },
                     ]
@@ -89,32 +92,37 @@ let actions = {
                     res.locals.data.tabs = [...res.locals.data.tabs, ...[
                             {
                                 name: 'friends',
+                                to: 'friends' + id,
                                 icon: 'fas fa-users'
                             },
                             {
                                 name: 'charts',
-                                to: 'public',
+                                to: 'charts' + id,
                                 icon: 'far fa-comments'
                             },
                             {
                                 name: 'profile',
+                                to: 'profile' + id,
                                 icon: 'far fa-address-card'
                             },
                             {
                                 name: 'search',
+                                to: 'search' + id,
                                 icon: 'fas fa-search'
                             },
                             {
                                 name: 'phones',
+                                to: 'phones' + id,
                                 icon: 'fas fa-mobile'
                             },
                             {
                                 name: 'applications',
+                                to: 'applications' + id,
                                 icon: 'fas fa-cogs'
                             },
                         ]
                     ]
-                };
+                }
 
                 
             }
@@ -150,7 +158,7 @@ let actions = {
                         res.locals.shared.layout_tabs = [...res.locals.shared.layout_tabs, ...[
                                 {
                                     name: 'public',
-                                    to: 'public:' + req.user.public_id,
+                                    to: 'feed:' + req.user.public_id,
                                     icon: 'far fa-address-card'
                                 },
                             ]
@@ -553,7 +561,7 @@ let matrix = [
             ui: ['profile'],
             ui_api: ['profile.get']
         },
-        access: ['*']
+        access: ['current']
     },
     {
         scopes: ['site'],
@@ -660,7 +668,7 @@ let access = function (req, res, access_group) {
     //console.log(grants)
 
     let granted = grants.some(unit => {
-        return unit.access.some(group => (req.user && group === '*') || group === access_group);
+        return unit.access.some(group => (req.user && group === '*') || (req.user && req.params.id === req.user.public_id && group === 'current') || (group === access_group) );
     });
 
     return granted || grants.length === 0;

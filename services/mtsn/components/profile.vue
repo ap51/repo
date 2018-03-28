@@ -36,7 +36,7 @@
                                     width="200"
                                     height="200"
                                     margin="0"
-                                    :prefill="`${state.base}files/images/${object.avatar}` || 'static/foster.jpg'"
+                                    :prefill="prefill"
                                     :prefill-options="{
                                         fileName: 'foster.jpg',
                                         fileType: 'jpg',
@@ -117,6 +117,7 @@
                 frame: false,
                 changed: false,
                 internal_object: void 0,
+                prefill: 'static/foster.jpg',
                 strings: {
                     upload: '<h1>Bummer!</h1>',
                     //drag: 'Drag a 😺 GIF or GTFO'
@@ -126,6 +127,7 @@
         },
         created() {
             //let fp = FilePond.create();
+            this.prefill = `${this.state.base}files/images/${this.current_profile.avatar}` || 'static/foster.jpg';
         },
         computed: {
             object() {
@@ -194,7 +196,6 @@
         width: 100%;
         height: 100%;
         position: relative;
-        z-index: 10001;
         box-sizing: border-box;
         background-color: transparent!important;
         padding: 8px!important;

@@ -43,9 +43,24 @@ let router = new VueRouter(
                 redirect: 'about'
             },
             {
+                path: '/feed\::id',
+                components: {
+                    'public': httpVueLoader('public'),
+                },
+            },
+            {
+                path: '/friends*',
+                components: {
+                    'public': httpVueLoader('public'),
+                },
+            },
+            {
                 path: '/*',
                 components: {
                     'layout': httpVueLoader('layout'),
+/*
+                    'public': httpVueLoader('public'),
+*/
                 },
                 props: {
                 },
@@ -61,7 +76,7 @@ let router = new VueRouter(
 );
 
 router.beforeEach(async function (to, from, next) {
-    let path = to.params.name;
+    let path = to.params.name || to.path;
 
     Vue.prototype.$page(path, true);
 
@@ -118,7 +133,7 @@ Vue.prototype.$request = async function(url, data, options) {
 
     url.indexOf(component) === 0 && (url = Vue.prototype.$state.base_ui + parsed.url);
 
-    let {method, callback, encode, config} = options || {};
+    let {method, callback, encode, config, no_headers} = options || {};
 
     let response = !data && !parsed.action && cache[component];
 
@@ -147,6 +162,7 @@ Vue.prototype.$request = async function(url, data, options) {
     };
 
     //encode && (config.headers['content-type'] = 'application/x-www-form-urlencoded');
+    no_headers && (delete conf.headers);
 
     config = Object.assign(conf, config || {});
     
@@ -188,7 +204,7 @@ Vue.prototype.$request = async function(url, data, options) {
                         cache[component] = res.data.component || cache[component];
 
                         Vue.prototype.$request(`${Vue.prototype.$state.base_api}${parsed.ident}.get`);
-                        console.log('REQUEST:', `${Vue.prototype.$state.base_api}${parsed.ident}.get`);
+                        //console.log('REQUEST:', `${Vue.prototype.$state.base_api}${parsed.ident}.get`);
 
                         return cache[component];
                     break;
@@ -216,10 +232,11 @@ Vue.prototype.$request = async function(url, data, options) {
                                 let b = new Set(source);
                                 let union = Array.from(new Set([...a, ...b]));
 
-                                console.log('API DATA:', data);
                                 return union;
                             }
                         });
+
+                        //console.log('API DATA:', data);
 
                         Vue.set(Vue.prototype.$state, 'api', api);
                         Vue.set(Vue.prototype.$state, 'entry', entry);
@@ -229,7 +246,7 @@ Vue.prototype.$request = async function(url, data, options) {
                         Vue.prototype.$bus.$emit('merged', merge);
                     break;
                 default:
-                    //callback && callback(res);
+                    callback && callback(res);
                     return res;
                     break;
             }
@@ -252,12 +269,6 @@ let component = {
         database() {
             return (this.$state.entities[this.$state.entry] && this.$state.entities[this.$state.entry][this.$state.api]) || {};
         },
-        parsed_route() {
-            return route(this.$state.path);
-        },
-        location() {
-            return route(this.$state.path).component;
-        },
         auth() {
             return this.$state.auth;
         },
@@ -272,7 +283,21 @@ let component = {
         },
         current_profile() {
             return (this.entities.profile && this.entities.profile[this.parsed_route.id]) || {name: 'unknown'};
-        }
+        },
+        parsed_route() {
+            return route(this.$state.path);
+        },
+        location() {
+            //return route(this.$state.path).component;
+
+            let route = this.parsed_route.component;
+            if(this.auth || this.parsed_route.name === 'feed') {
+                let location_change = ['feed', 'friends', 'charts', 'profile', 'search', 'phones', 'applications'].indexOf(this.parsed_route.name) !== -1;
+                route = location_change ? route.replace(this.parsed_route.name, 'public') : route;
+                //location_change && route !== this.location && httpVueLoader.register(Vue, route);
+            }
+            return route;
+        },
     },
     data() {
         let data = {
@@ -280,7 +305,12 @@ let component = {
         };
 
         data.name = this.$options.name || this.$options._componentTag;
-        Object.assign(data, this.$state.data[data.name]);
+        let current = route(window.location.pathname);
+        let identified = current.component.replace(current.name, data.name);
+
+        let assigned_data = this.$state.data[data.name] || this.$state.data[identified];
+
+        Object.assign(data, assigned_data);
 
         return data;
     },
@@ -290,6 +320,11 @@ let component = {
     },
     activated() {
         document.title = this.document_title;
+    },
+    methods: {
+        parseRoute(path) {
+            return route(path);
+        }
     },
     watch: {
         'state.locationToggle': function () {

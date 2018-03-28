@@ -65,6 +65,9 @@ let _router = function(service) {
     router.database = require(path.join(service_path, 'database', 'db'));
     router.use(favicon(path.join(service_path, 'favicon.ico')));
 
+    const multer = require('multer');
+    router.upload = multer()
+
     router.use(bodyParser.json());
     router.use(bodyParser.urlencoded({extended: false}));
 

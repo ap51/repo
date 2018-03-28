@@ -23,27 +23,28 @@
                             </v-container>
                             <v-card-actions>
                                 <v-toolbar flat color="blue darken-2" dense tabs="tabs">
-                                 <v-tabs v-model="active" color="blue darken-2" dark dense :right="false" show-arrows>
+                                     <v-tabs v-model="active" color="blue darken-2" dark dense :right="false" show-arrows>
 
-                                    <v-tabs-slider color="yellow"></v-tabs-slider>
+                                        <v-tabs-slider color="yellow"></v-tabs-slider>
 
-                                    <v-tab v-for="tab in tabs"
-                                           :key="tab.name"
-                                           v-if="!tab.right">
+                                        <v-tab v-for="tab in tabs"
+                                            :key="tab.name"
+                                            :to="tab.to || tab.name">
 
-                                        <v-icon class="mr-1 mb-1">{{ tab.icon}}</v-icon>
+                                            <v-icon class="mr-1 mb-1">{{ tab.icon}}</v-icon>
 
-                                        {{ tab.name }}
-                                    </v-tab>
+                                            {{tab.name}}
+                                        </v-tab>
 
-                                </v-tabs>
+                                    </v-tabs>
                                 </v-toolbar>
                             </v-card-actions>
                         </v-card>
                     </v-flex>
                     <v-flex xs12>
+                        <!--<router-view name="tabs[active].name"></router-view>-->
                         <keep-alive>
-                            <component :is="tabs[active].name"></component>
+                            <component :is="parseRoute(active).component"></component>
                         </keep-alive>
                     </v-flex>
                 </v-layout>
@@ -51,6 +52,43 @@
         </v-card>
     </div>
 </template>
+
+<script>
+    module.exports = {
+        name: 'public',
+        extends: component,
+        components: {
+            /*
+                        'feed': httpVueLoader('feed'),
+                        'friends': httpVueLoader('friends'),
+                        'charts': httpVueLoader('charts'),
+                        'profile': httpVueLoader('profile'),
+                        'search': httpVueLoader('search'),
+                        'phones': httpVueLoader('phones'),
+                        'applications': httpVueLoader('applications'),
+            */
+        },
+        data() {
+            return {
+                active: '',
+            }
+        },
+        created() {
+            console.log('public create', this.active);
+            //httpVueLoader.register(Vue, this.parsed_route.component);
+            //console.log(this.tabs[this.active].name);
+        },
+        computed: {
+        },
+        watch: {
+            'active': function (newValue, oldValue) {
+                //console.log(this.tabs[newValue])
+            }
+        }
+    }
+
+    //# sourceURL=public.js
+</script>
 
 <style scoped>
     iframe {
@@ -67,11 +105,11 @@
         width: 70vw;
     }
 
-/*
-    .profile-details div:first-child {
-        min-width: 150px;
-    }
-*/
+    /*
+        .profile-details div:first-child {
+            min-width: 150px;
+        }
+    */
 
     div.profile {
         width: 40%;
@@ -106,74 +144,3 @@
     }
 
 </style>
-
-<script>
-    module.exports = {
-        extends: component,
-        components: {
-            'feed': httpVueLoader('feed'),
-            'friends': httpVueLoader('friends'),
-            'charts': httpVueLoader('charts'),
-            'profile': httpVueLoader('profile'),
-            'search': httpVueLoader('search'),
-            'phones': httpVueLoader('phones'),
-            'applications': httpVueLoader('applications'),
-        },
-        data() {
-            return {
-                active: 0,
-/*                 tabs: [
-                    {
-                        name: 'feed',
-                        icon: 'fas fa-newspaper'
-                    },
-                    {
-                        name: 'friends',
-                        icon: 'fas fa-users'
-                    },
-                    {
-                        name: 'charts',
-                        to: 'public',
-                        icon: 'far fa-comments'
-                    },
-                    {
-                        name: 'profile',
-                        icon: 'far fa-address-card'
-                    },
-                    {
-                        name: 'search',
-                        icon: 'fas fa-search'
-                    },
-                    {
-                        name: 'phones',
-                        icon: 'fas fa-mobile'
-                    },
-                    {
-                        name: 'applications',
-                        icon: 'fas fa-cogs'
-                    },
-                ]
- */            }
-        },
-        created() {
-            console.log(this.active);
-        },
-        computed: {
-/*
-            object() {
-                return (this.entities.profile && this.entities.profile.current) || {};
-            },
-            profile() {
-                return (this.entities.profile && this.entities.profile.current) || {};
-            }
-*/
-        },
-        watch: {
-            'active': function (newValue, oldValue) {
-                //console.log(this.tabs[newValue])
-            }
-        }
-    }
-
-    //# sourceURL=public.js
-</script>
