@@ -86,7 +86,7 @@ axios.interceptors.response.use(
     },
     function (error) {
         //error.response.status === 401 && (Vue.prototype.$state.auth = void 0);
-        error.message = error.response.data || error.message;
+        error.message = (error.response && error.response.data) || error.message;
         error.code = error.response.status || error.code;
         return Promise.reject(error);
     }
@@ -118,14 +118,14 @@ Vue.prototype.$request = async function(url, data, options) {
 
     url.indexOf(component) === 0 && (url = Vue.prototype.$state.base_ui + parsed.url);
 
-    let {method, callback, encode} = options || {};
+    let {method, callback, encode, config} = options || {};
 
     let response = !data && !parsed.action && cache[component];
 
     if(response)
         return response;
 
-    let config = {
+    let conf = {
         url: url,
         method: data ? method || 'post' : 'get',
         headers: {
@@ -147,6 +147,9 @@ Vue.prototype.$request = async function(url, data, options) {
     };
 
     //encode && (config.headers['content-type'] = 'application/x-www-form-urlencoded');
+
+    config = Object.assign(conf, config || {});
+    
     data && (config.data = data);
 
     return axios(config)
@@ -226,7 +229,8 @@ Vue.prototype.$request = async function(url, data, options) {
                         Vue.prototype.$bus.$emit('merged', merge);
                     break;
                 default:
-                    callback && callback(res);
+                    //callback && callback(res);
+                    return res;
                     break;
             }
 
@@ -307,9 +311,13 @@ const theme = {
     error: '#b71c1c'
 };
 
+//httpVueLoader.register(Vue, 'picture-input');
+
 window.vm = new Vue({
     el: '#app',
     router: router,
+    components: {
+    },
     created() {
         this.$vuetify.theme = theme
     }

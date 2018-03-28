@@ -2,7 +2,7 @@
     <div class="layout-view">
         <h1>unauthenticated access</h1>
         <v-icon color="red darken-2" class="shadow">fas fa-user-secret fa-3x</v-icon>
-        <h1>"{{location}}"</h1>
+        <h1>"{{parsed_route.url}}"</h1>
 
         <v-btn color="blue darken-2" flat="flat" @click="signin()">Sign in</v-btn>
     </div>

@@ -157,7 +157,39 @@ router.onComponentData = async function(req, res, response, data) {
     return data;
 };
 
+
 router.all('*', router.jwtHandler());
+
+router.all(['/files/*/:file', '/files/:file'], function(req, res, next) {
+    if(req.user) {
+        let options = {
+            root: __dirname + `/public/${req.user._id}`,
+            dotfiles: 'deny',
+/*             headers: {
+                'x-timestamp': Date.now(),
+                'x-sent': true
+            }
+ */
+          };
+        
+          req.params.path = req.params[0] ? `${req.params[0]}/${req.params.file}` : req.params.file;
+          
+          let fileName = req.params.path;
+          res.sendFile(fileName, options, function (err) {
+            if (err) {
+              next(err);
+            } 
+            else {
+              console.log('Sent:', fileName);
+              res.end();
+            }
+          });
+
+        //console.log(req.params);
+        //res.end();
+    }
+    else res.status(404).end('Not found.');
+});
 
 router.all(config.patterns, router.authenticateHandler({allowBearerTokensInQueryString: true}), router.accessHandler(), async function (req, res, next) {
     let data = void 0;

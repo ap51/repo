@@ -26,7 +26,6 @@ app.use('/:service/ui', history({
 
 app.use('/:service/ui', staticFileMiddleware);
 
-
 let httpsServer = https.createServer(credentials, app);
 
 app.use('/_file_/:name', function (req, res, next){
@@ -44,7 +43,9 @@ fs.readdir('./services/', (err, dirs) => {
     dirs.forEach(dir => {
         console.log(dir);
         try {
+            //const serviceStatic = express.static(`public`, {});
             app.use(`/${dir}/`, require(`./services/${dir}/router`)(dir));
+            //app.use(`/${dir}/ui`, serviceStatic);
         }
         catch (err) {
             console.log(err);
