@@ -205,7 +205,7 @@ let actions = {
                 };
 
                 if(location && ['feed', 'friends', 'charts', 'profile', 'search', 'phones', 'applications'].indexOf(location.name) !== -1) {
-                    Object.assign(res.locals.shared, {location: `public${location.id ? `_${location.id}` : ''}`});
+                    Object.assign(res.locals.shared, {location: `public${location.id ? `:${location.id}` : ''}`});
                 }
 
                 return {};

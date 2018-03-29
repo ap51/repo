@@ -27,7 +27,7 @@
         data() {
             return {
             }
-        }
+        },
     }
 
     //# sourceURL=feed.js

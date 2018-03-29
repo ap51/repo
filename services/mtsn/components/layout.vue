@@ -82,8 +82,6 @@
                 </v-snackbar>
             </v-content>
         </v-app>
-
-
 </template>
 
 <style scoped>
@@ -135,6 +133,9 @@
                 self.snackbar.message = message;
                 self.snackbar.visible = true;
             })
+        },
+        activated() {
+            this.$state.shared.location = void 0;
         },
         computed: {
         },

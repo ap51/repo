@@ -289,19 +289,25 @@ let component = {
             return route(this.$state.path);
         },
         location() {
-            //return route(this.$state.path).component;
+            let current = route(this.$state.path);
+            let location = this.$state.shared.location ? route(this.$state.shared.location) : current;
+
+            if(location.component !== current.component) {
+                //this.$page(location.component, true);
+                !cache[location.component] && httpVueLoader.register(Vue, location.component);
+                this.$request(location.component);
+                //this.$state.path = location.component;
+                //this.$state.shared.location = void 0;
+
+                return location.component;
+            }
+            else return current.component;
 
             
-            let route = this.shared.location || route(this.$state.path).component;
+/*             let route = this.shared.location || route(this.$state.path).component;
             this.shared.location && httpVueLoader.register(Vue, route);
             
-/*             if(this.auth || this.parsed_route.name === 'feed') {
-                let location_change = ['feed', 'friends', 'charts', 'profile', 'search', 'phones', 'applications'].indexOf(this.parsed_route.name) !== -1;
-                route = location_change ? route.replace(this.parsed_route.name, 'public') : route;
-                //location_change && route !== this.location && httpVueLoader.register(Vue, route);
-            }
- */            
-            return route;
+            return route; */
         },
         loader() {
             return httpVueLoader;
@@ -321,6 +327,9 @@ let component = {
         Object.assign(data, assigned_data);
 
         return data;
+    },
+    beforeCreate() {
+        //console.log(this.$state);
     },
     created() {
         //console.log(this.state.path);
