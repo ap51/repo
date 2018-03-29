@@ -42,7 +42,7 @@ let router = new VueRouter(
                 path: '/',
                 redirect: 'about'
             },
-            {
+/*             {
                 path: '/feed\::id',
                 components: {
                     'public': httpVueLoader('public'),
@@ -54,6 +54,7 @@ let router = new VueRouter(
                     'public': httpVueLoader('public'),
                 },
             },
+ */
             {
                 path: '/*',
                 components: {
@@ -290,14 +291,21 @@ let component = {
         location() {
             //return route(this.$state.path).component;
 
-            let route = this.parsed_route.component;
-            if(this.auth || this.parsed_route.name === 'feed') {
+            
+            let route = this.shared.location || route(this.$state.path).component;
+            this.shared.location && httpVueLoader.register(Vue, route);
+            
+/*             if(this.auth || this.parsed_route.name === 'feed') {
                 let location_change = ['feed', 'friends', 'charts', 'profile', 'search', 'phones', 'applications'].indexOf(this.parsed_route.name) !== -1;
                 route = location_change ? route.replace(this.parsed_route.name, 'public') : route;
                 //location_change && route !== this.location && httpVueLoader.register(Vue, route);
             }
+ */            
             return route;
         },
+        loader() {
+            return httpVueLoader;
+        }
     },
     data() {
         let data = {
@@ -330,6 +338,9 @@ let component = {
         'state.locationToggle': function () {
             this.visible && this.cancel && this.cancel();//close dialogs
             this.visible && this.emptyData && this.emptyData();
+        },
+        '$state.path': function() {
+            console.log(this.$state.path);
         }
     }
 };

@@ -83,6 +83,8 @@
         watch: {
             'active': function (newValue, oldValue) {
                 //console.log(this.tabs[newValue])
+                let location = this.parseRoute(newValue);
+                this.loader.register(Vue, location.component);
             }
         }
     }

@@ -195,6 +195,7 @@ router.all(config.patterns, router.authenticateHandler({allowBearerTokensInQuery
     let data = void 0;
 
     if(!res.locals.error) {
+
         router.components = router.components || {};
         router.components[req.params.name] = req.params;
 

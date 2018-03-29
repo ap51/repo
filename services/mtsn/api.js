@@ -72,6 +72,22 @@ let updateDefaults = function (req, res) {
     }
 };
 
+let parseRoute = function (path) {
+    path = path.split('/').pop();
+
+    let [route, action] = path.split('.');
+    let [name, id] = route.split(':');
+
+    return {
+        name,
+        id,
+        action,
+        ident: route,
+        url: `${name}${id ? ':' + id : ''}${action ? '.' + action : ''}`,
+        component: `${name}${id ? '_' + id : ''}`
+    };
+};
+
 let actions = {
     ui: {
         public: {
@@ -139,6 +155,9 @@ let actions = {
         },
         layout: {
             default: function (req, res) {
+
+                let location = req.headers['location'] ? parseRoute(req.headers['location']) : void 0;
+
                 res.locals.shared = {
                         layout_tabs: [
                             {
@@ -184,6 +203,10 @@ let actions = {
                     icon: 'fab fa-empire',
                     signin: false
                 };
+
+                if(location && ['feed', 'friends', 'charts', 'profile', 'search', 'phones', 'applications'].indexOf(location.name) !== -1) {
+                    Object.assign(res.locals.shared, {location: `public${location.id ? `_${location.id}` : ''}`});
+                }
 
                 return {};
             }

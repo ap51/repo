@@ -72,11 +72,11 @@
                 </v-card>
 
                 <v-snackbar
-                        :timeout="snackbar.timeout"
-                        :color="snackbar.color"
-                        :multi-line="snackbar.multiline"
-                        :vertical="snackbar.vertical"
-                        v-model="snackbar.visible">
+                    :timeout="snackbar.timeout"
+                    :color="snackbar.color"
+                    :multi-line="snackbar.multiline"
+                    :vertical="snackbar.vertical"
+                    v-model="snackbar.visible">
                     {{ snackbar.message }}
                     <v-btn dark flat @click.native="snackbar.visible = false">Close</v-btn>
                 </v-snackbar>
