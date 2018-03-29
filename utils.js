@@ -247,6 +247,11 @@ let _router = function(service) {
             }
 */
 
+/*
+            res.locals.shared = res.locals.shared || {};
+            !res.locals.shared.location && (res.locals.shared.location = '');
+*/
+
             if(!response.error) {
                 response = {...response,
                     data: res.locals.data,
@@ -259,6 +264,8 @@ let _router = function(service) {
             delete res.locals.redirect;
 
             res.status(221).json(response);
+
+
             return res.end();
             //res.send(JSON.stringify(response));
 

@@ -61,7 +61,14 @@ let updateDefaults = function (req, res) {
                     let b = new Set(source);
                     let union = Array.from(new Set([...a, ...b]));
 
-                    union = union.map(item => JSON5.parse(item));
+                    union = union.map(item => {
+                        try {
+                            return JSON5.parse(item)
+                        }
+                        catch (err) {
+                            return item;
+                        }
+                    });
 
                     return union;
                 }
@@ -92,7 +99,9 @@ let actions = {
     ui: {
         public: {
             default(req, res) {
-                let id = `${req.params.id ? ':' + req.params.id : ''}`;
+                let location = req.headers['location'] ? parseRoute(req.headers['location']) : void 0;
+
+                let id = `${location.id ? ':' + location.id : ''}`;
 
                 res.locals.data = {
                     tabs: [
@@ -159,7 +168,7 @@ let actions = {
                 let location = req.headers['location'] ? parseRoute(req.headers['location']) : void 0;
 
                 res.locals.shared = {
-                        layout_tabs: [
+                    layout_tabs: [
                             {
                                 name: 'about',
                                 icon: 'far fa-question-circle'
@@ -204,8 +213,16 @@ let actions = {
                     signin: false
                 };
 
+                let replacements = {
+                    names: ['feed', 'friends', 'charts', 'profile', 'search', 'phones', 'applications'],
+                    location: `public` //for all ids, replace on client
+                };
+
+                Object.assign(res.locals.shared, {replacements});
+
                 if(location && ['feed', 'friends', 'charts', 'profile', 'search', 'phones', 'applications'].indexOf(location.name) !== -1) {
-                    Object.assign(res.locals.shared, {location: `public${location.id ? `:${location.id}` : ''}`});
+                    Object.assign(res.locals.shared, {location: `public`});
+                    //Object.assign(res.locals.shared, {location: `public${location.id ? `:${location.id}` : ''}`});
                 }
 
                 return {};

@@ -78,13 +78,16 @@
             //httpVueLoader.register(Vue, this.parsed_route.component);
             //console.log(this.tabs[this.active].name);
         },
+        activated() {
+            //this.$state.shared.location = void 0;
+        },
         computed: {
         },
         watch: {
             'active': function (newValue, oldValue) {
                 //console.log(this.tabs[newValue])
-                let location = this.parseRoute(newValue);
-                this.loader.register(Vue, location.component);
+                //let location = this.parseRoute(newValue);
+                //this.loader.register(Vue, location.component);
             }
         }
     }

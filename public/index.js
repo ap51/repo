@@ -79,6 +79,7 @@ let router = new VueRouter(
 router.beforeEach(async function (to, from, next) {
     let path = to.params.name || to.path;
 
+    Vue.prototype.$state.shared.location = void 0;
     Vue.prototype.$page(path, true);
 
     next();
@@ -288,26 +289,22 @@ let component = {
         parsed_route() {
             return route(this.$state.path);
         },
-        location() {
-            let current = route(this.$state.path);
-            let location = this.$state.shared.location ? route(this.$state.shared.location) : current;
+        location: {
+            get() {
+                let location = void 0;
+                if(this.$state.shared.replacements) {
+                    this.$state.shared.replacements.names.find(name => name === this.parsed_route.name) && (location = this.$state.shared.replacements.location);
+                    if(location) {
+                        location = this.parsed_route.url.replace(this.parsed_route.name, location);
+                        location = route(location);
+                        !cache[location.component] && httpVueLoader.register(Vue, location.component);
+                    }
+                }
 
-            if(location.component !== current.component) {
-                //this.$page(location.component, true);
-                !cache[location.component] && httpVueLoader.register(Vue, location.component);
-                this.$request(location.component);
-                //this.$state.path = location.component;
-                //this.$state.shared.location = void 0;
-
-                return location.component;
-            }
-            else return current.component;
-
-            
-/*             let route = this.shared.location || route(this.$state.path).component;
-            this.shared.location && httpVueLoader.register(Vue, route);
-            
-            return route; */
+                return (location && location.component) || this.parsed_route.component;
+                //return this.$state.shared.location || route(this.$state.path).component;
+            },
+            cache: true
         },
         loader() {
             return httpVueLoader;
