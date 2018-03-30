@@ -187,7 +187,8 @@ let actions = {
                                 {
                                     name: 'public',
                                     to: 'feed:' + req.user.public_id,
-                                    icon: 'far fa-address-card'
+                                    icon: 'far fa-address-card',
+                                    dynamic: true
                                 },
                             ]
                         ]
