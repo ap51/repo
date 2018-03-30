@@ -66,9 +66,15 @@
                 <signout :visible="signout" :object="current_user" @cancel="signout = false"></signout>
 
                 <v-card class="base-layout">
+<!--
                     <keep-alive>
-                        <component :is="location"></component>
+                        <transition name="fade" mode="out-in">
+-->
+                        <component :is="location" transition="fade" transition-mode="out-in"></component>
+<!--
+                        </transition>
                     </keep-alive>
+-->
                 </v-card>
 
                 <v-snackbar
@@ -132,7 +138,7 @@
             this.$bus.$on('snackbar', function (message) {
                 self.snackbar.message = message;
                 self.snackbar.visible = true;
-            })
+            });
         },
         activated() {
             this.$state.shared.location = void 0;
@@ -140,13 +146,6 @@
         computed: {
         },
         methods: {
-            apiCall(data) {
-                this.$request(`${window.location.origin}/${this.state.service}/api/profile.get`, data);
-            },
-            apiCallRestricted(data) {
-                this.$request(`${window.location.origin}/${this.state.service}/api/client.get`, data);
-            }
-
         },
         watch: {
             'shared.layout_tabs': function (newValue, oldValue) {

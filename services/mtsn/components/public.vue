@@ -88,6 +88,7 @@
                 //console.log(this.tabs[newValue])
                 //let location = this.parseRoute(newValue);
                 //this.loader.register(Vue, location.component);
+                newValue && newValue !== this.state.path && this.$router.replace(newValue.replace(Vue.prototype.$state.base_ui, ''));
             }
         }
     }

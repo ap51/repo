@@ -79,6 +79,8 @@ let router = new VueRouter(
 router.beforeEach(async function (to, from, next) {
     let path = to.params.name || to.path;
 
+    //path = path.replace(Vue.prototype.$state.base_ui, '');
+
     Vue.prototype.$state.shared.location = void 0;
     Vue.prototype.$page(path, true);
 
@@ -110,6 +112,7 @@ axios.interceptors.response.use(
 );
 
 Vue.prototype.$page = function(path, force) {
+    //path = path.replace(Vue.prototype.$state.base_ui, '');
     if(force || Vue.prototype.$state.path !== path) {
         //force && (Vue.prototype.$state.path = '');
         let parsed = route(path);
