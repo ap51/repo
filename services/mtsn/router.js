@@ -1,3 +1,5 @@
+'use strict';
+
 let service = __dirname.split(/\/|\\/g);
 service = service[service.length - 1];
 
@@ -19,13 +21,16 @@ const OAuth2Server = require('oauth2-server');
 const Request = OAuth2Server.Request;
 const Response = OAuth2Server.Response;
 
-oauth = new OAuth2Server({
+let oauth = new OAuth2Server({
     model: require('./model')
 });
 
 router.authenticateHandler = function(options) {
     return async function(req, res, next) {
         //if(req.params.name === 'clients' || req.params.name === 'signin') {
+        let result = await api.accessGranted(req, res, router);
+        //console.log(granted);
+
         if(options.force || api.secured(req, res)) {
             try {
                 let request = new Request(req);
@@ -107,16 +112,8 @@ router.tokenHandler = function(options) {
             let response = new Response(res);
 
             let token = await oauth.token(request, response, options);
-            req.user = token.user;
 
-            req.token.access = token.accessToken;
-
-            req.token.auth = {
-                name: token.user.name,
-                //group: token.user.group
-            }
-
-            //req.token.data.user_id = token.user._id;
+            return token;
         }
         catch (err) {
             let {code, message} = err;

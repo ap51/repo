@@ -66,15 +66,9 @@
                 <signout :visible="signout" :object="current_user" @cancel="signout = false"></signout>
 
                 <v-card class="base-layout">
-<!--
                     <keep-alive>
-                        <transition name="fade" mode="out-in">
--->
                         <component :is="location" transition="fade" transition-mode="out-in"></component>
-<!--
-                        </transition>
                     </keep-alive>
--->
                 </v-card>
 
                 <v-snackbar

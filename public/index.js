@@ -28,7 +28,7 @@ Vue.prototype.$state = {
     data: {},
     shared: {},
     locationToggle: false,
-    token: localStorage.getItem('token'),
+    token: localStorage.getItem(`${service}:token`),
     auth: {}
     //token: '{user_id:1010010, user_name:"bob dilan", container_id:"pdqwp08qfu", token:"qfefw98we7ggwvv7s"}',
 };
@@ -58,7 +58,7 @@ let router = new VueRouter(
             {
                 path: '/*',
                 components: {
-                    'layout': httpVueLoader('layout'),
+                    //'layout': httpVueLoader('layout'),
 /*
                     'public': httpVueLoader('public'),
 */
@@ -152,7 +152,8 @@ Vue.prototype.$request = async function(url, data, options) {
             'content-type': encode ? 'application/x-www-form-urlencoded' : 'application/json',
             //'Authorization': Vue.prototype.$state.token ? `Bearer ${Vue.prototype.$state.token}` : '',
             'token': Vue.prototype.$state.token || '',
-            'location': data ? data.location || window.location.pathname : window.location.pathname
+            'location': data ? data.location || window.location.pathname : window.location.pathname,
+            'user-agent': 'internal'
         },
         transformRequest: function(obj) {
             let transformed = encode ? Qs.stringify(obj) : JSON.stringify(obj);
@@ -177,7 +178,8 @@ Vue.prototype.$request = async function(url, data, options) {
         .then(function(res) {
             if(res.status > 220) {
                 res.data.token && Vue.set(Vue.prototype.$state, 'token', res.data.token);
-                localStorage.setItem('token', Vue.prototype.$state.token);
+                localStorage.setItem(`${service}:token`, Vue.prototype.$state.token);
+
                 Vue.set(Vue.prototype.$state, 'auth', res.data.auth || '');
 
                 if (res.data.redirect_remote) {
@@ -370,6 +372,7 @@ const theme = {
 
 window.vm = new Vue({
     el: '#app',
+    extends: component,
     router: router,
     components: {
     },

@@ -54,13 +54,13 @@ model.getClient = async function(clientId, clientSecret, callback) {
         if (clientSecret !== null && client.client_secret !== clientSecret)
             return callback();
 
-        client.id = client.client_id;
+        client.id = client._id;
         callback(null, client);
     });
 };
 
 model.saveToken = async function(token, client, user, callback) {
-    token.client = {_id: client._id};//{id: client.client_id};
+    token.client = {_id: client._id, scope: client.scope};//{id: client.client_id};
     let {_id, name, group, public_id} = user;
     token.user = {_id, name, group, public_id};
     db.token.insert(token, function (err, inserted) {
@@ -97,11 +97,22 @@ model.getUserFromClient = async function(client, callback) {
 };
 
 model.getRefreshToken = async function(refreshToken, callback) {
-    return await new Promise('getRefreshToken!');
+    db.token.find({refreshToken}, async function(err, tokens) {
+        let token = tokens[0];
+        if(token) {
+            token.user = await db.findOne('user', {_id: token.user._id});
+            token.client = await db.findOne('client', {_id: token.client._id});
+        }
+        tokens.length ? callback(null, token) : callback(err || new OAuth2Server.InvalidTokenError());
+    });
+
 };
 
 model.revokeToken = async function(token, callback) {
-    return await new Promise('revokeToken!');
+    db.token.remove({accessToken: token.accessToken}, {}, function (err, removed) {
+        callback(err, removed);
+    });
+
 };
 
 model.getAccessToken = function(accessToken, callback) {

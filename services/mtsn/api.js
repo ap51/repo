@@ -1,6 +1,8 @@
 'use strict';
 
 const database = require('./database/db');
+const cheerio = require('cheerio');
+const loadContent = require('./../../utils').loadContent;
 const normalizer = require('normalizr');
 const merge = require('deepmerge');
 const JSON5 = require('json5');
@@ -578,8 +580,405 @@ let scopes = {
 */
 };
 
+/*
+let element = {
+    path: { //ui, api, ...
+        element: { //layout, public, ...
+            type: 'tab',
+            scopes: [],
+            access: [],
+            methods: {
+                'save': {
+                    access: [],
+                    method() {}
+                },
+                get() {}
+            },
+            children: {
+                'element': element
+            }
+        }
+    }
+};
+*/
+
+let flat = function (root, array, parent) {
+    array = array || [];
+
+    let __default = root.__default || (root.parent && root.parent.__default) || {};
+
+    root = root.children;
+
+    for(let name in root) {
+        let component = root[name];
+
+        if(name !== '__default') {
+            component = {...component, name, parent};
+
+            Object.assign(component, merge(__default, component, {
+                arrayMerge: function (destinationArray, sourceArray, options) {
+                    return sourceArray;
+                }
+            }));
+
+            component.__default = component.__default || __default;
+
+            Object.assign(component.__default, merge(__default, component.__default, {
+                arrayMerge: function (destinationArray, sourceArray, options) {
+                    return sourceArray;
+                }
+            }));
+
+            array.push(component);
+            component.children && (array = flat(component, array, component));
+        }
+    }
+
+    return array;
+};
+
+let accessGranted = async function (req, res, router) {
+    let {section, name, id, action} = req.params;
+    try {
+        let component = access_matrix[section].find(component => component.name === name);
+        if (component) {
+            let {user, client, token} = req;
+            let access_group = (user && user.group);
+
+            let auth = user ? {name: user.name} : {};
+
+            component.route = parseRoute(req.headers['location'] || req.originalUrl);
+            component.user = user;
+            component.client = client;
+            component.token = token;
+
+            let needAuthentication = !!(component && component.access && component.access.length);
+
+            if (needAuthentication) {
+
+                if (token.access) {
+                    let expired = new Date() > new Date(token.access.expired);
+                    if (expired) {
+                        let body = {...req.body};
+
+                        client = await database.findOne('client', {_id: client._id});
+                        token = await database.findOne('token', {accessToken: token.access.token});
+
+                        req.body = {
+                            grant_type: 'refresh_token',
+                            refresh_token: token.refreshToken,
+                            client_id: client.client_id,
+                            client_secret: client.client_secret,
+                            scope: client.scope.join(',')
+                        };
+
+                        req.method = 'POST';
+                        req.headers['content-type'] = 'application/x-www-form-urlencoded';
+                        req.headers['transfer-encoding'] = 'true';
+                        req.headers['content-length'] = 1;
+
+                        try {
+                            token = await router.tokenHandler({})(req, res);
+
+                            let {accessToken, accessTokenExpiresAt, refreshToken, user, client} = token;
+
+                            req.token.access = {
+                                token: accessToken,
+                                expired: accessTokenExpiresAt,
+                                user,
+                                client
+                            };
+
+                            auth = {name: token.user.name};
+
+                        }
+                        catch (err) {
+                            auth = {};
+                        }
+
+                        console.log(token.access.refresh_token);
+                    }
+                }
+                else throw new CustomError(401, 'Unauthenticate');
+            }
+
+            let checkAccess = function (access) {
+                return access.length ? access.some(group => (group === 'current' && user.public_id === id) || (user && group === '*') || (group === access_group)) : true;
+            };
+
+            let access = needAuthentication ? checkAccess(component.access) : true;
+            if (!access) {
+                if (user) {
+                    throw new CustomError(403, 'Access denied');
+                }
+                throw new CustomError(401, 'Unauthenticate');
+            }
+
+            let scope = (client && component.scopes) ? component.scopes.some(scope => scope === '*' || (client && client.scope.includes(scope))) : true;
+            if (!scope) {
+                throw new CustomError(400, 'Insufficient scope');
+            }
+
+            if (access && scope) {
+
+                let noop = function () {
+                    return {}
+                };
+
+                let executeChain = function (component, action) {
+                    component.parent && (component.parent.checkAccess = checkAccess);
+                    let data = (component.parent && executeChain(component.parent, action)) || {};
+
+                    let method = component.methods[action] ? typeof component.methods[action] === 'function' ? component.methods[action] : component.methods[action].method || noop : noop;
+                    return Object.assign(method(req, res, component) || {}, data);
+                };
+
+                action = action || 'default';
+
+                let execute = typeof component.methods[action] === 'object' && (component.methods[action].access && component.methods[action].access.length) ? checkAccess(component.methods[action].access) : true;
+
+                let data = execute && executeChain(component, action);
+
+                data.status = component.methods.__status ? component.methods.__status(req, res) : 221;
+
+                data._parent = component.parent;
+
+                data = component.methods.__wrapper ? await component.methods.__wrapper(req, res, data) : data;
+
+                let response = {
+                    data,
+                    auth,
+                    token
+                };
+
+                return data;
+            }
+        }
+        else throw new CustomError(404, 'Not found');
+    }
+    catch (err) {
+        switch (err.code) {
+            case 400:
+                req.params = {name: 'bad-request'};
+                break;
+            case 401:
+                req.params = {name: 'unauthenticate'};
+                break;
+            case 403:
+                req.params = {name: 'access-denied'};
+                break;
+            case 404:
+                req.params = {name: 'not-found'};
+                break;
+            default:
+                req.params = {name: 'unknown-error'};
+                break;
+        }
+
+        req.params.section = section;
+        return accessGranted(req, res, router);
+    }
+
+    console.log(access);
+};
+
+let matrix = {
+    ui: {
+        __default: {
+            scopes: ['site'],
+            access: ['*'],
+            type: void 0,
+            methods: {
+                __status() {
+                    return 221;
+                },
+                __wrapper: async function(req, res, data) {
+                    data.__wrapped = true;
+
+                    let name = req.params.name;
+
+                    try {
+                        let content = name && await loadContent(name, res, router.service);
+
+                        res.$ = cheerio.load(content);
+                        data.sfc = res.$.html();
+
+                        return data;
+                    }
+                    catch (err) {
+                        throw new CustomError(404, 'Not found');
+                    }
+                },
+                'default'() {
+                    return {
+                        service: router.service
+                    }
+                }
+
+            },
+        },
+        children: {
+            layout: {
+                scopes: ['site'],
+                access: [],
+                methods: {
+                    'default': {
+                        access: [],
+                        method(req, res, self) {
+                            console.log(self);
+
+                            let tabs = [];
+                            for(let name in self.children) {
+                                let child = self.children[name];
+                                child.type === 'tab' && self.checkAccess(child.access) && tabs.push({
+                                    name,
+                                    to: `${name}${req.params.id ? ':' + req.params.id : ''}`,
+                                    icon: child.icon
+                                });
+                            }
+
+                            return {
+                                //service: 'NO SERVICE',
+                                title: router.service,
+                                icon: 'fab fa-empire',
+                                signin: false
+                            };
+                        }
+                    }
+                },
+                __default: {
+                    access: [],
+                },
+                children: {
+                    'bad-request': {},
+                    'unauthenticate': {},
+                    'access-denied': {},
+                    'not-found': {},
+                    'unknown-error': {},
+
+                    signin: {
+                        methods: {},
+                    },
+                    signout: {
+                        methods: {},
+                    },
+                    signup: {
+                        methods: {},
+                    },
+                    about: {
+                        type: 'tab',
+                        access: [],
+                        methods: {
+                            'default': {
+                                access: ['users', 'developers', 'admins'],
+                                method() {
+
+                                }
+                            },
+                        },
+                    },
+                    news: {
+                        type: 'tab',
+                        access: ['*'],
+                        methods: {
+                            get() {
+
+                            },
+                            'save': {
+                                access: ['admins'],
+                                method() {
+
+                                }
+                            },
+                            'remove': {
+                                access: ['admins'],
+                                method() {
+
+                                }
+                            }
+                        }
+                    },
+                    public: {
+                        type: 'tab',
+                        access: [],
+                        __default: {
+                            type: 'tab',
+                            access: ['current'],
+                            methods: {
+                                __typeFormat(req, res, self) {
+                                    return {
+                                        to: self.route.ident
+                                    }
+                                },
+                                get(req, res) {
+
+                                },
+                                'save': {
+                                    access: ['current'],
+                                    method(req, res) {
+
+                                    }
+                                },
+                                'remove': {
+                                    access: ['current'],
+                                    method(req, res) {
+
+                                    }
+                                }
+                            },
+                        },
+                        children: {
+                            feed: {
+                                type: 'tab',
+                                access: [],
+                                methods: {
+                                    'save': {
+                                        access: ['current', 'admins'],
+                                    },
+                                    'remove': {
+                                        access: ['current', 'admins'],
+                                    }
+                                },
+                            },
+                            friends: {},
+                            charts: {},
+                            profile: {
+                                access: ['current', 'admins'],
+                            },
+                            search: {},
+                            phones: {},
+                            applications: {}
+                        }
+                    },
+                    clients: {
+                        type: 'tab',
+                        access: ['admins'],
+                        methods: {},
+                    },
+                    users: {
+                        type: 'tab',
+                        access: ['admins'],
+                        methods: {},
+                    },
+                    scopes: {
+                        type: 'tab',
+                        access: ['admins'],
+                        methods: {},
+                    }
+                }
+            }
+        }
+    }
+};
+
+let access_matrix = {};
+for(let section in matrix) {
+    access_matrix[section] = flat(matrix[section]);
+}
+
+
 //просмотр сверху до первого совпадения!!!
-let matrix = [
+let matrix1 = [
     {
         scopes: ['site'],
         actions: {
@@ -773,5 +1172,6 @@ module.exports = {
     secured,
     access,
     action,
-    entities
+    entities,
+    accessGranted
 };

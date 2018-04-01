@@ -13,9 +13,13 @@
 
         <div id="app">
             <router-view name="layout"></router-view>
-<!--
-            <layout :component="path"></layout>
--->
+            <keep-alive>
+                <component :is="location" transition="fade" transition-mode="out-in"></component>
+            </keep-alive>
+
+            <!--
+                        <layout :component="path"></layout>
+            -->
             <router-view name="loader"></router-view>
         </div>
 

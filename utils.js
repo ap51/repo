@@ -66,7 +66,7 @@ let _router = function(service) {
     router.use(favicon(path.join(service_path, 'favicon.ico')));
 
     const multer = require('multer');
-    router.upload = multer()
+    router.upload = multer();
 
     router.use(bodyParser.json());
     router.use(bodyParser.urlencoded({extended: false}));
@@ -91,7 +91,7 @@ let _router = function(service) {
 
         token[router.service].data = token[router.service].data || {session: await crypto.createPassword()};
 
-        token[router.service].access && (token[router.service].access = await encryptRSA(token[router.service].access, token.public || keys.publicKey));
+        token[router.service].access && (token[router.service].access = await encryptRSA(JSON5.stringify(token[router.service].access), token.public || keys.publicKey));
 
         let encoded = jwt.sign(token, keys.privateKey);
         return encoded;
@@ -116,7 +116,18 @@ let _router = function(service) {
         decoded.verified = verified;
         decoded[router.service] = decoded[router.service] || {};
 
-        decoded[router.service].access && (decoded[router.service].access = await decryptRSA(decoded[router.service].access, keys.privateKey));
+        decoded[router.service].access && (decoded[router.service].access = JSON5.parse(await decryptRSA(decoded[router.service].access, keys.privateKey)));
+/*
+        let access = decoded[router.service].access ? await router.database.findOne('token', {accessToken: decoded[router.service].access.token}, {allow_empty: true}) : void 0;
+        access && (access = {
+            token: access.accessToken,
+            user: access.user,
+            client: access.client,
+            expired: access.accessTokenExpiresAt,
+            refresh_token: access.refreshToken
+        });
+        decoded[router.service].access = access;
+*/
 
         decoded[router.service].count = decoded[router.service].count + 1 || 1;
         return decoded;
@@ -135,15 +146,18 @@ let _router = function(service) {
             req._token = await router.decode(req._token);
             
             if(!req._token.verified)
-                return res.status(401).end();
+                throw new CustomError(401, 'Invalid signature');
 
             req.token = req._token[router.service];
 
-            let access = req.token.access || req.query.access_token;
+            let access = (req.token.access && req.token.access.token) || req.query.access_token;
             req.query.access_token = void 0;
 
-            token = access && await database.findOne('token', {accessToken: access}, {allow_empty: true});
-            req.user = token && token.user;
+            //token = access && await database.findOne('token', {accessToken: access}, {allow_empty: true});
+            // req.user = token && token.user;
+            req.user = req.token && req.token.access && req.token.access.user;
+            req.client = req.token && req.token.access && req.token.access.client;
+
 
             req.headers['authorization'] = access && `Bearer ${access}`;
 
@@ -299,4 +313,5 @@ let getKeys = async function (service) {
 
 module.exports = {
     router: _router,
+    loadContent
 };
