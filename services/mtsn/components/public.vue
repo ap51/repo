@@ -79,7 +79,10 @@
             //console.log(this.tabs[this.active].name);
         },
         activated() {
-            //this.$state.shared.location = void 0;
+            console.log('ACTIVE', this.active)
+            this.active = (!(this.active === '') && this.active) || this.tabs[0].to || this.tabs[0].name;
+            newValue = this.active.replace(Vue.prototype.$state.base_ui, '');
+            newValue !== this.state.path && this.$router.replace(newValue);
         },
         computed: {
         },
@@ -88,7 +91,10 @@
                 //console.log(this.tabs[newValue])
                 //let location = this.parseRoute(newValue);
                 //this.loader.register(Vue, location.component);
-                newValue && newValue !== this.state.path && this.$router.replace(newValue.replace(Vue.prototype.$state.base_ui, ''));
+                newValue = newValue.replace(Vue.prototype.$state.base_ui, '');
+                let tab = this.shared.layout_tabs.find(tab => tab.to === oldValue.replace(Vue.prototype.$state.base_ui, '') || tab.dynamic);
+                newValue && tab && (tab.to = newValue);
+                newValue && newValue !== this.state.path && this.$router.replace(newValue);
             }
         }
     }
