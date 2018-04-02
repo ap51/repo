@@ -187,7 +187,11 @@ router.all(['/files/*/:file', '/files/:file'], function(req, res, next) {
     }
     else res.status(404).end('Not found.');
 });
+router.all(config.patterns, api.accessMiddleware({}), async function (req, res, next) {
+    next(); //to utils endHandler
+});
 
+/* 
 router.all(config.patterns, router.authenticateHandler({allowBearerTokensInQueryString: true}), router.accessHandler(), async function (req, res, next) {
     let data = void 0;
 
@@ -271,7 +275,7 @@ router.all(config.patterns, router.authenticateHandler({allowBearerTokensInQuery
     }
 
 });
-
+ */
 /*router.all(endpoints.patterns('api'), router.authenticateHandler({endpoint:'api', allowBearerTokensInQueryString: true}), router.accessHandler({endpoint:'api'}), async function (req, res, next) {
     if(res.locals.error) {
         res.status(res.locals.error.code).send(res.locals.error.message)

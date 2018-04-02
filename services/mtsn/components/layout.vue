@@ -4,7 +4,7 @@
                 <v-toolbar color="blue darken-2" dark dense>
                     <v-toolbar-title class="mr-2"><v-icon class="mr-1 mb-1">{{icon}}</v-icon><small>{{title.toUpperCase() + ' (My Tiny Social Network)'}}</small></v-toolbar-title>
 
-                    <v-tabs v-model="active" v-if="location !== 'external-signin'" color="blue darken-2"
+                    <v-tabs v-model="active" color="blue darken-2"
                             :right="false">
 
                         <v-tabs-slider color="yellow"></v-tabs-slider>
@@ -42,7 +42,7 @@
                     </v-tabs>
 -->
 
-                    <v-toolbar-items v-if="location !== 'external-signin'">
+                    <v-toolbar-items >
 
                         <v-btn v-if="!auth.name" flat @click="signin = true">
                             <v-icon class="mr-1 mb-1">fas fa-user-circle</v-icon>SIGN IN
@@ -67,7 +67,7 @@
 
                 <v-card class="base-layout">
                     <keep-alive>
-                        <component :is="location" transition="fade" transition-mode="out-in"></component>
+                        <component :is="location"></component>
                     </keep-alive>
                 </v-card>
 
@@ -135,27 +135,29 @@
             });
         },
         activated() {
-            this.$state.shared.location = void 0;
+            //this.$state.shared.location = void 0;
         },
         computed: {
         },
         methods: {
         },
         watch: {
-            'shared.layout_tabs': function (newValue, oldValue) {
+/*             'shared.layout_tabs': function (newValue, oldValue) {
                 let found = newValue.find(tab => this.active.replace(this.state.base_ui, '') == (tab.to || tab.name));
             
                 !found && this.$router.replace('about');
             },
+ */
             'state.auth.name': function (newValue, oldValue) {
-                //newValue && (delete cache[this.location]);
+/*                 //newValue && (delete cache[this.location]);
                 newValue && (cache = {});
                 !newValue && Vue.set(Vue.prototype.$state, 'entities', {});
                 //newValue && (delete cache['layout']);
-                this.$page(this.location, true);
+                //this.$page(this.location, true);
                 //!newValue && this.$request(this.location);//this.$page(this.location, true);
                 !newValue && (this.signout = false);
                 newValue && (this.signin = false);
+ */
             }
         }
     }

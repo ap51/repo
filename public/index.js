@@ -153,7 +153,7 @@ Vue.prototype.$request = async function(url, data, options) {
             //'Authorization': Vue.prototype.$state.token ? `Bearer ${Vue.prototype.$state.token}` : '',
             'token': Vue.prototype.$state.token || '',
             'location': data ? data.location || window.location.pathname : window.location.pathname,
-            'user-agent': 'internal'
+            //'user-agent': 'internal'
         },
         transformRequest: function(obj) {
             let transformed = encode ? Qs.stringify(obj) : JSON.stringify(obj);
@@ -182,6 +182,7 @@ Vue.prototype.$request = async function(url, data, options) {
 
                 Vue.set(Vue.prototype.$state, 'auth', res.data.auth || '');
 
+/* 
                 if (res.data.redirect_remote) {
                     window.location.replace(res.data.redirect.remote);
                     return;
@@ -198,19 +199,25 @@ Vue.prototype.$request = async function(url, data, options) {
                     else router.push(path);
                     return;
                 }
-
-                res.data.data && Vue.set(Vue.prototype.$state.data, component, res.data.data);
-
-                Object.assign(Vue.prototype.$state.shared, res.data.shared);
+ */                
+                
             }
 
             switch (res.status) {
                 case 221:
                         let redirected = decodeURIComponent(window.location.origin + res.config.url) !== decodeURIComponent(res.request.responseURL);
 
-                        cache[component] = res.data.component || cache[component];
+                        res.data[component] && Vue.set(Vue.prototype.$state.data, component, res.data[component]);
 
-                        Vue.prototype.$request(`${Vue.prototype.$state.base_api}${parsed.ident}.get`);
+                        //Object.assign(Vue.prototype.$state.shared, res.data.shared);
+
+                        cache[component] = res.data.sfc || cache[component];
+
+                        //res.data.parent && Vue.prototype.$page(res.data.parent);
+                        res.data.parent && !cache[res.data.parent] && httpVueLoader.register(Vue, res.data.parent);
+                        res.data.parent && !cache[res.data.parent] && (Vue.prototype.$state.path = res.data.parent);
+
+                        //Vue.prototype.$request(`${Vue.prototype.$state.base_ui}${parsed.ident}.get`);
                         //console.log('REQUEST:', `${Vue.prototype.$state.base_api}${parsed.ident}.get`);
 
                         return cache[component];
@@ -218,13 +225,13 @@ Vue.prototype.$request = async function(url, data, options) {
                 case 222:
                         callback && callback(res, data);
 
-                        let api = res.data.result;
+/*                         let api = res.data.result;
                         let entry = res.data.entry;
 
                         let database = res.data.entities[entry][api];
 
                         let merge = deepmerge(Vue.prototype.$state.entities, res.data.entities, {
-                            arrayMerge: function (destination/*entities*/, source/*data*/, options) {
+                            arrayMerge: function (destination, source, options) {
                                 //ALL ARRAYS MUST BE SIMPLE IDs HOLDER AFTER NORMALIZE
                                 if(res.data.method === 'DELETE') {
                                     if(destination.length) {
@@ -251,6 +258,7 @@ Vue.prototype.$request = async function(url, data, options) {
                         Vue.set(Vue.prototype.$state, 'entities', merge);
 
                         Vue.prototype.$bus.$emit('merged', merge);
+ */
                     break;
                 default:
                     callback && callback(res);
@@ -294,9 +302,14 @@ let component = {
         parsed_route() {
             return route(this.$state.path);
         },
-        location: {
+        location() {
+            return this.parsed_route.ident;
+        },
+/*         location: {
             get() {
-                let location = void 0;
+                //return route(window.location.pathname).url;
+                return this.parsed_route.url;
+                 let location = void 0;
                 if(this.$state.shared.replacements) {
                     this.$state.shared.replacements.names.find(name => name === this.parsed_route.name) && (location = this.$state.shared.replacements.location);
                     if(location) {
@@ -307,10 +320,11 @@ let component = {
                 }
 
                 return (location && location.component) || this.parsed_route.component;
-                //return this.$state.shared.location || route(this.$state.path).component;
+                 //return this.$state.shared.location || route(this.$state.path).component;
             },
             cache: true
         },
+ */
         loader() {
             return httpVueLoader;
         }
@@ -321,10 +335,15 @@ let component = {
         };
 
         data.name = this.$options.name || this.$options._componentTag;
+/* 
         let current = route(window.location.pathname);
         let identified = current.component.replace(current.name, data.name);
 
         let assigned_data = this.$state.data[data.name] || this.$state.data[identified];
+
+        Object.assign(data, assigned_data);
+ */
+        let assigned_data = this.$state.data[data.name] || {};
 
         Object.assign(data, assigned_data);
 

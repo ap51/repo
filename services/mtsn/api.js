@@ -608,13 +608,13 @@ let flat = function (root, array, parent) {
 
     let __default = root.__default || (root.parent && root.parent.__default) || {};
 
-    root = root.children;
+    let children = root.children;
 
-    for(let name in root) {
-        let component = root[name];
+    for(let name in children) {
+        let component = children[name];
 
         if(name !== '__default') {
-            component = {...component, name, parent};
+            component.name = name;
 
             Object.assign(component, merge(__default, component, {
                 arrayMerge: function (destinationArray, sourceArray, options) {
@@ -631,17 +631,35 @@ let flat = function (root, array, parent) {
             }));
 
             array.push(component);
-            component.children && (array = flat(component, array, component));
+            component.children && (array = flat(component, array));
+
+            component.parent = root;
+            children[name] = component;
         }
     }
 
     return array;
 };
 
+let accessMiddleware = function(options) {
+    return async function(req, res, next) {
+        let response = await accessGranted(req, res, router);
+        
+        res.status(response.status).json(response);
+        return res.end();
+        //next();
+    };
+}
+
 let accessGranted = async function (req, res, router) {
     let {section, name, id, action} = req.params;
+    action = action || 'default';
+    req.params.action = action;
+
     try {
-        let component = access_matrix[section].find(component => component.name === name);
+        !access_matrix[section] && (section = 'ui');
+
+        let component = access_matrix[section] && access_matrix[section].find(component => component.name === name);
         if (component) {
             let {user, client, token} = req;
             let access_group = (user && user.group);
@@ -727,22 +745,27 @@ let accessGranted = async function (req, res, router) {
                 };
 
                 let executeChain = function (component, action) {
-                    component.parent && (component.parent.checkAccess = checkAccess);
-                    let data = (component.parent && executeChain(component.parent, action)) || {};
+                    component.checkAccess = checkAccess;
+                    //component.parent && (component.parent.checkAccess = checkAccess);
 
-                    let method = component.methods[action] ? typeof component.methods[action] === 'function' ? component.methods[action] : component.methods[action].method || noop : noop;
-                    return Object.assign(method(req, res, component) || {}, data);
+                    let data = {};
+
+                    let execute = component.methods ? typeof component.methods[action] === 'object' && (component.methods[action].access && component.methods[action].access.length) ? checkAccess(component.methods[action].access) : true : false;
+                    if(execute) {
+                        let method = component.methods[action] ? typeof component.methods[action] === 'function' ? component.methods[action] : component.methods[action].method || noop : noop;
+                        data[component.name] = method(req, res, component);
+                    }
+
+                    return Object.assign(data, (component.parent && executeChain(component.parent, action)) || {});
                 };
 
-                action = action || 'default';
+                //action = action || 'default';
 
-                let execute = typeof component.methods[action] === 'object' && (component.methods[action].access && component.methods[action].access.length) ? checkAccess(component.methods[action].access) : true;
-
-                let data = execute && executeChain(component, action);
+                let data = executeChain(component, action);
 
                 data.status = component.methods.__status ? component.methods.__status(req, res) : 221;
 
-                data._parent = component.parent;
+                data.parent = component.parent && component.parent.name;
 
                 data = component.methods.__wrapper ? await component.methods.__wrapper(req, res, data) : data;
 
@@ -790,25 +813,33 @@ let matrix = {
             access: ['*'],
             type: void 0,
             methods: {
-                __status() {
-                    return 221;
+                __status(req, res) {
+                    return req.params.action === 'default'  ? 221 : 222;
                 },
                 __wrapper: async function(req, res, data) {
                     data.__wrapped = true;
 
-                    let name = req.params.name;
+                    switch(data.status) {
+                        case 221:
+                            let name = req.params.name;
 
-                    try {
-                        let content = name && await loadContent(name, res, router.service);
-
-                        res.$ = cheerio.load(content);
-                        data.sfc = res.$.html();
-
-                        return data;
+                            try {
+                                let content = name && await loadContent(name, res, router.service);
+        
+                                res.$ = cheerio.load(content);
+                                data.sfc = res.$.html();
+                            }
+                            catch (err) {
+                                throw new CustomError(404, 'Not found');
+                            }
+                            break;
+                        case 222:
+                            break;
+                        default:
+                            break;
                     }
-                    catch (err) {
-                        throw new CustomError(404, 'Not found');
-                    }
+
+                    return data;
                 },
                 'default'() {
                     return {
@@ -857,28 +888,31 @@ let matrix = {
                     'not-found': {},
                     'unknown-error': {},
 
-                    signin: {
+                    'signin': {
                         methods: {},
                     },
-                    signout: {
+                    'signout': {
                         methods: {},
                     },
-                    signup: {
+                    'signup': {
                         methods: {},
                     },
-                    about: {
+                    'about': {
                         type: 'tab',
-                        access: [],
+                        icon: 'far fa-question-circle',
                         methods: {
                             'default': {
                                 access: ['users', 'developers', 'admins'],
-                                method() {
-
+                                method(req, res, self) {
+                                    return self.name;
                                 }
                             },
+                            get() {
+                                return {someData: 'hello'}
+                            }
                         },
                     },
-                    news: {
+                    'news': {
                         type: 'tab',
                         access: ['*'],
                         methods: {
@@ -899,9 +933,9 @@ let matrix = {
                             }
                         }
                     },
-                    public: {
+                    'public': {
                         type: 'tab',
-                        access: [],
+                        icon: 'far fa-address-card',
                         __default: {
                             type: 'tab',
                             access: ['current'],
@@ -929,7 +963,7 @@ let matrix = {
                             },
                         },
                         children: {
-                            feed: {
+                            'feed': {
                                 type: 'tab',
                                 access: [],
                                 methods: {
@@ -941,27 +975,29 @@ let matrix = {
                                     }
                                 },
                             },
-                            friends: {},
-                            charts: {},
-                            profile: {
+                            'friends': {},
+                            'charts': {},
+                            'profile': {
                                 access: ['current', 'admins'],
                             },
-                            search: {},
-                            phones: {},
-                            applications: {}
+                            'search': {},
+                            'phones': {},
+                            'applications': {}
                         }
                     },
-                    clients: {
+                    'clients': {
                         type: 'tab',
+                        icon: 'fas fa-cogs',
                         access: ['admins'],
                         methods: {},
                     },
-                    users: {
+                    'users': {
                         type: 'tab',
+                        icon: 'fas fa-users',
                         access: ['admins'],
                         methods: {},
                     },
-                    scopes: {
+                    'scopes': {
                         type: 'tab',
                         access: ['admins'],
                         methods: {},
@@ -1174,5 +1210,6 @@ module.exports = {
     access,
     action,
     entities,
-    accessGranted
+    //accessGranted,
+    accessMiddleware
 };
