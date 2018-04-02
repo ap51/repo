@@ -12,9 +12,9 @@
     <body>
 
         <div id="app">
-            <router-view name="layout"></router-view>
+            <!--<router-view :name="location"></router-view>-->
             <keep-alive>
-                <component :is="location" transition="fade" transition-mode="out-in"></component>
+                <component :is="location"></component>
             </keep-alive>
 
             <!--

@@ -29,7 +29,8 @@ Vue.prototype.$state = {
     shared: {},
     locationToggle: false,
     token: localStorage.getItem(`${service}:token`),
-    auth: {}
+    auth: {},
+    hierarchy: void 0
     //token: '{user_id:1010010, user_name:"bob dilan", container_id:"pdqwp08qfu", token:"qfefw98we7ggwvv7s"}',
 };
 
@@ -82,7 +83,8 @@ router.beforeEach(async function (to, from, next) {
     //path = path.replace(Vue.prototype.$state.base_ui, '');
 
     Vue.prototype.$state.shared.location = void 0;
-    Vue.prototype.$page(path, true);
+    //Vue.prototype.$page(path, true);
+    Vue.prototype.$request(path);
 
     next();
 });
@@ -178,7 +180,7 @@ Vue.prototype.$request = async function(url, data, options) {
         .then(function(res) {
             if(res.status > 220) {
                 res.data.token && Vue.set(Vue.prototype.$state, 'token', res.data.token);
-                localStorage.setItem(`${service}:token`, Vue.prototype.$state.token);
+                Vue.prototype.$state.token && localStorage.setItem(`${service}:token`, Vue.prototype.$state.token);
 
                 Vue.set(Vue.prototype.$state, 'auth', res.data.auth || '');
 
@@ -213,9 +215,10 @@ Vue.prototype.$request = async function(url, data, options) {
 
                         cache[component] = res.data.sfc || cache[component];
 
+                        //Vue.prototype.$state.hierarchy = ['layout', 'public', 'feed'];
+                        Vue.prototype.$state.hierarchy = ['layout', 'about'];
+
                         //res.data.parent && Vue.prototype.$page(res.data.parent);
-                        res.data.parent && !cache[res.data.parent] && httpVueLoader.register(Vue, res.data.parent);
-                        res.data.parent && !cache[res.data.parent] && (Vue.prototype.$state.path = res.data.parent);
 
                         //Vue.prototype.$request(`${Vue.prototype.$state.base_ui}${parsed.ident}.get`);
                         //console.log('REQUEST:', `${Vue.prototype.$state.base_api}${parsed.ident}.get`);
@@ -303,7 +306,15 @@ let component = {
             return route(this.$state.path);
         },
         location() {
-            return this.parsed_route.ident;
+            if(this.state.hierarchy) {
+                let name = this.name || '';
+                if (name === '' || this.state.hierarchy.includes(name)) {
+                    let inx = this.state.hierarchy.indexOf(name);
+                    let component = this.state.hierarchy[inx + 1];
+                    !cache[component] && httpVueLoader.register(Vue, component);
+                    return component;
+                }
+            }
         },
 /*         location: {
             get() {
