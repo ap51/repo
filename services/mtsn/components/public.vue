@@ -80,9 +80,9 @@
         },
         activated() {
             console.log('ACTIVE', this.active)
-            this.active = (!(this.active === '') && this.active) || this.tabs[0].to || this.tabs[0].name;
-            newValue = this.active.replace(Vue.prototype.$state.base_ui, '');
-            newValue !== this.state.path && this.$router.replace(newValue);
+            //this.active = (!(this.active === '') && this.active) || this.tabs[0].to || this.tabs[0].name;
+            //newValue = this.active.replace(Vue.prototype.$state.base_ui, '');
+            //newValue !== this.state.path && this.$router.replace(newValue);
         },
         computed: {
         },

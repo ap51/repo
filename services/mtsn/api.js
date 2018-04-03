@@ -652,9 +652,11 @@ let accessMiddleware = function(options) {
     return async function(req, res, next) {
         let response = await accessGranted(req, res, router);
         
-        res.status(response.status).json(response);
+        res.locals.response = response;
+/*         res.status(response.status).json(response);
         return res.end();
-        //next();
+ */
+        next();
     };
 }
 
@@ -752,7 +754,7 @@ let accessGranted = async function (req, res, router) {
                     return {}
                 };
 
-                let executeChain = function (component, action) {
+                let executeChain = async function (component, action) {
                     component.checkAccess = checkAccess;
                     //component.parent && (component.parent.checkAccess = checkAccess);
 
@@ -761,7 +763,7 @@ let accessGranted = async function (req, res, router) {
                     let execute = component.methods ? typeof component.methods[action] === 'object' && (component.methods[action].access && component.methods[action].access.length) ? checkAccess(component.methods[action].access) : true : false;
                     if(execute) {
                         let method = component.methods[action] ? typeof component.methods[action] === 'function' ? component.methods[action] : component.methods[action].method || noop : noop;
-                        data[component.name] = method(req, res, component);
+                        data[component.name] = await method(req, res, component);
                     }
 
                     return Object.assign(data, (component.parent && executeChain(component.parent, action)) || {});
@@ -769,7 +771,7 @@ let accessGranted = async function (req, res, router) {
 
                 //action = action || 'default';
 
-                let data = executeChain(component, action);
+                let data = await executeChain(component, action);
 
                 data.status = component.methods.__status ? component.methods.__status(req, res) : 221;
 
@@ -779,13 +781,9 @@ let accessGranted = async function (req, res, router) {
 
                 data = component.methods.__wrapper ? await component.methods.__wrapper(req, res, data) : data;
 
-                let response = {
-                    data,
-                    auth,
-                    token
-                };
+                let response = {...data, auth};
 
-                return data;
+                return response;
             }
         }
         else throw new CustomError(404, 'Not found');
@@ -901,12 +899,6 @@ let matrix = {
 
                     'dialog-signin': {
                         methods: {
-                            default() {
-                                return {
-                                    email: 'ap@gmail.com',
-                                    password: '123'
-                                }
-                            }
                         },
                     },
                     'signin': {
@@ -915,6 +907,32 @@ let matrix = {
                                 return {
                                     email: 'ap@gmail.com',
                                     password: '123'
+                                }
+                            },
+                            async submit(req, res) {
+
+                                try {
+                                    //await router.authenticateHandler({force: true})(req, res);
+                                    let {client_id, client_secret, scope} = await database.findOne('client', {client_id: 'authenticate'});
+                
+                                    req.body.username = req.body.email;
+                                    req.body.client_id = client_id;
+                                    req.body.client_secret = client_secret;
+                                    req.body.grant_type = 'password';
+                                    req.body.scope = scope.join(',');
+                
+                                    let token = await router.tokenHandler({})(req, res);
+
+                                    let {accessToken, accessTokenExpiresAt, refreshToken, user, client} = token;
+                                    req.token.access = {
+                                        token: accessToken,
+                                        expired: accessTokenExpiresAt,
+                                        user,
+                                        client
+                                    };
+                                }
+                                catch(err) {
+                                    res.status(err.code).end(err.message);
                                 }
                             }
                         },
@@ -1035,12 +1053,18 @@ let matrix = {
                         icon: 'fas fa-cogs',
                         access: ['admins'],
                         methods: {},
+                        children: {
+                            'client-dialog': {}
+                        }
                     },
                     'users': {
                         type: 'tab',
                         icon: 'fas fa-users',
                         access: ['admins'],
                         methods: {},
+                        children: {
+                            'user-dialog': {}
+                        }
                     },
                     'scopes': {
                         type: 'tab',

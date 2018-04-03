@@ -2,7 +2,7 @@
     <div class="layout-view">
         <h1>page not found:</h1>
         <v-icon color="red darken-2" class="shadow">fas fa-unlink fa-3x</v-icon>
-        <h1>"{{location}}"</h1>
+        <h1>"{{address.ident}}"</h1>
 
         <v-btn color="blue darken-2" flat="flat" @click.stop="reload()">Try again</v-btn>
     </div>

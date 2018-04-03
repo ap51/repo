@@ -19,13 +19,14 @@ let getSFC = function(name, service){
 
 let loadContent = async function (name, res, service) {
     let content = '';
-    try {
+    content = await getSFC(name, service);
+/*     try {
         content = await getSFC(name, service);
     }
     catch (err) {
         content = await getSFC('not-found', service);
     }
-
+ */
     return content;
 };
 
@@ -169,12 +170,12 @@ let _router = function(service) {
         return async function (req, res, next) {
             //console.log('BEGIN - ', req.originalUrl);
 
-            req.params = res.locals.params || req.params;
+/*             req.params = res.locals.params || req.params;
             let name = req.params.name;
 
             let content = name && await loadContent(name, res, service);
             res.$ = cheerio.load(content);
-
+ */
 /*
             router.components = router.components || {};
             res.component = router.components[name];
@@ -210,9 +211,8 @@ let _router = function(service) {
         return async function (req, res, next) {
             //req.params.action && res.component[req.params.action] && await res.component[req.params.action](req, res);
 
-            req._token[router.service] = req.token;
 
-            let response = {
+/*             let response = {
                 error: res.locals.error,
                 redirect_remote: res.redirect_remote,
                 redirect_local: res.redirect_local,
@@ -230,7 +230,7 @@ let _router = function(service) {
 
                 res.locals.component = res.$.html();
             }
-
+ */
 /*
             router.shared = {};
 
@@ -266,7 +266,7 @@ let _router = function(service) {
             !res.locals.shared.location && (res.locals.shared.location = '');
 */
 
-            if(!response.error) {
+/*             if(!response.error) {
                 response = {...response,
                     data: res.locals.data,
                     shared: res.locals.shared,
@@ -278,8 +278,14 @@ let _router = function(service) {
             delete res.locals.redirect;
 
             res.status(221).json(response);
+ */
 
+            req._token[router.service] = req.token;
 
+            let response = res.locals.response;
+            response.token = await router.encode(req._token);
+
+            res.status(response.status).json(response);
             return res.end();
             //res.send(JSON.stringify(response));
 

@@ -117,7 +117,7 @@ Vue.prototype.$page = function(path, force) {
         !cache[component] && httpVueLoader.register(Vue, component);
 
         Vue.prototype.$state.locationToggle = !Vue.prototype.$state.locationToggle;
-        Vue.prototype.$state.locations[name] ? Vue.prototype.$state.hierarchy = Vue.prototype.$state.locations[name] : Vue.prototype.$request(url);
+        Vue.prototype.$state.locations[name] ? Vue.prototype.$state.hierarchy = Vue.prototype.$state.locations[name] : Vue.prototype.$request(component);
     }
 };
 
@@ -299,6 +299,9 @@ let component = {
         },
         parsed_route() {
             return route(this.$state.path);
+        },
+        address() {
+            return route(window.location.pathname);
         },
         location() {
             if(this.state.hierarchy) {

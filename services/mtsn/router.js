@@ -27,43 +27,14 @@ let oauth = new OAuth2Server({
 
 router.authenticateHandler = function(options) {
     return async function(req, res, next) {
-        //if(req.params.name === 'clients' || req.params.name === 'signin') {
-        let result = await api.accessGranted(req, res, router);
-        //console.log(granted);
+        let request = new Request(req);
+        let response = new Response(res);
 
-        if(options.force || api.secured(req, res)) {
-            try {
-                let request = new Request(req);
-                let response = new Response(res);
-
-                options.scope = req.path;
-                let token = await oauth.authenticate(request, response, options);
-                //req.locals.token = token;
-
-/*
-                let granted = endpoints.access(options.endpoint, req.params, token.user.group);
-                if(!!!granted) {
-                    throw new OAuth2Server.InsufficientScopeError('Access denied.');
-                }
-                else {
-                    //console.log(granted);
-                    res.locals.unit = granted;
-                }
-*/
-            }
-            catch (err) {
-
-                let {code, message} = err;
-                res.locals.error = {code, message};
-
-                if (code === 401 && req.token) {
-                    req.token.access = void 0;
-                    req.token.auth = void 0;
-                }
-
-            }
-        }
-
+        //options.scope = req.path;
+        options.scope = true;
+        let token = await oauth.authenticate(request, response, options);
+        return token;
+    
         next && next();
     }
 };
@@ -107,20 +78,14 @@ function authorizeHandler(options) {
 
 router.tokenHandler = function(options) {
     return async function(req, res, next) {
-        try {
-            let request = new Request(req);
-            let response = new Response(res);
+        let request = new Request(req);
+        let response = new Response(res);
 
-            let token = await oauth.token(request, response, options);
+        let token = await oauth.token(request, response, options);
 
-            return token;
-        }
-        catch (err) {
-            let {code, message} = err;
-            res.locals.error = {code, message};
-            console.log(err);
-        }
-        next && next()
+        return token;
+
+        next && next();
     }
 };
 
@@ -187,6 +152,7 @@ router.all(['/files/*/:file', '/files/:file'], function(req, res, next) {
     }
     else res.status(404).end('Not found.');
 });
+
 router.all(config.patterns, api.accessMiddleware({}), async function (req, res, next) {
     next(); //to utils endHandler
 });
@@ -327,24 +293,24 @@ router.all(['/ui/profile', '/ui/clients'], router.authenticateHandler({allowBear
     next();
 });
  */
-router.all(patterns, router.beginHandler());
+
+//router.all(patterns, router.beginHandler());
 
 //router.all(patterns, authenticateHandler());
 
-router.all(patterns, function(req, res, next) {
-    //console.log(req.params);
+/* router.all(patterns, function(req, res, next) {
     next();
 });
+ */
+//router.post('/oauthorize', authorizeHandler(authorizeOptions));
 
-router.post('/oauthorize', authorizeHandler(authorizeOptions));
+//router.post('/otoken', router.tokenHandler());
 
-router.post('/otoken', router.tokenHandler());
-
-router.post('/grant', function(req, res, next){
+/* router.post('/grant', function(req, res, next){
     next();
 });
-
-router.all(patterns, router.endHandler());
+ */
+router.all(config.patterns, router.endHandler());
 
 module.exports = function (name) {
     return router;
