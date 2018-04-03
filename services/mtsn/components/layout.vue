@@ -9,7 +9,7 @@
 
                         <v-tabs-slider color="yellow"></v-tabs-slider>
 
-                        <v-tab v-for="tab in shared.layout_tabs"
+                        <v-tab v-for="tab in tabs"
                              :key="tab.name"
                              :to="tab.to || tab.name"
                              v-if="!tab.right">

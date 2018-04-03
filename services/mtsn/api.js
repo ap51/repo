@@ -630,10 +630,17 @@ let flat = function (root, array, parent) {
                 }
             }));
 
+            let parent = root;
+            component.parent = root;
+
+            component.parents = [];
+            while(parent && parent.name) {
+                component.parents.push(parent);
+                parent = parent.parent;
+            }
+
             array.push(component);
             component.children && (array = flat(component, array));
-
-            component.parent = root;
             children[name] = component;
         }
     }
@@ -655,6 +662,7 @@ let accessGranted = async function (req, res, router) {
     let {section, name, id, action} = req.params;
     action = action || 'default';
     req.params.action = action;
+    let location = parseRoute(req.headers['location']).name || name;
 
     try {
         !access_matrix[section] && (section = 'ui');
@@ -722,7 +730,7 @@ let accessGranted = async function (req, res, router) {
             }
 
             let checkAccess = function (access) {
-                return access.length ? access.some(group => (group === 'current' && user.public_id === id) || (user && group === '*') || (group === access_group)) : true;
+                return access.length ? access.some(group => (group === 'current' && user && user.public_id === id) || (user && group === '*') || (group === access_group)) : true;
             };
 
             let access = needAuthentication ? checkAccess(component.access) : true;
@@ -766,6 +774,8 @@ let accessGranted = async function (req, res, router) {
                 data.status = component.methods.__status ? component.methods.__status(req, res) : 221;
 
                 data.parent = component.parent && component.parent.name;
+                data.location = access_matrix[section].find(component => component.name === location);
+                data.location = data.location.parents.length ? data.location.parents.map(obj => obj.name).reverse().join('.') + '.' + data.location.name : data.location.name;
 
                 data = component.methods.__wrapper ? await component.methods.__wrapper(req, res, data) : data;
 
@@ -873,7 +883,8 @@ let matrix = {
                                 //service: 'NO SERVICE',
                                 title: router.service,
                                 icon: 'fab fa-empire',
-                                signin: false
+                                signin: false,
+                                tabs
                             };
                         }
                     }
@@ -888,8 +899,25 @@ let matrix = {
                     'not-found': {},
                     'unknown-error': {},
 
+                    'dialog-signin': {
+                        methods: {
+                            default() {
+                                return {
+                                    email: 'ap@gmail.com',
+                                    password: '123'
+                                }
+                            }
+                        },
+                    },
                     'signin': {
-                        methods: {},
+                        methods: {
+                            default() {
+                                return {
+                                    email: 'ap@gmail.com',
+                                    password: '123'
+                                }
+                            }
+                        },
                     },
                     'signout': {
                         methods: {},
@@ -936,6 +964,23 @@ let matrix = {
                     'public': {
                         type: 'tab',
                         icon: 'far fa-address-card',
+                        methods: {
+                            default(req, res, self) {
+                                let tabs = [];
+                                for(let name in self.children) {
+                                    let child = self.children[name];
+                                    child.type === 'tab' && self.checkAccess(child.access) && tabs.push({
+                                        name,
+                                        to: `${name}${req.params.id ? ':' + req.params.id : ''}`,
+                                        icon: child.icon
+                                    });
+                                }
+    
+                                return {
+                                    tabs
+                                };    
+                            }
+                        },
                         __default: {
                             type: 'tab',
                             access: ['current'],

@@ -30,7 +30,8 @@ Vue.prototype.$state = {
     locationToggle: false,
     token: localStorage.getItem(`${service}:token`),
     auth: {},
-    hierarchy: void 0
+    hierarchy: void 0,
+    locations: {}
     //token: '{user_id:1010010, user_name:"bob dilan", container_id:"pdqwp08qfu", token:"qfefw98we7ggwvv7s"}',
 };
 
@@ -80,13 +81,9 @@ let router = new VueRouter(
 router.beforeEach(async function (to, from, next) {
     let path = to.params.name || to.path;
 
-    //path = path.replace(Vue.prototype.$state.base_ui, '');
-
-    Vue.prototype.$state.shared.location = void 0;
-    //Vue.prototype.$page(path, true);
-    Vue.prototype.$request(path);
-
     next();
+
+    Vue.prototype.$page(path, true);
 });
 
 
@@ -106,7 +103,6 @@ axios.interceptors.response.use(
         return response;
     },
     function (error) {
-        //error.response.status === 401 && (Vue.prototype.$state.auth = void 0);
         error.message = (error.response && error.response.data) || error.message;
         error.code = error.response.status || error.code;
         return Promise.reject(error);
@@ -114,16 +110,14 @@ axios.interceptors.response.use(
 );
 
 Vue.prototype.$page = function(path, force) {
-    //path = path.replace(Vue.prototype.$state.base_ui, '');
     if(force || Vue.prototype.$state.path !== path) {
-        //force && (Vue.prototype.$state.path = '');
         let parsed = route(path);
         let {ident, url, name, component} = parsed;
 
         !cache[component] && httpVueLoader.register(Vue, component);
 
         Vue.prototype.$state.locationToggle = !Vue.prototype.$state.locationToggle;
-        Vue.prototype.$state.path = url;
+        Vue.prototype.$state.locations[name] ? Vue.prototype.$state.hierarchy = Vue.prototype.$state.locations[name] : Vue.prototype.$request(url);
     }
 };
 
@@ -147,6 +141,8 @@ Vue.prototype.$request = async function(url, data, options) {
     if(response)
         return response;
 
+    let location = route(window.location.pathname).ident;
+
     let conf = {
         url: url,
         method: data ? method || 'post' : 'get',
@@ -154,7 +150,7 @@ Vue.prototype.$request = async function(url, data, options) {
             'content-type': encode ? 'application/x-www-form-urlencoded' : 'application/json',
             //'Authorization': Vue.prototype.$state.token ? `Bearer ${Vue.prototype.$state.token}` : '',
             'token': Vue.prototype.$state.token || '',
-            'location': data ? data.location || window.location.pathname : window.location.pathname,
+            'location': data ? data.location || location : location,
             //'user-agent': 'internal'
         },
         transformRequest: function(obj) {
@@ -183,7 +179,7 @@ Vue.prototype.$request = async function(url, data, options) {
                 Vue.prototype.$state.token && localStorage.setItem(`${service}:token`, Vue.prototype.$state.token);
 
                 Vue.set(Vue.prototype.$state, 'auth', res.data.auth || '');
-
+                
 /* 
                 if (res.data.redirect_remote) {
                     window.location.replace(res.data.redirect.remote);
@@ -214,9 +210,8 @@ Vue.prototype.$request = async function(url, data, options) {
                         //Object.assign(Vue.prototype.$state.shared, res.data.shared);
 
                         cache[component] = res.data.sfc || cache[component];
-
-                        //Vue.prototype.$state.hierarchy = ['layout', 'public', 'feed'];
-                        Vue.prototype.$state.hierarchy = ['layout', 'about'];
+                        Vue.prototype.$state.locations[name] = Vue.prototype.$state.locations[name] || res.data.location.split('.');
+                        Vue.prototype.$state.hierarchy = Vue.prototype.$state.locations[name];
 
                         //res.data.parent && Vue.prototype.$page(res.data.parent);
 
