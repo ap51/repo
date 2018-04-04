@@ -658,7 +658,7 @@ let accessMiddleware = function(options) {
  */
         next();
     };
-}
+};
 
 let accessGranted = async function (req, res, router) {
     let {section, name, id, action} = req.params;
@@ -777,6 +777,7 @@ let accessGranted = async function (req, res, router) {
 
                 data.parent = component.parent && component.parent.name;
                 data.location = access_matrix[section].find(component => component.name === location);
+                !data.location && (data.location = access_matrix[section].find(component => component.name === 'not-found'));
                 data.location = data.location.parents.length ? data.location.parents.map(obj => obj.name).reverse().join('.') + '.' + data.location.name : data.location.name;
 
                 data = component.methods.__wrapper ? await component.methods.__wrapper(req, res, data) : data;
@@ -808,6 +809,7 @@ let accessGranted = async function (req, res, router) {
         }
 
         req.params.section = section;
+        req.headers['location'] = req.params.name;
         return accessGranted(req, res, router);
     }
 
@@ -872,7 +874,7 @@ let matrix = {
                                 let child = self.children[name];
                                 child.type === 'tab' && self.checkAccess(child.access) && tabs.push({
                                     name,
-                                    to: `${name}${req.params.id ? ':' + req.params.id : ''}`,
+                                    to: `${child.to || name}${req.params.id ? ':' + req.params.id : ''}`,
                                     icon: child.icon
                                 });
                             }
@@ -981,6 +983,7 @@ let matrix = {
                     },
                     'public': {
                         type: 'tab',
+                        to: 'child',
                         icon: 'far fa-address-card',
                         methods: {
                             default(req, res, self) {
@@ -989,7 +992,7 @@ let matrix = {
                                     let child = self.children[name];
                                     child.type === 'tab' && self.checkAccess(child.access) && tabs.push({
                                         name,
-                                        to: `${name}${req.params.id ? ':' + req.params.id : ''}`,
+                                        to: `${child.to || name}${req.params.id ? ':' + req.params.id : ''}`,
                                         icon: child.icon
                                     });
                                 }
@@ -1028,7 +1031,6 @@ let matrix = {
                         children: {
                             'feed': {
                                 type: 'tab',
-                                access: [],
                                 methods: {
                                     'save': {
                                         access: ['current', 'admins'],
@@ -1041,9 +1043,11 @@ let matrix = {
                             'friends': {},
                             'charts': {},
                             'profile': {
-                                access: ['current', 'admins'],
+                                //access: ['current', 'admins'],
                             },
-                            'search': {},
+                            'search': {
+                                access: [],
+                            },
                             'phones': {},
                             'applications': {}
                         }

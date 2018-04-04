@@ -75,7 +75,8 @@
         },
         created() {
             console.log('public create', this.active);
-            //httpVueLoader.register(Vue, this.parsed_route.component);
+            //this.loader.register(Vue, this.tabs[0].to || this.tabs[0].name);
+            this.$router.replace(this.tabs[0].to || this.tabs[0].name);
             //console.log(this.tabs[this.active].name);
         },
         activated() {

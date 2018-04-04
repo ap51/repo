@@ -1,10 +1,9 @@
 <template>
     <div class="layout-view">
-        <h1>page not found:</h1>
-        <v-icon color="red darken-2" class="shadow">fas fa-unlink fa-3x</v-icon>
+        <h1>unknown error</h1>
+        <v-icon color="red darken-2" class="shadow">fas fa-error fa-3x</v-icon>
         <h1>"{{address.ident}}"</h1>
 
-        <v-btn color="blue darken-2" flat="flat" @click.stop="reload()">Try again</v-btn>
     </div>
 </template>
 
@@ -35,13 +34,14 @@
 <script>
     module.exports = {
         extends: component,
+        mounted() {
+        },
         methods: {
-            reload() {
-                //window.location.pathname = this.$state.base + this.$state.path;
-                this.$page(this.address.ident);
+            signin() {
+                this.$bus.$emit('signin');
             }
         }
     }
 
-    //# sourceURL=not-found.js
+    //# sourceURL=unauthorized.js
 </script>
