@@ -3,6 +3,7 @@
         <v-toolbar flat color="white lighten-2" dense class="elevation-1 ma-1">
             <v-toolbar-title>{{name}}:</v-toolbar-title>
             <v-spacer></v-spacer>
+            <v-btn flat to="feed:ap-51"><v-icon color="green darken-2" class="mr-1 mb-1">far fa-check-circle</v-icon>profile ap-51</v-btn>
             <v-btn flat to="profile:jd"><v-icon color="green darken-2" class="mr-1 mb-1">far fa-check-circle</v-icon>profile jd</v-btn>
             <v-btn flat to="feed:jd"><v-icon color="green darken-2" class="mr-1 mb-1">far fa-check-circle</v-icon>feed jd</v-btn>
             <!-- <v-btn flat="flat" :disabled="selected.length === 0" @click.stop="remove"><v-icon color="red darken-2" class="mr-1 mb-1">fas fa-times</v-icon>remove</v-btn> -->
@@ -28,7 +29,7 @@
 <!-- :request="$request" -->
 <!-- :prefill="`${state.base}files/images/${object.avatar}` || 'static/foster.jpg'" -->
                                 <picture-input
-                                    :request="$request"            
+                                    :request="$request"
                                     class="elevation-1"
                                     ref="pictureInput"
                                     @change="onChange"

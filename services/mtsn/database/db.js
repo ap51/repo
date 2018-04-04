@@ -78,7 +78,7 @@ class NotFoundError extends Error {
 }
 
 db.find = function(collection, query, options) {
-    let {allow_empty} = options || {};
+    let {not_clear_result, allow_empty} = options || {};
 
     return new Promise(function (resolve, reject) {
         db[collection].find(query).sort({created: 1}).exec(function (err, results) {
@@ -87,9 +87,12 @@ db.find = function(collection, query, options) {
             }
             else {
                 results && results.length && resolve(results.map(record => {
-                    record.id = record._id; 
-                    let {_id, ...clean} = record; 
-                    return clean
+                    if(!not_clear_result) {
+                        record.id = record._id;
+                        let {_id, ...clean} = record;
+                        return clean;
+                    }
+                    return record;
                 }));
 
                 results && !results.length && (!allow_empty ? reject(new NotFoundError(collection)) : resolve(results));

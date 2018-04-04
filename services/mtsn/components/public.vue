@@ -44,7 +44,7 @@
                     <v-flex xs12>
                         <!--<router-view name="tabs[active].name"></router-view>-->
                         <keep-alive>
-                            <component :is="parseRoute(active).component"></component>
+                            <component :is="location"></component>
                         </keep-alive>
                     </v-flex>
                 </v-layout>
@@ -76,7 +76,7 @@
         created() {
             console.log('public create', this.active);
             //this.loader.register(Vue, this.tabs[0].to || this.tabs[0].name);
-            this.$router.replace(this.tabs[0].to || this.tabs[0].name);
+            //this.$router.replace(this.tabs[0].to || this.tabs[0].name);
             //console.log(this.tabs[this.active].name);
         },
         activated() {

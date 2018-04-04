@@ -117,7 +117,7 @@ Vue.prototype.$page = function(path, force) {
         !cache[component] && httpVueLoader.register(Vue, component);
 
         Vue.prototype.$state.locationToggle = !Vue.prototype.$state.locationToggle;
-        Vue.prototype.$state.locations[name] ? Vue.prototype.$state.hierarchy = Vue.prototype.$state.locations[name] : Vue.prototype.$request(component);
+        Vue.prototype.$state.locations[component] ? Vue.prototype.$state.hierarchy = Vue.prototype.$state.locations[component] : Vue.prototype.$request(component);
     }
 };
 
@@ -210,8 +210,8 @@ Vue.prototype.$request = async function(url, data, options) {
                         //Object.assign(Vue.prototype.$state.shared, res.data.shared);
 
                         cache[component] = res.data.sfc || cache[component];
-                        Vue.prototype.$state.locations[name] = Vue.prototype.$state.locations[name] || res.data.location.split('.');
-                        Vue.prototype.$state.hierarchy = Vue.prototype.$state.locations[name];
+                        Vue.prototype.$state.locations[component] = Vue.prototype.$state.locations[component] || res.data.location.split('.');
+                        Vue.prototype.$state.hierarchy = Vue.prototype.$state.locations[component];
 
                         //res.data.parent && Vue.prototype.$page(res.data.parent);
 

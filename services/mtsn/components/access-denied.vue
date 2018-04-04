@@ -2,7 +2,7 @@
     <div class="layout-view">
         <h1>access denied</h1>
         <v-icon color="red darken-2" class="shadow">fas fa-minus-circle fa-3x</v-icon>
-        <h1>"{{location}}"</h1>
+        <h1>"{{parsed_route.ident}}"</h1>
 
         <v-btn color="blue darken-2" flat="flat" @click="signin()">Sign in</v-btn>
     </div>

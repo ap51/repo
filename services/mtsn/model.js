@@ -68,6 +68,29 @@ model.saveToken = async function(token, client, user, callback) {
     });
 };
 
+model.getAccessToken = function(accessToken, callback) {
+    db.token.find({accessToken}, async function(err, tokens) {
+        let token = tokens[0];
+        if(token) {
+            token.user = await db.findOne('user', {_id: token.user._id}, {not_clear_result: true});
+            token.client = await db.findOne('client', {_id: token.client._id}, {not_clear_result: true});
+        }
+        tokens.length ? callback(null, token) : callback(err || new OAuth2Server.InvalidTokenError());
+    });
+};
+
+model.getRefreshToken = async function(refreshToken, callback) {
+    db.token.find({refreshToken}, async function(err, tokens) {
+        let token = tokens[0];
+        if(token) {
+            token.user = await db.findOne('user', {_id: token.user._id}, {not_clear_result: true});
+            token.client = await db.findOne('client', {_id: token.client._id});
+        }
+        tokens.length ? callback(null, token) : callback(err || new OAuth2Server.InvalidTokenError());
+    });
+
+};
+
 model.saveAuthorizationCode = async function(code, client, user, callback) {
     code.client = {id: client.client_id};
     code.user = user._id;
@@ -96,34 +119,11 @@ model.getUserFromClient = async function(client, callback) {
     return await new Promise('getUserFromClient!');
 };
 
-model.getRefreshToken = async function(refreshToken, callback) {
-    db.token.find({refreshToken}, async function(err, tokens) {
-        let token = tokens[0];
-        if(token) {
-            token.user = await db.findOne('user', {_id: token.user._id});
-            token.client = await db.findOne('client', {_id: token.client._id});
-        }
-        tokens.length ? callback(null, token) : callback(err || new OAuth2Server.InvalidTokenError());
-    });
-
-};
-
 model.revokeToken = async function(token, callback) {
     db.token.remove({accessToken: token.accessToken}, {}, function (err, removed) {
         callback(err, removed);
     });
 
-};
-
-model.getAccessToken = function(accessToken, callback) {
-    db.token.find({accessToken}, async function(err, tokens) {
-        let token = tokens[0];
-        if(token) {
-            token.user = await db.findOne('user', {_id: token.user._id});
-            token.client = await db.findOne('client', {_id: token.client._id});
-        }
-        tokens.length ? callback(null, token) : callback(err || new OAuth2Server.InvalidTokenError());
-    });
 };
 
 model.verifyScope = function(accessToken, scope, callback) {

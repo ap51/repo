@@ -732,7 +732,7 @@ let accessGranted = async function (req, res, router) {
             }
 
             let checkAccess = function (access) {
-                return access.length ? access.some(group => (group === 'current' && user && user.public_id === id) || (user && group === '*') || (group === access_group)) : true;
+                return access.length ? access.some(group => (group === 'current' && user && (user.public_id === req.params.id || !req.params.id)) || (user && group === '*') || (group === access_group)) : true;
             };
 
             let access = needAuthentication ? checkAccess(component.access) : true;
@@ -778,7 +778,8 @@ let accessGranted = async function (req, res, router) {
                 data.parent = component.parent && component.parent.name;
                 data.location = access_matrix[section].find(component => component.name === location);
                 !data.location && (data.location = access_matrix[section].find(component => component.name === 'not-found'));
-                data.location = data.location.parents.length ? data.location.parents.map(obj => obj.name).reverse().join('.') + '.' + data.location.name : data.location.name;
+                //data.location = data.location.parents.length ? data.location.parents.map(obj => obj.name).reverse().join('.') + '.' + data.location.name : data.location.name;
+                data.location = data.location.parents.length ? data.location.parents.map(obj => obj.name).reverse().join('.') + '.' + component.route.component : component.route.component;
 
                 data = component.methods.__wrapper ? await component.methods.__wrapper(req, res, data) : data;
 
@@ -826,6 +827,18 @@ let matrix = {
                 __status(req, res) {
                     return req.params.action === 'default'  ? 221 : 222;
                 },
+                __checkAccess(req, res, access) {
+                    let user = req.user;
+                    return (access && access.length) ? access.some(group => (group === 'current' && user && (user.public_id === req.params.id || !req.params.id)) || (user && group === '*') || (user && group === user.group)) : true;
+                },
+                __typedChildren(req, res, self, type) {
+                    let typed_children = [];
+                    for(let name in self.children) {
+                        let child = self.children[name];
+                        child.type === type && self.methods.__checkAccess(req, res, child.access) && typed_children.push(child);
+                    }
+                    return typed_children;
+                },
                 __wrapper: async function(req, res, data) {
                     data.__wrapped = true;
 
@@ -851,7 +864,23 @@ let matrix = {
 
                     return data;
                 },
-                'default'() {
+                __tabs(req, res, self) {
+                    let getTo = function (component) {
+                        return typeof component.to === 'function' ? component.to(req, res, component) : component.to || component.name;
+                    };
+
+                    let tabs = self.methods.__typedChildren(req, res, self, 'tab');
+                    tabs = tabs.map(child => {
+                        return {
+                            name: child.name,
+                            to: getTo(child), //`${child.to === '__child__' ? child.methods.__tabs(req, res, child)[0].to : child.to || child.name}${req.params.id ? ':' + req.params.id : ''}`,
+                            icon: child.icon
+                        }
+                    });
+
+                    return tabs;
+                },
+                default() {
                     return {
                         service: router.service
                     }
@@ -869,15 +898,7 @@ let matrix = {
                         method(req, res, self) {
                             console.log(self);
 
-                            let tabs = [];
-                            for(let name in self.children) {
-                                let child = self.children[name];
-                                child.type === 'tab' && self.checkAccess(child.access) && tabs.push({
-                                    name,
-                                    to: `${child.to || name}${req.params.id ? ':' + req.params.id : ''}`,
-                                    icon: child.icon
-                                });
-                            }
+                            let tabs = self.methods.__tabs(req, res, self);
 
                             return {
                                 //service: 'NO SERVICE',
@@ -940,7 +961,16 @@ let matrix = {
                         },
                     },
                     'signout': {
-                        methods: {},
+                        methods: {
+                            async submit(req, res) {
+                                await database.remove('token', {accessToken: req.token.access.token});
+
+                                req.token.access = void 0;
+                                req.user = void 0;
+
+                                return {};
+                            }
+                        },
                     },
                     'signup': {
                         methods: {},
@@ -983,10 +1013,11 @@ let matrix = {
                     },
                     'public': {
                         type: 'tab',
-                        to: 'child',
+                        to: 'search',
                         icon: 'far fa-address-card',
                         methods: {
                             default(req, res, self) {
+/*
                                 let tabs = [];
                                 for(let name in self.children) {
                                     let child = self.children[name];
@@ -996,9 +1027,10 @@ let matrix = {
                                         icon: child.icon
                                     });
                                 }
-    
+*/
+
                                 return {
-                                    tabs
+                                    tabs: self.methods.__tabs(req, res, self)
                                 };    
                             }
                         },
@@ -1029,8 +1061,15 @@ let matrix = {
                             },
                         },
                         children: {
+                            'search': {
+                                access: [],
+                            },
                             'feed': {
                                 type: 'tab',
+                                access: [],
+                                to(req, res, self) {
+                                    return self.name + ':' + req.user.public_id;
+                                },
                                 methods: {
                                     'save': {
                                         access: ['current', 'admins'],
@@ -1044,11 +1083,19 @@ let matrix = {
                             'charts': {},
                             'profile': {
                                 //access: ['current', 'admins'],
+                                children: {
+                                    'picture-input': {
+                                        access: []
+                                    }
+                                }
                             },
-                            'search': {
-                                access: [],
+                            'phones': {
+                                children: {
+                                    'phone-dialog': {
+                                        access: []
+                                    }
+                                }
                             },
-                            'phones': {},
                             'applications': {}
                         }
                     },

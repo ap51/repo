@@ -102,7 +102,7 @@
                 };
 
                 cache = {};
-                this.$request(`${Vue.prototype.$state.base_api}signout.submit`, data);
+                this.$request(`${Vue.prototype.$state.base_api}signout.submit`, data, {callback: this.cancel});
             },
             save(user) {
                 if (this.$refs.form.validate()) {
