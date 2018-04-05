@@ -180,40 +180,45 @@ Vue.prototype.$request = async function(url, data, options) {
                 Vue.prototype.$state.token && localStorage.setItem(`${service}:token`, Vue.prototype.$state.token);
 
                 Vue.set(Vue.prototype.$state, 'auth', res.data.auth || '');
-                
-/* 
-                if (res.data.redirect_remote) {
-                    window.location.replace(res.data.redirect.remote);
-                    return;
-                }
 
-                if (res.data.redirect_local) {
-                    let path = res.data.redirect_local.replace(Vue.prototype.$state.base_ui, '');
+                /*
+                                if (res.data.redirect_remote) {
+                                    window.location.replace(res.data.redirect.remote);
+                                    return;
+                                }
 
-                    name = path;
+                                if (res.data.redirect_local) {
+                                    let path = res.data.redirect_local.replace(Vue.prototype.$state.base_ui, '');
 
-                    if (Vue.prototype.$state.path === path) {
-                        Vue.prototype.$page(path, true);
-                    }
-                    else router.push(path);
-                    return;
-                }
- */                
-                
-            }
+                                    name = path;
 
-            switch (res.status) {
-                case 223:
-                    /* let redirect = res.data.redirect; // ЭТО ПОДСТАНОВКА А НЕ РЕДИРЕКТ
-                    if(redirect.local) {
-                        !cache[redirect.local] && httpVueLoader.register(Vue, redirect.local);
-                        Vue.prototype.$request(redirect.local, {location: redirect.local});
-                    } */
-                    break;
-                case 221:
+                                    if (Vue.prototype.$state.path === path) {
+                                        Vue.prototype.$page(path, true);
+                                    }
+                                    else router.push(path);
+                                    return;
+                                }
+                 */
+
+                let componets_data = Object.entries(res.data.executed);
+
+                switch (res.status) {
+                    case 223:
+                        /* let redirect = res.data.redirect; // ЭТО ПОДСТАНОВКА А НЕ РЕДИРЕКТ
+                        if(redirect.local) {
+                            !cache[redirect.local] && httpVueLoader.register(Vue, redirect.local);
+                            Vue.prototype.$request(redirect.local, {location: redirect.local});
+                        } */
+                        break;
+                    case 221:
                         let redirected = decodeURIComponent(window.location.origin + res.config.url) !== decodeURIComponent(res.request.responseURL);
 
-                        res.data[component] && Vue.set(Vue.prototype.$state.data, component, res.data[component]);
+                        componets_data.map(function (item) {
+                            let [key, value] = item;
+                            Vue.set(Vue.prototype.$state.data, key, value);
+                        });
+
+                        //res.data.executed[component] && Vue.set(Vue.prototype.$state.data, component, res.data.executed[component]);
 
                         //Object.assign(Vue.prototype.$state.shared, res.data.shared);
 
@@ -227,49 +232,58 @@ Vue.prototype.$request = async function(url, data, options) {
                         //console.log('REQUEST:', `${Vue.prototype.$state.base_api}${parsed.ident}.get`);
 
                         return cache[component];
-                    break;
-                case 222:
+                        break;
+                    case 222:
                         callback && callback(res, data);
 
-/*                         let api = res.data.result;
-                        let entry = res.data.entry;
+                        /*                         let api = res.data.result;
+                                                let entry = res.data.entry;
 
-                        let database = res.data.entities[entry][api];
+                                                let database = res.data.entities[entry][api];
 
-                        let merge = deepmerge(Vue.prototype.$state.entities, res.data.entities, {
-                            arrayMerge: function (destination, source, options) {
-                                //ALL ARRAYS MUST BE SIMPLE IDs HOLDER AFTER NORMALIZE
-                                if(res.data.method === 'DELETE') {
-                                    if(destination.length) {
-                                        return destination.filter(id => source.indexOf(id) === -1);
-                                    }
-                                    else {
-                                        return source;
-                                    }
-                                }
+                                                let merge = deepmerge(Vue.prototype.$state.entities, res.data.entities, {
+                                                    arrayMerge: function (destination, source, options) {
+                                                        //ALL ARRAYS MUST BE SIMPLE IDs HOLDER AFTER NORMALIZE
+                                                        if(res.data.method === 'DELETE') {
+                                                            if(destination.length) {
+                                                                return destination.filter(id => source.indexOf(id) === -1);
+                                                            }
+                                                            else {
+                                                                return source;
+                                                            }
+                                                        }
 
-                                let a = new Set(destination);
-                                let b = new Set(source);
-                                let union = Array.from(new Set([...a, ...b]));
+                                                        let a = new Set(destination);
+                                                        let b = new Set(source);
+                                                        let union = Array.from(new Set([...a, ...b]));
 
-                                return union;
-                            }
-                        });
+                                                        return union;
+                                                    }
+                                                });
 
-                        //console.log('API DATA:', data);
+                                                //console.log('API DATA:', data);
 
-                        Vue.set(Vue.prototype.$state, 'api', api);
-                        Vue.set(Vue.prototype.$state, 'entry', entry);
+                                                Vue.set(Vue.prototype.$state, 'api', api);
+                                                Vue.set(Vue.prototype.$state, 'entry', entry);
 
-                        Vue.set(Vue.prototype.$state, 'entities', merge);
+                                                Vue.set(Vue.prototype.$state, 'entities', merge);
 
-                        Vue.prototype.$bus.$emit('merged', merge);
- */
-                    break;
-                default:
-                    callback && callback(res);
-                    return res;
-                    break;
+                                                Vue.prototype.$bus.$emit('merged', merge);
+                         */
+                        break;
+                    default:
+                        callback && callback(res);
+                        return res;
+                        break;
+                }
+
+                componets_data.map(function (item) {
+                    let [key, value] = item;
+                    Vue.prototype.$bus.$emit(`data:${key}`, value);
+                    //Vue.set(Vue.prototype.$state.data, key, value);
+                });
+
+                //res.data.executed[component] && Vue.prototype.$bus.$emit(`data:${component}`, res.data.executed[component]);
             }
 
         })
@@ -322,44 +336,32 @@ let component = {
                 }
             }
         },
-/*         location: {
-            get() {
-                //return route(window.location.pathname).url;
-                return this.parsed_route.url;
-                 let location = void 0;
-                if(this.$state.shared.replacements) {
-                    this.$state.shared.replacements.names.find(name => name === this.parsed_route.name) && (location = this.$state.shared.replacements.location);
-                    if(location) {
-                        location = this.parsed_route.url.replace(this.parsed_route.name, location);
-                        location = route(location);
-                        !cache[location.component] && httpVueLoader.register(Vue, location.component);
-                    }
-                }
-
-                return (location && location.component) || this.parsed_route.component;
-                 //return this.$state.shared.location || route(this.$state.path).component;
-            },
-            cache: true
-        },
- */
         loader() {
             return httpVueLoader;
         }
     },
     data() {
+        let self = this;
         let data = {
             state: this.$state
         };
 
         data.name = this.$options.name || this.$options._componentTag;
-/* 
-        let current = route(window.location.pathname);
-        let identified = current.component.replace(current.name, data.name);
 
-        let assigned_data = this.$state.data[data.name] || this.$state.data[identified];
+        this.$bus.$on(`data:${data.name}`, function (data) {
+            console.log(self.$data, data);
+            Object.assign(self.$data, data);
+        });
 
-        Object.assign(data, assigned_data);
- */
+
+        /*
+                let current = route(window.location.pathname);
+                let identified = current.component.replace(current.name, data.name);
+
+                let assigned_data = this.$state.data[data.name] || this.$state.data[identified];
+
+                Object.assign(data, assigned_data);
+         */
         let assigned_data = this.$state.data[data.name] || {};
 
         Object.assign(data, assigned_data);

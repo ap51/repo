@@ -676,8 +676,6 @@ let accessGranted = async function (req, res, router) {
             let {user, client, token} = req;
             let access_group = (user && user.group);
 
-            let auth = user ? {name: user.name} : {};
-
             component.route = parseRoute(req.headers['location'] || req.originalUrl);
             component.user = user;
             component.client = client;
@@ -720,7 +718,7 @@ let accessGranted = async function (req, res, router) {
                                 client
                             };
 
-                            auth = {name: token.user.name};
+                            req.user = user;
 
                             console.log(token.access.refresh_token);
                         }
@@ -758,37 +756,45 @@ let accessGranted = async function (req, res, router) {
 
                 let executeChain = async function (component, action) {
                     component.checkAccess = checkAccess;
-                    //component.parent && (component.parent.checkAccess = checkAccess);
 
                     let data = {};
+
+                    let parent_data = {};
 
                     let execute = component.methods ? typeof component.methods[action] === 'object' && (component.methods[action].access && component.methods[action].access.length) ? checkAccess(component.methods[action].access) : true : false;
                     if(execute) {
                         let method = component.methods[action] ? typeof component.methods[action] === 'function' ? component.methods[action] : component.methods[action].method || noop : noop;
-                        data[component.name] = await method(req, res, component);
+                        data[component.name] = await method(req, res, component) || {};
+
+                        parent_data = (component.parent && await executeChain(component.parent, action)) || {};
+                        Object.assign(data, parent_data);
+
+                        let __execute = data[component.name].__execute || [];
+                        __execute = await __execute.reduce(async function(memo, item) {
+                            Object.assign(memo, await executeChain(component, item));
+                            return memo;
+                        }, {});
+                        Object.assign(data, __execute);
                     }
 
-                    return Object.assign(data, (component.parent && executeChain(component.parent, action)) || {});
+
+                    return data;
                 };
 
-                //action = action || 'default';
-
-                let data = await executeChain(component, action);
+                let data = {executed: await executeChain(component, action)};
 
                 data.status = component.methods.__status ? component.methods.__status(req, res) : 221;
-
-                //data.parent = component.parent && component.parent.name;
 
                 data.location = access_matrix[section].find(item => item.name === location);
                 if(!data.location) {
                     throw new CustomError(404, 'Not found');       
                 }
 
-                //let str = (replace && replace.component) || component.route.component;
                 data.location = data.location.parents.length ? data.location.parents.map(item => item.name).reverse().join('.') + '.' + parseRoute(req.headers['location']).component : parseRoute(req.headers['location']).component;
 
                 data = component.methods.__wrapper ? await component.methods.__wrapper(req, res, data) : data;
 
+                let auth = req.user ? {name: req.user.name} : {};
                 let response = {...data, auth};
 
                 return response;
@@ -970,6 +976,12 @@ let matrix = {
                                         user,
                                         client
                                     };
+
+                                    req.user = user;
+
+                                    return {
+                                        __execute: ['default']
+                                    };
                                 }
                                 catch(err) {
                                     res.status(err.code).end(err.message);
@@ -980,12 +992,14 @@ let matrix = {
                     'signout': {
                         methods: {
                             async submit(req, res) {
-                                await database.remove('token', {accessToken: req.token.access.token});
+                                await database.remove('token', {accessToken: req.token.access.token}, {allow_empty: true});
 
                                 req.token.access = void 0;
                                 req.user = void 0;
 
-                                return {};
+                                return {
+                                    __execute: ['default']
+                                };
                             }
                         },
                     },
@@ -1087,7 +1101,7 @@ let matrix = {
                             'friends': {},
                             'charts': {},
                             'profile': {
-                                //access: ['current', 'admins'],
+                                access: ['current', 'admins'],
                                 children: {
                                     'picture-input': {
                                         access: []

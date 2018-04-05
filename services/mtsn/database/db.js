@@ -115,12 +115,14 @@ db.findOne = function(collection, query, options) {
     })
 };
 
-db.remove = function(collection, query) {
+db.remove = function(collection, query, options) {
+    let {allow_empty} = options || {};
+
     return new Promise(function (resolve, reject) {
         db[collection].remove(query, {multi: true}, function (err, results) {
             //console.log(results);
             if(!results || err) {
-                reject(err || new NotFoundError(collection));
+                reject(err || (!allow_empty ? reject(new NotFoundError(collection)) : resolve(results)));
             }
             else {
                 results && resolve(results);

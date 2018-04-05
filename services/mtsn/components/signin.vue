@@ -100,6 +100,13 @@
             },
             cancel() {
                 this.$emit('cancel');
+
+                let locations = Object.entries(this.state.locations);
+                locations.map(function (item) {
+                    let [key, value] = item;
+                    let component = value.slice(-1).pop();
+                    delete cache[component];
+                });
             },
             signin() {
                 if (this.$refs.form.validate()) {
