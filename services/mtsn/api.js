@@ -660,13 +660,13 @@ let accessMiddleware = function(options) {
     };
 };
 
-let accessGranted = async function (req, res, router, replace) {
-    let {section, name, id, action} = req.params; //распарсить params in jwtHandler
+let accessGranted = async function (req, res, router) {
+    let {section, name, id, action} = req.params; 
     action = action || 'default';
     req.params.action = action;
 
     let location = parseRoute(req.headers['location']).name || name;
-    replace && (replace = parseRoute(replace));
+
 
     try {
         !access_matrix[section] && (section = 'ui');
@@ -784,8 +784,8 @@ let accessGranted = async function (req, res, router, replace) {
                     throw new CustomError(404, 'Not found');       
                 }
 
-                let str = (replace && replace.component) || component.route.component;
-                data.location = data.location.parents.length ? data.location.parents.map(obj => obj.name).reverse().join('.') + '.' + str : str;
+                //let str = (replace && replace.component) || component.route.component;
+                data.location = data.location.parents.length ? data.location.parents.map(item => item.name).reverse().join('.') + '.' + parseRoute(req.headers['location']).component : parseRoute(req.headers['location']).component;
 
                 data = component.methods.__wrapper ? await component.methods.__wrapper(req, res, data) : data;
 
@@ -800,25 +800,25 @@ let accessGranted = async function (req, res, router, replace) {
         let replace = '';
         switch (err.code) {
             case 400:
-                replace = 'bad-request';
+                req.params = {name: 'bad-request'};
                 break;
             case 401:
-                replace = 'unauthenticate';
+                req.params = {name: 'unauthenticate'};
                 break;
             case 403:
-                replace = 'access-denied';
+                req.params = {name: 'access-denied'};
                 break;
             case 404:
-                replace = 'not-found';
+                req.params = {name: 'not-found'};
                 break;
             default:
-                replace = 'unknown-error';
+                req.params = {name: 'unknown-error'};
                 break;
         }
 
-        //req.params.section = section;
+        req.params.section = section;
         //req.headers['location'] = req.params.name;
-        return accessGranted(req, res, router, replace);
+        return accessGranted(req, res, router);
 /*         let data = {
             redirect: {
                 local: req.params.name
@@ -837,7 +837,7 @@ let matrix = {
     ui: {
         __default: {
             scopes: ['site'],
-            access: ['*'],
+            access: [],
             type: void 0,
             methods: {
                 __status(req, res) {
@@ -1034,18 +1034,6 @@ let matrix = {
                         icon: 'far fa-address-card',
                         methods: {
                             default(req, res, self) {
-/*
-                                let tabs = [];
-                                for(let name in self.children) {
-                                    let child = self.children[name];
-                                    child.type === 'tab' && self.checkAccess(child.access) && tabs.push({
-                                        name,
-                                        to: `${child.to || name}${req.params.id ? ':' + req.params.id : ''}`,
-                                        icon: child.icon
-                                    });
-                                }
-*/
-
                                 return {
                                     tabs: self.methods.__tabs(req, res, self)
                                 };    

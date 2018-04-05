@@ -142,7 +142,7 @@ Vue.prototype.$request = async function(url, data, options) {
         return response;
 
     //let location = route(window.location.pathname).ident;
-    let location = Vue.prototype.$state.locations[component] || route(window.location.pathname).ident;
+    let location = route(window.location.pathname).ident;
 
     let conf = {
         url: url,
