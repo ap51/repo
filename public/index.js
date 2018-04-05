@@ -141,7 +141,8 @@ Vue.prototype.$request = async function(url, data, options) {
     if(response)
         return response;
 
-    let location = route(window.location.pathname).ident;
+    //let location = route(window.location.pathname).ident;
+    let location = Vue.prototype.$state.locations[component] || route(window.location.pathname).ident;
 
     let conf = {
         url: url,
@@ -202,6 +203,13 @@ Vue.prototype.$request = async function(url, data, options) {
             }
 
             switch (res.status) {
+                case 223:
+                    /* let redirect = res.data.redirect; // ЭТО ПОДСТАНОВКА А НЕ РЕДИРЕКТ
+                    if(redirect.local) {
+                        !cache[redirect.local] && httpVueLoader.register(Vue, redirect.local);
+                        Vue.prototype.$request(redirect.local, {location: redirect.local});
+                    } */
+                    break;
                 case 221:
                         let redirected = decodeURIComponent(window.location.origin + res.config.url) !== decodeURIComponent(res.request.responseURL);
 

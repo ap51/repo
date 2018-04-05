@@ -656,20 +656,22 @@ let accessMiddleware = function(options) {
 /*         res.status(response.status).json(response);
         return res.end();
  */
-        next();
+        response && next();
     };
 };
 
-let accessGranted = async function (req, res, router) {
-    let {section, name, id, action} = req.params;
+let accessGranted = async function (req, res, router, replace) {
+    let {section, name, id, action} = req.params; //распарсить params in jwtHandler
     action = action || 'default';
     req.params.action = action;
+
     let location = parseRoute(req.headers['location']).name || name;
+    replace && (replace = parseRoute(replace));
 
     try {
         !access_matrix[section] && (section = 'ui');
 
-        let component = access_matrix[section] && access_matrix[section].find(component => component.name === name);
+        let component = access_matrix[section] && access_matrix[section].find(item => item.name === name);
         if (component) {
             let {user, client, token} = req;
             let access_group = (user && user.group);
@@ -688,25 +690,25 @@ let accessGranted = async function (req, res, router) {
                 if (token.access) {
                     let expired = new Date() > new Date(token.access.expired);
                     if (expired) {
-                        let body = {...req.body};
-
-                        client = await database.findOne('client', {_id: client._id});
-                        token = await database.findOne('token', {accessToken: token.access.token});
-
-                        req.body = {
-                            grant_type: 'refresh_token',
-                            refresh_token: token.refreshToken,
-                            client_id: client.client_id,
-                            client_secret: client.client_secret,
-                            scope: client.scope.join(',')
-                        };
-
-                        req.method = 'POST';
-                        req.headers['content-type'] = 'application/x-www-form-urlencoded';
-                        req.headers['transfer-encoding'] = 'true';
-                        req.headers['content-length'] = 1;
-
                         try {
+                            let body = {...req.body};
+
+                            client = await database.findOne('client', {_id: client._id});
+                            token = await database.findOne('token', {accessToken: token.access.token}, {allow_empty: true});
+
+                            req.body = {
+                                grant_type: 'refresh_token',
+                                refresh_token: token.refreshToken,
+                                client_id: client.client_id,
+                                client_secret: client.client_secret,
+                                scope: client.scope.join(',')
+                            };
+
+                            req.method = 'POST';
+                            req.headers['content-type'] = 'application/x-www-form-urlencoded';
+                            req.headers['transfer-encoding'] = 'true';
+                            req.headers['content-length'] = 1;
+
                             token = await router.tokenHandler({})(req, res);
 
                             let {accessToken, accessTokenExpiresAt, refreshToken, user, client} = token;
@@ -720,12 +722,12 @@ let accessGranted = async function (req, res, router) {
 
                             auth = {name: token.user.name};
 
+                            console.log(token.access.refresh_token);
                         }
-                        catch (err) {
-                            auth = {};
+                        catch(err) {
+                            req.token.access = void 0;
+                            throw new CustomError(401, 'Unauthenticate');
                         }
-
-                        console.log(token.access.refresh_token);
                     }
                 }
                 else throw new CustomError(401, 'Unauthenticate');
@@ -775,11 +777,15 @@ let accessGranted = async function (req, res, router) {
 
                 data.status = component.methods.__status ? component.methods.__status(req, res) : 221;
 
-                data.parent = component.parent && component.parent.name;
-                data.location = access_matrix[section].find(component => component.name === location);
-                !data.location && (data.location = access_matrix[section].find(component => component.name === 'not-found'));
-                //data.location = data.location.parents.length ? data.location.parents.map(obj => obj.name).reverse().join('.') + '.' + data.location.name : data.location.name;
-                data.location = data.location.parents.length ? data.location.parents.map(obj => obj.name).reverse().join('.') + '.' + component.route.component : component.route.component;
+                //data.parent = component.parent && component.parent.name;
+
+                data.location = access_matrix[section].find(item => item.name === location);
+                if(!data.location) {
+                    throw new CustomError(404, 'Not found');       
+                }
+
+                let str = (replace && replace.component) || component.route.component;
+                data.location = data.location.parents.length ? data.location.parents.map(obj => obj.name).reverse().join('.') + '.' + str : str;
 
                 data = component.methods.__wrapper ? await component.methods.__wrapper(req, res, data) : data;
 
@@ -791,27 +797,37 @@ let accessGranted = async function (req, res, router) {
         else throw new CustomError(404, 'Not found');
     }
     catch (err) {
+        let replace = '';
         switch (err.code) {
             case 400:
-                req.params = {name: 'bad-request'};
+                replace = 'bad-request';
                 break;
             case 401:
-                req.params = {name: 'unauthenticate'};
+                replace = 'unauthenticate';
                 break;
             case 403:
-                req.params = {name: 'access-denied'};
+                replace = 'access-denied';
                 break;
             case 404:
-                req.params = {name: 'not-found'};
+                replace = 'not-found';
                 break;
             default:
-                req.params = {name: 'unknown-error'};
+                replace = 'unknown-error';
                 break;
         }
 
-        req.params.section = section;
-        req.headers['location'] = req.params.name;
-        return accessGranted(req, res, router);
+        //req.params.section = section;
+        //req.headers['location'] = req.params.name;
+        return accessGranted(req, res, router, replace);
+/*         let data = {
+            redirect: {
+                local: req.params.name
+            }
+        };
+
+        res.status(223).json(data);
+        res.end();
+        return false; */
     }
 
     console.log(access);
@@ -889,6 +905,12 @@ let matrix = {
             },
         },
         children: {
+            'bad-request': {},
+            'unauthenticate': {},
+            'access-denied': {},
+            'not-found': {},
+            'unknown-error': {},
+
             layout: {
                 scopes: ['site'],
                 access: [],
@@ -914,11 +936,6 @@ let matrix = {
                     access: [],
                 },
                 children: {
-                    'bad-request': {},
-                    'unauthenticate': {},
-                    'access-denied': {},
-                    'not-found': {},
-                    'unknown-error': {},
 
                     'dialog-signin': {
                         methods: {
@@ -1066,9 +1083,9 @@ let matrix = {
                             },
                             'feed': {
                                 type: 'tab',
-                                access: [],
+                                //access: [],
                                 to(req, res, self) {
-                                    return self.name + ':' + req.user.public_id;
+                                    return req.user && self.name + ':' + req.user.public_id;
                                 },
                                 methods: {
                                     'save': {
