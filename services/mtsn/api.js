@@ -1042,10 +1042,30 @@ let matrix = {
                             }
                         }
                     },
-                    'public': {
+                    'feed': {
                         type: 'tab',
-                        to: 'search',
+                        access: ['*'],
+                        to(req, res, self) {
+                            return req.user && self.name + ':' + req.user.public_id;
+                        },
+                        methods: {
+                            'save': {
+                                access: ['current', 'admins'],
+                            },
+                            'remove': {
+                                access: ['current', 'admins'],
+                            }
+                        },
+                    },
+                    'search': {
+                        type: 'tab',
+                        access: [],
+                    },
+                    'private': {
+                        type: 'tab',
+                        to: 'profile',
                         icon: 'far fa-address-card',
+                        access: ['*'],
                         methods: {
                             default(req, res, self) {
                                 return {
@@ -1080,24 +1100,6 @@ let matrix = {
                             },
                         },
                         children: {
-                            'search': {
-                                access: [],
-                            },
-                            'feed': {
-                                type: 'tab',
-                                //access: [],
-                                to(req, res, self) {
-                                    return req.user && self.name + ':' + req.user.public_id;
-                                },
-                                methods: {
-                                    'save': {
-                                        access: ['current', 'admins'],
-                                    },
-                                    'remove': {
-                                        access: ['current', 'admins'],
-                                    }
-                                },
-                            },
                             'friends': {},
                             'charts': {},
                             'profile': {
@@ -1115,32 +1117,33 @@ let matrix = {
                                     }
                                 }
                             },
-                            'applications': {}
+                            'applications': {},
+                            'clients': {
+                                type: 'tab',
+                                icon: 'fas fa-cogs',
+                                access: ['admins'],
+                                methods: {},
+                                children: {
+                                    'client-dialog': {}
+                                }
+                            },
+                            'users': {
+                                type: 'tab',
+                                icon: 'fas fa-users',
+                                access: ['admins'],
+                                methods: {},
+                                children: {
+                                    'user-dialog': {}
+                                }
+                            },
+                            'scopes': {
+                                type: 'tab',
+                                access: ['admins'],
+                                methods: {},
+                            }                        
                         }
                     },
-                    'clients': {
-                        type: 'tab',
-                        icon: 'fas fa-cogs',
-                        access: ['admins'],
-                        methods: {},
-                        children: {
-                            'client-dialog': {}
-                        }
-                    },
-                    'users': {
-                        type: 'tab',
-                        icon: 'fas fa-users',
-                        access: ['admins'],
-                        methods: {},
-                        children: {
-                            'user-dialog': {}
-                        }
-                    },
-                    'scopes': {
-                        type: 'tab',
-                        access: ['admins'],
-                        methods: {},
-                    }
+
                 }
             }
         }

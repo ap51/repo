@@ -45,11 +45,11 @@
                     <v-toolbar-items >
 
                         <v-btn v-if="!auth.name" flat @click="signin = true">
-                            <v-icon class="mr-1 mb-1">fas fa-user-circle</v-icon>SIGN IN
+                            <v-icon class="mr-1 mb-1">fas fa-sign-in-alt</v-icon>SIGN IN
                         </v-btn>
 
                         <v-btn v-if="auth.name"  flat @click="signout = true">
-                            <v-icon class="mr-1 mb-1">fas fa-sign-out-alt</v-icon>{{auth.name}}
+                            <v-icon class="mr-1 mb-1">fas fa-user-circle</v-icon>{{auth.name}}
                         </v-btn>
 
                         <!--
@@ -106,7 +106,6 @@
         components: {
             'dialog-signin': httpVueLoader('dialog-signin'),
             'signout': httpVueLoader('signout'),
-            'public': httpVueLoader('public'),
         },
         data() {
             return {
@@ -142,12 +141,12 @@
         methods: {
         },
         watch: {
-/*             'shared.layout_tabs': function (newValue, oldValue) {
+            'tabs': function (newValue, oldValue) {
                 let found = newValue.find(tab => this.active.replace(this.state.base_ui, '') == (tab.to || tab.name));
             
-                !found && this.$router.replace('about');
+                !found && this.$router.push('about');
             },
- */
+
             'state.auth.name': function (newValue, oldValue) {
 /*                 //newValue && (delete cache[this.location]);
                 newValue && (cache = {});

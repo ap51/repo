@@ -55,7 +55,6 @@
 
 <script>
     module.exports = {
-        name: 'public',
         extends: component,
         components: {
             /*

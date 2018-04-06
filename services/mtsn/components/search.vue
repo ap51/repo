@@ -12,7 +12,7 @@
 <style scoped>
     .layout-view {
         display: flex;
-        justify-content: center;
+        justify-content: flex-start;
         align-items: center;
         overflow: auto;
         height: 100%;
