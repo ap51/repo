@@ -1051,9 +1051,15 @@ let matrix = {
                         methods: {
                             'save': {
                                 access: ['current', 'admins'],
+                                method() {
+
+                                }
                             },
                             'remove': {
                                 access: ['current', 'admins'],
+                                method() {
+
+                                }
                             }
                         },
                     },
