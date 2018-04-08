@@ -127,3 +127,7 @@ body {
 form {
     width: 100%;
 }
+
+.input-group.input-group--error label {
+    animation: none !important;
+}

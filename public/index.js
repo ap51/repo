@@ -200,7 +200,8 @@ Vue.prototype.$request = async function(url, data, options) {
                                 }
                  */
 
-                let componets_data = Object.entries(res.data.executed);
+                let componets_data = res.data.executed && Object.entries(res.data.executed);
+                callback && callback(res, data);
 
                 switch (res.status) {
                     case 223:
@@ -218,72 +219,73 @@ Vue.prototype.$request = async function(url, data, options) {
                             Vue.set(Vue.prototype.$state.data, key, value);
                         });
 
-                        //res.data.executed[component] && Vue.set(Vue.prototype.$state.data, component, res.data.executed[component]);
-
-                        //Object.assign(Vue.prototype.$state.shared, res.data.shared);
-
                         cache[component] = res.data.sfc || cache[component];
                         Vue.prototype.$state.locations[component] = Vue.prototype.$state.locations[component] || res.data.location.split('.');
                         Vue.prototype.$state.hierarchy = Vue.prototype.$state.locations[component];
 
-                        //res.data.parent && Vue.prototype.$page(res.data.parent);
-
-                        //Vue.prototype.$request(`${Vue.prototype.$state.base_ui}${parsed.ident}.get`);
+                        let last = [...Vue.prototype.$state.hierarchy];
+                        last = last.pop();
+                        parsed.component === last && Vue.prototype.$request(`${Vue.prototype.$state.base_ui}${parsed.ident}.get`);
                         //console.log('REQUEST:', `${Vue.prototype.$state.base_api}${parsed.ident}.get`);
+
+/*
+                        componets_data.map(function (item) {
+                            let [key, value] = item;
+                            Vue.prototype.$bus.$emit(`data:${key}`, value);
+                        });
+*/
 
                         return cache[component];
                         break;
                     case 222:
-                        callback && callback(res, data);
+                        let api = res.data.result;
+                        let entry = res.data.entry;
 
-                        /*                         let api = res.data.result;
-                                                let entry = res.data.entry;
+                        let database = res.data.entities[entry][api];
 
-                                                let database = res.data.entities[entry][api];
+                        let merge = deepmerge(Vue.prototype.$state.entities, res.data.entities, {
+                            arrayMerge: function (destination, source, options) {
+                                //ALL ARRAYS MUST BE SIMPLE IDs HOLDER AFTER NORMALIZE
+                                if(res.data.method === 'DELETE') {
+                                    if(destination.length) {
+                                        return destination.filter(id => source.indexOf(id) === -1);
+                                    }
+                                    else {
+                                        return source;
+                                    }
+                                }
 
-                                                let merge = deepmerge(Vue.prototype.$state.entities, res.data.entities, {
-                                                    arrayMerge: function (destination, source, options) {
-                                                        //ALL ARRAYS MUST BE SIMPLE IDs HOLDER AFTER NORMALIZE
-                                                        if(res.data.method === 'DELETE') {
-                                                            if(destination.length) {
-                                                                return destination.filter(id => source.indexOf(id) === -1);
-                                                            }
-                                                            else {
-                                                                return source;
-                                                            }
-                                                        }
+                                let a = new Set(destination);
+                                let b = new Set(source);
+                                let union = Array.from(new Set([...a, ...b]));
 
-                                                        let a = new Set(destination);
-                                                        let b = new Set(source);
-                                                        let union = Array.from(new Set([...a, ...b]));
+                                return union;
+                            }
+                        });
 
-                                                        return union;
-                                                    }
-                                                });
+                        //console.log('API DATA:', data);
 
-                                                //console.log('API DATA:', data);
+                        //Vue.set(Vue.prototype.$state, 'api', api);
+                        //Vue.set(Vue.prototype.$state, 'entry', entry);
 
-                                                Vue.set(Vue.prototype.$state, 'api', api);
-                                                Vue.set(Vue.prototype.$state, 'entry', entry);
+                        Vue.set(Vue.prototype.$state, 'entities', merge);
 
-                                                Vue.set(Vue.prototype.$state, 'entities', merge);
-
-                                                Vue.prototype.$bus.$emit('merged', merge);
-                         */
+                        Vue.prototype.$bus.$emit('merged', merge);
                         break;
                     default:
-                        callback && callback(res);
-                        return res;
                         break;
                 }
 
-                componets_data.map(function (item) {
+                componets_data && componets_data.map(function (item) {
                     let [key, value] = item;
                     Vue.prototype.$bus.$emit(`data:${key}`, value);
-                    //Vue.set(Vue.prototype.$state.data, key, value);
                 });
 
                 //res.data.executed[component] && Vue.prototype.$bus.$emit(`data:${component}`, res.data.executed[component]);
+            }
+            else {
+                callback && callback(res);
+                return res;
             }
 
         })
@@ -314,16 +316,19 @@ let component = {
             return `${service} - ${this.name}`;
         },
         current_user() {
-            return (this.entities.user && this.entities.user.current) || {name: 'unknown'};
-        },
-        current_profile() {
-            return (this.entities.profile && this.entities.profile[this.parsed_route.id]) || {name: 'unknown'};
+            //this.state.locationToggle && void 0;
+            let id = this.address.id || 'current';
+            let user = this.entities.user && this.entities.user[id];
+            let profile = user && this.entities.profile && this.entities.profile[user.profile];
+            return (user && {...user, ...profile}) || {name: 'unknown'};
         },
         parsed_route() {
             return route(this.$state.path);
         },
         address() {
-            return route(window.location.pathname);
+            this.state.locationToggle && void 0; //ensure this will update computed value
+            let pathname = window.location.pathname;
+            return route(pathname);
         },
         location() {
             if(this.state.hierarchy) {
@@ -381,6 +386,20 @@ let component = {
     methods: {
         parseRoute(path) {
             return route(path);
+        },
+        clearCache(options) {
+            let {reload} = options;
+            let locations = Object.entries(this.state.locations);
+            locations.map(function (item) {
+                let [key, value] = item;
+                if(key !== 'layout')
+                    delete cache[key];
+            });
+
+            if(reload) {
+                this.state.locations[this.address.component] = void 0;
+                this.$page(this.address.url, true);
+            }
         }
     },
     watch: {

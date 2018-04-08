@@ -122,7 +122,7 @@
                     email: 'loading...',
                 };
                 this.dialog.visible = true;
-                this.$request('https://randomuser.me/api', null, {callback: this.onNames});
+                this.$request('https://randomuser.me/api', null, {callback: this.onNames, no_headers: true});
             },
             edit(id) {
                 let user = {...this.entities.user[id]};

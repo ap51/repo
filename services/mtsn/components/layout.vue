@@ -12,7 +12,7 @@
                         <v-tab v-for="tab in tabs"
                              :key="tab.name"
                              :to="tab.to || tab.name"
-                             v-if="!tab.right">
+                             v-if="!tab.invisible">
 
                                 <v-icon class="mr-1 mb-1">{{ tab.icon}}</v-icon>
 
@@ -67,7 +67,7 @@
 
                 <v-card class="base-layout">
                     <keep-alive>
-                        <component :is="location"></component>
+                        <component @event="onChildEvent" :is="location"></component>
                     </keep-alive>
                 </v-card>
 
@@ -109,6 +109,13 @@
         },
         data() {
             return {
+/*
+                current_tab: {
+                    name: '',
+                    icon: 'far fa-plus',
+                    invisible: true
+                },
+*/
                 active: void 0,
                 //signin: false,
                 signout: false,
@@ -124,6 +131,7 @@
         },
         created() {
             let self = this;
+
             this.$bus.$on('signin', function () {
                 self.signin = true;
             });
@@ -137,17 +145,64 @@
             //this.$state.shared.location = void 0;
         },
         computed: {
+            active_tab: {
+                get() {
+                    return this.tabs.find(tab => tab.active);
+                },
+                cache: false
+            },
+            tab_found() {
+                return !!(this.active ? this.tabs.find(tab => this.address.ident == (tab.to || tab.name)) : false);
+            },
+/*
+            current_tab() {
+                let tab = {
+                    name: this.active,
+                    icon: 'far fa-plus',
+                    invisible: this.active ? this.tabs.find(tab => this.active.replace(this.state.base_ui, '') == (tab.to || tab.name)) : true
+                };
+
+                return tab;
+            }
+*/
         },
         methods: {
+            onChildEvent(data) {
+                if(data && data.name) {
+                    switch(data.name) {
+                        case 'active:changed':
+                            let tab = this.tabs.find(tab => tab.name === 'private'); //не private а родительский элемент в иерархии текущей
+                            tab && (tab.to = this.parseRoute(data.value).ident);
+                            this.active = data.value;
+
+                            this.active_tab.invisible = this.tab_found;
+                            break;
+                    }
+                }
+            }
         },
         watch: {
-            'tabs': function (newValue, oldValue) {
-                let found = newValue.find(tab => this.active.replace(this.state.base_ui, '') == (tab.to || tab.name));
+            'tabs': function (new_value, old_value) {
+                if(new_value.length < old_value.length) {
+                    this.active_tab.invisible = this.tab_found;
+                    this.active_tab.name = this.address.ident;
+                }
+
+                //let found = newValue.find(tab => this.active.replace(this.state.base_ui, '') == (tab.to || tab.name));
             
-                !found && this.$router.push('about');
+                //!found && this.$router.push('about');
+/*
+                if(!found) {
+                    this.tabs.push({
+                        name: this.active.replace(this.state.base_ui, ''),
+                        to: this.active.replace(this.state.base_ui, ''),
+                        icon: 'far fa-plus'
+                    })
+                }
+*/
             },
 
-            'state.auth.name': function (newValue, oldValue) {
+            'active': function (new_value, old_value) {
 /*                 //newValue && (delete cache[this.location]);
                 newValue && (cache = {});
                 !newValue && Vue.set(Vue.prototype.$state, 'entities', {});

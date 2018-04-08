@@ -777,7 +777,6 @@ let accessGranted = async function (req, res, router) {
                         Object.assign(data, __execute);
                     }
 
-
                     return data;
                 };
 
@@ -823,20 +822,85 @@ let accessGranted = async function (req, res, router) {
         }
 
         req.params.section = section;
-        //req.headers['location'] = req.params.name;
+        req.params.action = action;
         return accessGranted(req, res, router);
-/*         let data = {
-            redirect: {
-                local: req.params.name
-            }
-        };
-
-        res.status(223).json(data);
-        res.end();
-        return false; */
     }
 
     console.log(access);
+};
+
+let model = function (data) {
+
+/*
+    const _action = new schema.Entity('action', {});
+
+    const _profile = new schema.Entity('profile', {}, {
+        idAttribute: 'public_id' // to use not standard ID
+    });
+
+    const _phone = new schema.Entity('phone', {});
+
+    const _user = new schema.Entity('user', {
+        phones: [ _phone ],
+    });
+
+    const _scope = new schema.Entity('scope', {});
+
+    const _client = new schema.Entity('client', {
+        users: [ _user ],
+        scopes: [ _scope ]
+    }, {
+        //idAttribute: '_id' // to use not standard ID
+    });
+
+    _user.define({applications: [ _client ]});
+
+    const db = new schema.Entity('database', {
+        action: _action,
+        clients: [ _client ],
+        user: _user,
+        users: [ _user ],
+        profile: _profile,
+        scopes: [ _scope ]
+    }, {
+        idAttribute: 'api'
+    });
+*/
+
+    let schema = normalizer.schema;
+
+    const _profile = new schema.Entity('profile', {}, {
+        idAttribute: 'public_id' // to use not standard ID
+    });
+
+    const _phone = new schema.Entity('phone', {});
+
+    const _user = new schema.Entity('user', {
+        phones: [_phone],
+        profile: _profile
+    });
+
+    const _scope = new schema.Entity('scope', {});
+
+    const _client = new schema.Entity('client', {
+        users: [_user],
+        scopes: [_scope]
+    });
+
+    _user.define({applications: [_client]});
+
+    const db = new schema.Entity('database', {
+        clients: [_client],
+        users: [_user],
+        scopes: [_scope]
+    }, {
+        idAttribute: 'api'
+    });
+
+    let normalized = normalizer.normalize(data, db);
+    normalized = {...normalized, entry: 'database'};
+
+    return normalized;
 };
 
 let matrix = {
@@ -879,6 +943,19 @@ let matrix = {
                             }
                             break;
                         case 222:
+                            let entries = Object.entries(data.executed);
+                            let entities = entries.reduce(function (memo, item) {
+                                let [key, value] = item;
+                                memo = Object.assign(value, memo);
+
+                                return memo;
+                            }, {});
+
+                            let response = model({api: 'v1', ...entities});
+                            let {executed, ...clean} = data;
+                            data = {...clean, ...response};
+                            break;
+                        case 223:
                             break;
                         default:
                             break;
@@ -924,9 +1001,15 @@ let matrix = {
                     'default': {
                         access: [],
                         method(req, res, self) {
-                            console.log(self);
+                            //console.log(self);
 
                             let tabs = self.methods.__tabs(req, res, self);
+                            tabs.push({
+                                name: '',
+                                icon: 'fas fa-chevron-right',
+                                invisible: true,
+                                active: true
+                            });
 
                             return {
                                 //service: 'NO SERVICE',
@@ -935,6 +1018,22 @@ let matrix = {
                                 signin: false,
                                 tabs
                             };
+                        }
+                    },
+                    async get(req, res, self) {
+                        if(req.user) {
+                            let {public_id, _id, group, ...current} = req.user;
+                            let {user, ...profile} = await database.findOne('profile', {user: req.user._id});
+
+                            return {
+                                users: [
+                                    {
+                                        ...current,
+                                        id: 'current',
+                                        profile
+                                    }
+                                ]
+                            }
                         }
                     }
                 },
@@ -949,6 +1048,9 @@ let matrix = {
                     },
                     'signin': {
                         methods: {
+                            __status(req, res) {
+                                return req.params.action === 'default'  ? 221 : 223;
+                            },
                             default() {
                                 return {
                                     email: 'ap@gmail.com',
@@ -991,6 +1093,9 @@ let matrix = {
                     },
                     'signout': {
                         methods: {
+                            __status(req, res) {
+                                return req.params.action === 'default'  ? 221 : 223;
+                            },
                             async submit(req, res) {
                                 await database.remove('token', {accessToken: req.token.access.token}, {allow_empty: true});
 
@@ -1069,7 +1174,7 @@ let matrix = {
                     },
                     'private': {
                         type: 'tab',
-                        to: 'profile',
+                        to: 'friends',
                         icon: 'far fa-address-card',
                         access: ['*'],
                         methods: {
@@ -1109,6 +1214,25 @@ let matrix = {
                             'friends': {},
                             'charts': {},
                             'profile': {
+                                methods: {
+                                    async get(req, res, self) {
+                                        let pid = req.params.id || (req.user && req.user.public_id);
+                                        if(pid) {
+                                            let {public_id, _id, group, password, id, created, updated, ...current} = await database.findOne('user', {public_id: pid});
+                                            let {user, ...profile} = await database.findOne('profile', {user: id});
+
+                                            return {
+                                                users: [
+                                                    {
+                                                        ...current,
+                                                        id: req.params.id ? public_id : 'current',
+                                                        profile
+                                                    }
+                                                ]
+                                            }
+                                        }
+                                    }
+                                },
                                 access: ['current', 'admins'],
                                 children: {
                                     'picture-input': {

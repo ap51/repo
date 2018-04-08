@@ -96,20 +96,16 @@
             cancel() {
                 this.$emit('cancel');
             },
+            submitted() {
+                this.$emit('cancel');
+                this.clearCache({reload: true});
+            },
             signout() {
                 let data = {
 
                 };
 
-                //cache = {};
-                let locations = Object.entries(this.state.locations);
-                locations.map(function (item) {
-                    let [key, value] = item;
-                    let component = value.slice(-1).pop();
-                    delete cache[component];
-                });
-
-                this.$request(`${Vue.prototype.$state.base_api}signout.submit`, data, {callback: this.cancel});
+                this.$request(`${Vue.prototype.$state.base_api}signout.submit`, data, {callback: this.submitted});
             },
             save(user) {
                 if (this.$refs.form.validate()) {

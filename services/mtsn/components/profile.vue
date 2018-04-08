@@ -3,7 +3,7 @@
         <v-toolbar flat color="white lighten-2" dense class="elevation-1 ma-1">
             <v-toolbar-title>{{name}}:</v-toolbar-title>
             <v-spacer></v-spacer>
-            <v-btn flat to="feed:ap-51"><v-icon color="green darken-2" class="mr-1 mb-1">far fa-check-circle</v-icon>profile ap-51</v-btn>
+            <v-btn flat to="profile:ap-51"><v-icon color="green darken-2" class="mr-1 mb-1">far fa-check-circle</v-icon>profile ap-51</v-btn>
             <v-btn flat to="profile:jd"><v-icon color="green darken-2" class="mr-1 mb-1">far fa-check-circle</v-icon>profile jd</v-btn>
             <v-btn flat to="feed:jd"><v-icon color="green darken-2" class="mr-1 mb-1">far fa-check-circle</v-icon>feed jd</v-btn>
             <!-- <v-btn flat="flat" :disabled="selected.length === 0" @click.stop="remove"><v-icon color="red darken-2" class="mr-1 mb-1">fas fa-times</v-icon>remove</v-btn> -->
@@ -13,7 +13,7 @@
             <v-card-text>
                 <v-container grid-list-md>
                     <v-layout wrap>
-                        <v-form ref="form" lazy-validation @submit.prevent>
+                        <v-form ref="form" @submit.prevent>
                             <v-flex xs12>
                                 <v-btn
                                     @click="$refs.pictureInput.removeImage()"
@@ -40,7 +40,7 @@
                                     margin="0"
                                     :prefill="prefill"
                                     :prefill-options="{
-                                        fileName: 'foster.jpg',
+                                        fileName: 'https://s3.amazonaws.com/uifaces/faces/twitter/yayteejay/128.jpg',
                                         fileType: 'jpg',
                                         mediaType: 'image/jpeg'
                                     }"
@@ -63,17 +63,16 @@
                                               prepend-icon="fas fa-id-card"
                                               autofocus
                                               color="blue darken-2"
-                                              hint="^[a-zA-Z0-9-]{5,}$"
+                                              hint="RegEpxr: ^[a-zA-Z0-9-]{4,}$"
                                               :rules="[
                                                   () => {
-                                                    return (!!object.public_id && /^[a-zA-Z0-9-]{5,}$/.test(object.public_id)) || 'This field must equals ^[a-zA-Z0-9-]{5,}$'
+                                                    return (!!object.public_id && /^[a-zA-Z0-9-]{4,}$/.test(object.public_id)) || 'Value must equals ^[a-zA-Z0-9-]{4,}$'
                                                   }
                                               ]"
                                 ></v-text-field>
                             </v-flex>
                             <v-flex xs12>
                                 <v-text-field v-model="object.status"
-                                              validate-on-blur
                                               label="Status text"
                                               prepend-icon="far fa-comment-alt"
                                               color="blue darken-2"
@@ -119,7 +118,7 @@
                 frame: false,
                 changed: false,
                 internal_object: void 0,
-                prefill: 'static/foster.jpg',
+                prefill: 'https://s3.amazonaws.com/uifaces/faces/twitter/yayteejay/128.jpg',
                 strings: {
                     upload: '<h1>Bummer!</h1>',
                     //drag: 'Drag a 😺 GIF or GTFO'
@@ -133,24 +132,20 @@
             //let add = this.parseRoute(this.$state.shared.location);
             //console.log(add.component);
             //let fp = FilePond.create();
-            this.prefill = `${this.state.base}files/images/${this.current_profile.avatar}` || 'static/foster.jpg';
+            this.prefill = `${this.state.base}files/images/${this.current_user.avatar}` || 'https://s3.amazonaws.com/uifaces/faces/twitter/yayteejay/128.jpg';
         },
         computed: {
             object() {
-                    this.internal_object = this.internal_object || this.current_profile;//(this.entities.profile && {...this.entities.profile[thi]});
-
-                    this.checkChanges();
-                    //this.changed = JSON.stringify(this.internal_object) !== JSON.stringify(this.current_profile);
-
-                    return this.internal_object;
+                //console.log(this.state.locationToggle);
+                return {...this.current_user};
             }
         },
         methods: {
             onChange(image) {
-                console.log('New picture selected!')
+                console.log('New picture selected!');
                 if (image) {
-                    console.log('Picture loaded.')
-                    this.image = image
+                    console.log('Picture loaded.');
+                    this.image = image;
                     this.object.avatar = this.$refs.pictureInput.file.name;
                     this.checkChanges();
                 } else {
@@ -167,7 +162,7 @@
                 this.checkChanges();
             },
             checkChanges() {
-                this.changed = JSON.stringify(this.internal_object) !== JSON.stringify(this.current_profile);
+                this.changed = JSON.stringify(this.object) !== JSON.stringify(this.current_user);
             },
             applied(res) {
                 this.changed = false;
@@ -176,6 +171,10 @@
                 this.$request(`${this.$state.base_api}profile.save`, profile, {callback: this.applied});
             },
         },
+        watch: {
+            'state.locationToggle': function () {
+            }
+        }
     }
 
     //# sourceURL=profile.js

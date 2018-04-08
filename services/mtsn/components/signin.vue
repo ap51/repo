@@ -101,12 +101,10 @@
             cancel() {
                 this.$emit('cancel');
 
-                let locations = Object.entries(this.state.locations);
-                locations.map(function (item) {
-                    let [key, value] = item;
-                    let component = value.slice(-1).pop();
-                    delete cache[component];
-                });
+            },
+            submitted() {
+                this.$emit('cancel');
+                this.clearCache({reload: true});
             },
             signin() {
                 if (this.$refs.form.validate()) {
@@ -117,7 +115,7 @@
                     };
 
                     //this.$request('signin.submit', data, { encode: true });
-                    this.$request(`${Vue.prototype.$state.base_api}signin.submit`, data, { callback: this.cancel, encode: true });
+                    this.$request(`${Vue.prototype.$state.base_api}signin.submit`, data, { callback: this.submitted, encode: true });
 
                 }
                 else this.$bus.$emit('snackbar', 'Data entered don\'t match validation rules');
