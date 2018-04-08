@@ -1,5 +1,5 @@
 <template>
-    <div class="layout-view">
+    <div class="layout-view" v-if="!loading">
         <v-toolbar flat color="white lighten-2" dense class="elevation-1 ma-1">
             <v-toolbar-title>{{name}}:</v-toolbar-title>
             <v-spacer></v-spacer>
@@ -39,11 +39,6 @@
                                     height="200"
                                     margin="0"
                                     :prefill="prefill"
-                                    :prefill-options="{
-                                        fileName: 'https://s3.amazonaws.com/uifaces/faces/twitter/yayteejay/128.jpg',
-                                        fileType: 'jpg',
-                                        mediaType: 'image/jpeg'
-                                    }"
                                     :plain="false"
                                     accept="image/jpeg,image/png"
                                     size="10"
@@ -116,9 +111,9 @@
         data() {
             return {
                 frame: false,
-                changed: false,
+                //changed: false,
                 internal_object: void 0,
-                prefill: 'https://s3.amazonaws.com/uifaces/faces/twitter/yayteejay/128.jpg',
+                internal_prefill: '',
                 strings: {
                     upload: '<h1>Bummer!</h1>',
                     //drag: 'Drag a 😺 GIF or GTFO'
@@ -132,12 +127,21 @@
             //let add = this.parseRoute(this.$state.shared.location);
             //console.log(add.component);
             //let fp = FilePond.create();
-            this.prefill = `${this.state.base}files/images/${this.current_user.avatar}` || 'https://s3.amazonaws.com/uifaces/faces/twitter/yayteejay/128.jpg';
+            //this.prefill = `${this.state.base}files/images/${this.current_user.avatar}` || 'https://s3.amazonaws.com/uifaces/faces/twitter/yayteejay/128.jpg';
         },
         computed: {
+            prefill() {
+                console.log('PREFILL:', this.name);
+                this.internal_prefill = this.internal_prefill || ((this.current_user && this.current_user.avatar) ? `${this.state.base}files/images/${this.current_user.avatar}` : '');
+                return this.internal_prefill;
+            },
             object() {
                 //console.log(this.state.locationToggle);
-                return {...this.current_user};
+                this.internal_object = this.internal_object || (this.current_user && {...this.current_user});
+                return this.internal_object;
+            },
+            changed() {
+                return JSON.stringify(this.internal_object) !== JSON.stringify(this.current_user);
             }
         },
         methods: {
@@ -146,23 +150,20 @@
                 if (image) {
                     console.log('Picture loaded.');
                     this.image = image;
-                    this.object.avatar = this.$refs.pictureInput.file.name;
-                    this.checkChanges();
+                    this.internal_object.avatar = this.$refs.pictureInput.file.name;
+                    //this.checkChanges();
                 } else {
                     console.log('FileReader API not supported: use the <form>, Luke!')
                 }
             },
             onPrefill(image) {
-                this.object.avatar = this.object.avatar || "avatar.jpg";
-                this.checkChanges();
+                this.internal_object.avatar = this.internal_object.avatar || 'avatar.jpg';
+                //this.checkChanges();
             },
             onRemove(image) {
-                this.object.avatar = "avatar.jpg";
+                this.internal_object.avatar = '';
                 console.log('Removed');
-                this.checkChanges();
-            },
-            checkChanges() {
-                this.changed = JSON.stringify(this.object) !== JSON.stringify(this.current_user);
+                //this.checkChanges();
             },
             applied(res) {
                 this.changed = false;

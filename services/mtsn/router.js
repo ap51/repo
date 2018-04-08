@@ -124,6 +124,7 @@ router.all('*', router.jwtHandler());
 
 router.all(['/files/*/:file', '/files/:file'], function(req, res, next) {
     if(req.user) {
+
         let options = {
             root: __dirname + `/public/${req.user._id}`,
             dotfiles: 'deny',
@@ -132,20 +133,21 @@ router.all(['/files/*/:file', '/files/:file'], function(req, res, next) {
                 'x-sent': true
             }
  */
-          };
+        };
         
-          req.params.path = req.params[0] ? `${req.params[0]}/${req.params.file}` : req.params.file;
-          
-          let fileName = req.params.path;
-          res.sendFile(fileName, options, function (err) {
+        req.params.path = req.params[0] ? `${req.params[0]}/${req.params.file}` : req.params.file;
+
+        console.log('IMAGE:', options.root, req.params.path);
+        let fileName = req.params.path;
+        res.sendFile(fileName, options, function (err) {
             if (err) {
-              next(err);
-            } 
-            else {
-              console.log('Sent:', fileName);
-              res.end();
+                next(err);
             }
-          });
+            else {
+                console.log('Sent:', fileName);
+                res.end();
+            }
+        });
 
         //console.log(req.params);
         //res.end();

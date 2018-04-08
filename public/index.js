@@ -125,6 +125,9 @@ Vue.prototype.$bus = new Vue({});
 
 axios.defaults.headers['post'] = {};
 
+let request_queue = {};
+let loaded = {};
+
 Vue.prototype.$request = async function(url, data, options) {
     let name = url.replace('/index.vue', '').replace(/_/gi, ':');
 
@@ -133,6 +136,9 @@ Vue.prototype.$request = async function(url, data, options) {
     let {ident, component} = parsed;
 
     url.indexOf(component) === 0 && (url = Vue.prototype.$state.base_ui + parsed.url);
+
+    if(request_queue[url])
+        return request_queue[url];
 
     let {method, callback, encode, config, no_headers} = options || {};
 
@@ -173,8 +179,13 @@ Vue.prototype.$request = async function(url, data, options) {
     
     data && (config.data = data);
 
-    return axios(config)
+    console.log('REQUEST:', config.url);
+
+    request_queue[url] = axios(config)
         .then(function(res) {
+            request_queue[res.config.url] = false;
+
+            console.log('RESPONSE:', res.config.url);
             if(res.status > 220) {
                 res.data.token && Vue.set(Vue.prototype.$state, 'token', res.data.token);
                 Vue.prototype.$state.token && localStorage.setItem(`${service}:token`, Vue.prototype.$state.token);
@@ -220,13 +231,15 @@ Vue.prototype.$request = async function(url, data, options) {
                         });
 
                         cache[component] = res.data.sfc || cache[component];
+                        console.log('CACHE:', component);
+
                         Vue.prototype.$state.locations[component] = Vue.prototype.$state.locations[component] || res.data.location.split('.');
                         Vue.prototype.$state.hierarchy = Vue.prototype.$state.locations[component];
 
                         let last = [...Vue.prototype.$state.hierarchy];
                         last = last.pop();
                         parsed.component === last && Vue.prototype.$request(`${Vue.prototype.$state.base_ui}${parsed.ident}.get`);
-                        //console.log('REQUEST:', `${Vue.prototype.$state.base_api}${parsed.ident}.get`);
+                        //parsed.component === last && console.log('REQUEST:', `${Vue.prototype.$state.base_api}${parsed.ident}.get`);
 
 /*
                         componets_data.map(function (item) {
@@ -238,6 +251,7 @@ Vue.prototype.$request = async function(url, data, options) {
                         return cache[component];
                         break;
                     case 222:
+
                         let api = res.data.result;
                         let entry = res.data.entry;
 
@@ -271,6 +285,12 @@ Vue.prototype.$request = async function(url, data, options) {
                         Vue.set(Vue.prototype.$state, 'entities', merge);
 
                         Vue.prototype.$bus.$emit('merged', merge);
+
+                        Vue.prototype.$bus.$emit('merged', merge);
+
+                        loaded[parsed.component] = true;
+                        parsed.action === 'get' && Vue.prototype.$bus.$emit(`loaded:${parsed.component}`, merge);
+                        parsed.action === 'get' && console.log('LOADED:', parsed.component);
                         break;
                     default:
                         break;
@@ -293,7 +313,7 @@ Vue.prototype.$request = async function(url, data, options) {
             Vue.prototype.$bus.$emit('snackbar', `ERROR: ${err.message} ${err.code ? 'CODE: ' + err.code + '.': ''}`);
             return '';// Promise.reject(err);
         });
-
+    return request_queue[url];
 };
 
 httpVueLoader.httpRequest = Vue.prototype.$request;
@@ -320,7 +340,7 @@ let component = {
             let id = this.address.id || 'current';
             let user = this.entities.user && this.entities.user[id];
             let profile = user && this.entities.profile && this.entities.profile[user.profile];
-            return (user && {...user, ...profile}) || {name: 'unknown'};
+            return (user && {...user, ...profile});
         },
         parsed_route() {
             return route(this.$state.path);
@@ -348,6 +368,7 @@ let component = {
     data() {
         let self = this;
         let data = {
+            loading: true,
             state: this.$state
         };
 
@@ -358,6 +379,11 @@ let component = {
             Object.assign(self.$data, data);
         });
 
+        data.loading = !loaded[data.name];
+
+        this.$bus.$on(`loaded:${data.name}`, function (data) {
+            self.loading = false;
+        });
 
         /*
                 let current = route(window.location.pathname);
@@ -374,7 +400,7 @@ let component = {
         return data;
     },
     beforeCreate() {
-        //console.log(this.$state);
+        console.log('BEFORE CREATE:', this);
     },
     created() {
         //console.log(this.state.path);

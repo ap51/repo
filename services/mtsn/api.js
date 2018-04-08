@@ -1236,7 +1236,12 @@ let matrix = {
                                 access: ['current', 'admins'],
                                 children: {
                                     'picture-input': {
-                                        access: []
+                                        //access: [],
+                                        methods: {
+                                            async get(req, res, self) {
+                                                console.log(req.params.id);
+                                            }
+                                        },
                                     }
                                 }
                             },

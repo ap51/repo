@@ -11,12 +11,12 @@
                             <v-container fluid grid-list-lg>
                                 <v-layout row>
                                     <v-avatar size="70px" slot="activator">
-                                        <img src="static/foster.jpg" :alt="current_user.name">
+                                        <img src="static/foster.jpg" :alt="current_user && current_user.name">
                                     </v-avatar>
                                     <v-flex xs12>
                                         <div>
-                                            <div class="headline">{{current_user.name}}</div>
-                                            <div>{{current_user.status || 'anything...'}}</div>
+                                            <div class="headline">{{current_user && current_user.name}}</div>
+                                            <div>{{current_user && current_user.status || 'anything...'}}</div>
                                         </div>
                                     </v-flex>
                                 </v-layout>
@@ -43,9 +43,17 @@
                     </v-flex>
                     <v-flex xs12>
                         <!--<router-view name="tabs[active].name"></router-view>-->
+                        <transition appear name="fade" mode="out-in">
+                            <keep-alive>
+                                <component :is="location"></component>
+                            </keep-alive>
+                        </transition>
+
+<!--
                         <keep-alive>
                             <component :is="location"></component>
                         </keep-alive>
+-->
                     </v-flex>
                 </v-layout>
             </v-container>
