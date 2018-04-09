@@ -1,10 +1,7 @@
 <template>
     <div class="layout-view">
         <v-card flat width="60vw">
-            <v-container
-
-                    grid-list-lg
-            >
+            <v-container grid-list-lg>
                 <v-layout column>
                     <v-flex xs12>
                         <v-card color="blue darken-2" class="white--text">

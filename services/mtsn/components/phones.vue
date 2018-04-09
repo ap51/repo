@@ -18,7 +18,7 @@
             <v-pagination v-model="pagination.page" :length="pages" :total-visible="pages"></v-pagination>
         </div>
         
-        <v-data-table v-if="this.database.user"
+        <v-data-table v-if="this.database.users"
                 item-key="id"
                 disable-initial-sort
 
@@ -113,10 +113,13 @@
                 activePage: void 0
             }
         },
+        created() {
+            console.log(this.database);
+        },
         computed: {
             entity() {
                 this.pagination.page = this.activePage || this.pagination.page || 1;
-                return this.database.user ? (this.entities.user.current.phones || []).map(phone => this.entities.phone[phone]).map(phone => {phone.number = (phone.number + '').replace(/(\d{1})(\d{3})(\d{3})(\d{2})(\d{2})/, '+$1 ($2) $3 - $4 - $5'); return phone}) : [];
+                return this.database.users ? (this.entities.user.current.phones || []).map(phone => this.entities.phone[phone]).map(phone => {phone.number = (phone.number + '').replace(/(\d{1})(\d{3})(\d{3})(\d{2})(\d{2})/, '+$1 ($2) $3 - $4 - $5'); return phone}) : [];
             },
             pages () {
                 if (this.pagination.rowsPerPage == null || this.pagination.totalItems == null)

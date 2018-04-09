@@ -946,8 +946,14 @@ let matrix = {
                             let entries = Object.entries(data.executed);
                             let entities = entries.reduce(function (memo, item) {
                                 let [key, value] = item;
-                                memo = Object.assign(value, memo);
+                                //memo = Object.assign(value, memo);
 
+                                Object.assign(memo, merge(value, memo, {
+/*                                     arrayMerge: function (destinationArray, sourceArray, options) {
+                                        return sourceArray;
+                                    } */
+                                }));
+                    
                                 return memo;
                             }, {});
 
@@ -1041,7 +1047,7 @@ let matrix = {
                     access: [],
                 },
                 children: {
-
+                    'loading': {},
                     'dialog-signin': {
                         methods: {
                         },
@@ -1198,21 +1204,21 @@ let matrix = {
                                 },
                                 'save': {
                                     access: ['current'],
-                                    method(req, res) {
-
+                                    method(req, res, self) {
+                                        console.log('save:', req.body, self)
                                     }
                                 },
                                 'remove': {
                                     access: ['current'],
-                                    method(req, res) {
-
+                                    method(req, res, self) {
+                                        console.log('save', self)
                                     }
                                 }
                             },
                         },
                         children: {
                             'friends': {},
-                            'charts': {},
+                            'dialogs': {},
                             'profile': {
                                 methods: {
                                     async get(req, res, self) {
@@ -1246,6 +1252,45 @@ let matrix = {
                                 }
                             },
                             'phones': {
+                                collection: 'phone',
+                                methods: {
+                                    async get() {
+                                        let delay = new Promise(function(resolve, reject) {
+                                            setTimeout(function() {
+                                                resolve({
+                                                    users: [
+                                                        {
+                                                            id: 'current',
+                                                            phones: [
+                                                                {
+                                                                    id: 100,
+                                                                    number: 10001019056,
+                                                                    owner: 'ancle Bob'
+                                                                }
+                                                            ]
+                                                        }
+                                                    ]
+                                                });
+                                            }, 300000);
+                                        })
+                                        return await delay;
+
+                                        return {
+                                            users: [
+                                                {
+                                                    id: 'current',
+                                                    phones: [
+                                                        {
+                                                            id: 100,
+                                                            number: 10001019056,
+                                                            owner: 'ancle Bob'
+                                                        }
+                                                    ]
+                                                }
+                                            ]
+                                        }            
+                                    }
+                                },
                                 children: {
                                     'phone-dialog': {
                                         access: []
@@ -1266,7 +1311,6 @@ let matrix = {
                                 type: 'tab',
                                 icon: 'fas fa-users',
                                 access: ['admins'],
-                                methods: {},
                                 children: {
                                     'user-dialog': {}
                                 }

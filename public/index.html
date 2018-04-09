@@ -5,7 +5,7 @@
 
         <link href="css/vuetify.min.css" rel="stylesheet">
         <link href="css/fontawesome.min.css" rel="stylesheet">
-        <link href="css/vue2Dropzone.css" rel="stylesheet">
+        <link href="css/vue-loading.min.css" rel="stylesheet">
         <link href="css/custom.css" rel="stylesheet">
     </head>
 
@@ -17,10 +17,7 @@
                 <component :is="location"></component>
             </keep-alive>
 
-            <!--
-                        <layout :component="path"></layout>
-            -->
-            <router-view name="loader"></router-view>
+            <router-view name="loading"></router-view>
         </div>
 
         <script src="js/md5.min.js"></script>
@@ -34,6 +31,7 @@
         <script src="js/http-vue-loader.js"></script>
         <script src="js/deepmerge.js"></script>
         <script src="js/qs.js"></script>
+        
         <!-- <script src="js/vue-picture-input.js"></script> -->
 
         <script src="index.js"></script>

@@ -52,11 +52,11 @@
         flex-direction: column;
     }
 
-    .table {
+/*     .table {
         min-width: 60vw;
         max-width: 60vw;
     }
-
+ */
 </style>
 
 <script>

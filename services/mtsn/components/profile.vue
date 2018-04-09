@@ -53,43 +53,43 @@
                             </v-flex>
                             <v-flex xs12>
                                 <v-text-field v-model="object.public_id"
-                                              label="Public ID"
-                                              required
-                                              prepend-icon="fas fa-id-card"
-                                              autofocus
-                                              color="blue darken-2"
-                                              hint="RegEpxr: ^[a-zA-Z0-9-]{4,}$"
-                                              :rules="[
-                                                  () => {
+                                            label="Public ID"
+                                            required
+                                            prepend-icon="fas fa-id-card"
+                                            autofocus
+                                            color="blue darken-2"
+                                            hint="RegEpxr: ^[a-zA-Z0-9-]{4,}$"
+                                            :rules="[
+                                                () => {
                                                     return (!!object.public_id && /^[a-zA-Z0-9-]{4,}$/.test(object.public_id)) || 'Value must equals ^[a-zA-Z0-9-]{4,}$'
-                                                  }
-                                              ]"
+                                                }
+                                            ]"
                                 ></v-text-field>
                             </v-flex>
                             <v-flex xs12>
                                 <v-text-field v-model="object.status"
-                                              label="Status text"
-                                              prepend-icon="far fa-comment-alt"
-                                              color="blue darken-2"
-                                              hint="any string value"
+                                            label="Status text"
+                                            prepend-icon="far fa-comment-alt"
+                                            color="blue darken-2"
+                                            hint="any string value"
                                 ></v-text-field>
                             </v-flex>
 <!--  
                             <v-flex xs12>
                                 <v-text-field v-model="object.avatar"
-                                              validate-on-blur
-                                              label="Owner"
-                                              required
-                                              prepend-icon="fas fa-user"
-                                              color="blue darken-2"
-                                              hint="any string value"
-                                              :rules="[
-                                                  () => !!object.avatar || 'This field is required',
-                                              ]"
+                                            validate-on-blur
+                                            label="Owner"
+                                            required
+                                            prepend-icon="fas fa-user"
+                                            color="blue darken-2"
+                                            hint="any string value"
+                                            :rules="[
+                                                () => !!object.avatar || 'This field is required',
+                                            ]"
                                 ></v-text-field>
                             </v-flex>
 
- -->                        
+-->                        
                         </v-form>
                     </v-layout>
                 </v-container>

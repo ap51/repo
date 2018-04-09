@@ -60,6 +60,7 @@ let router = new VueRouter(
             {
                 path: '/*',
                 components: {
+                    'loading': httpVueLoader('loading'),
                     //'layout': httpVueLoader('layout'),
 /*
                     'public': httpVueLoader('public'),
@@ -86,23 +87,41 @@ router.beforeEach(async function (to, from, next) {
     Vue.prototype.$page(path, true);
 });
 
+let loader = void 0;
+let timeout = void 0;
 
 axios.interceptors.request.use(
     function (config) {
+/*         timeout = setTimeout(function() {
+            //loader = loader || (window.vm && window.vm.$loading.show());
+        }, 300);
+        loader = loader || (window.vm && window.vm.$loading.show()); */
         return config;
     },
     function (error) {
+        /* loader && loader.hide();
+        loader = void 0;
+        clearTimeout(timeout); */
+
         return Promise.reject(error);
     }
 );
 
 axios.interceptors.response.use(
     function (response) {
+        /* loader && loader.hide();
+        loader = void 0;
+        clearTimeout(timeout); */
+
         if(response.data.error)
             return Promise.reject(response.data.error);
         return response;
     },
     function (error) {
+        /* loader && loader.hide();
+        loader = void 0;
+        clearTimeout(timeout); */
+
         error.message = (error.response && error.response.data) || error.message;
         error.code = error.response.status || error.code;
         return Promise.reject(error);
@@ -239,6 +258,15 @@ Vue.prototype.$request = async function(url, data, options) {
                         let last = [...Vue.prototype.$state.hierarchy];
                         last = last.pop();
                         parsed.component === last && Vue.prototype.$request(`${Vue.prototype.$state.base_ui}${parsed.ident}.get`);
+
+                        if(parsed.component === last) {
+                            Vue.prototype.$bus.$emit(`loading`, true);
+                            Vue.prototype.$state.hierarchy.map(name => {
+                                Vue.prototype.$bus.$emit(`loading:${name}`, true);
+                                loaded[name] = false;
+                            });
+                        }
+
                         //parsed.component === last && console.log('REQUEST:', `${Vue.prototype.$state.base_api}${parsed.ident}.get`);
 
 /*
@@ -279,8 +307,8 @@ Vue.prototype.$request = async function(url, data, options) {
 
                         //console.log('API DATA:', data);
 
-                        //Vue.set(Vue.prototype.$state, 'api', api);
-                        //Vue.set(Vue.prototype.$state, 'entry', entry);
+                        Vue.set(Vue.prototype.$state, 'api', api);
+                        Vue.set(Vue.prototype.$state, 'entry', entry);
 
                         Vue.set(Vue.prototype.$state, 'entities', merge);
 
@@ -288,9 +316,23 @@ Vue.prototype.$request = async function(url, data, options) {
 
                         Vue.prototype.$bus.$emit('merged', merge);
 
-                        loaded[parsed.component] = true;
-                        parsed.action === 'get' && Vue.prototype.$bus.$emit(`loaded:${parsed.component}`, merge);
+                        
+                        //parsed.action === 'get' && Vue.prototype.$bus.$emit(`loaded:${parsed.component}`, merge);
                         parsed.action === 'get' && console.log('LOADED:', parsed.component);
+
+                        if(parsed.action === 'get') {
+                            Vue.prototype.$bus.$emit(`loading`, false);
+                            Vue.prototype.$state.hierarchy.map(name => {
+                                Vue.prototype.$bus.$emit(`loading:${name}`, false);
+                                loaded[name] = true;
+                            });
+                        }
+/*                         setTimeout(function() {
+                            loaded[parsed.component] = true;
+                            parsed.action === 'get' && Vue.prototype.$bus.$emit(`loaded:${parsed.component}`, merge);
+                            parsed.action === 'get' && console.log('LOADED:', parsed.component);
+                        }, 3000) */
+            
                         break;
                     default:
                         break;
@@ -319,6 +361,9 @@ Vue.prototype.$request = async function(url, data, options) {
 httpVueLoader.httpRequest = Vue.prototype.$request;
 
 let component = {
+    components: {
+        'loading': httpVueLoader('loading'),
+    },
     computed: {
         entities() {
             return this.$state.entities;
@@ -369,7 +414,8 @@ let component = {
         let self = this;
         let data = {
             loading: true,
-            state: this.$state
+            state: this.$state,
+            loaded
         };
 
         data.name = this.$options.name || this.$options._componentTag;
@@ -381,8 +427,8 @@ let component = {
 
         data.loading = !loaded[data.name];
 
-        this.$bus.$on(`loaded:${data.name}`, function (data) {
-            self.loading = false;
+        this.$bus.$on(`loading:${data.name}`, function (data) {
+            self.loading = data;
         });
 
         /*
@@ -452,14 +498,27 @@ const theme = {
 };
 
 //httpVueLoader.register(Vue, 'picture-input');
+//Vue.use(VueLoading);
 
 window.vm = new Vue({
     el: '#app',
     extends: component,
     router: router,
+    data() {
+        return {
+            loading: loaded
+        }
+    },
     components: {
     },
     created() {
-        this.$vuetify.theme = theme
+        this.$vuetify.theme = theme;
+        console.log('LOAD:', this.loading);
+    },
+    computed: {
+        /* loading() {
+            console.log('LOAD:', loaded);
+            return loaded;
+        } */
     }
 });
