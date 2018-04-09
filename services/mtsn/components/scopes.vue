@@ -32,13 +32,12 @@
                         v-model="props.selected">
                     </v-checkbox>
                 </td>
-                <td><a @click="edit(props.item.id)">{{ props.item.email }}</a></td>
                 <td><a @click="edit(props.item.id)">{{ props.item.name }}</a></td>
-                <td><a @click="edit(props.item.id)">{{ props.item.group }}</a></td>
+                <td><a @click="edit(props.item.id)">{{ props.item.description }}</a></td>
             </template>
         </v-data-table>
 
-         <user-dialog :visible="dialog.visible" :object="dialog.object" @save="save" @cancel="cancel"></user-dialog>
+         <!--<user-dialog :visible="dialog.visible" :object="dialog.object" @save="save" @cancel="cancel"></user-dialog>-->
     </div>
 </template>
 
@@ -63,7 +62,7 @@
     module.exports = {
         extends: component,
         components: {
-            'user-dialog': httpVueLoader('user-dialog')
+            //'user-dialog': httpVueLoader('user-dialog')
         },
         data() {
             return {
@@ -81,9 +80,8 @@
                 search: '',
                 selected: [],
                 headers: [
-                    { width: "35%", text: 'EMail', value: 'email' },
                     { width: "35%", text: 'Name', value: 'name' },
-                    { width: "30%", text: 'Access group', value: 'group' }
+                    { width: "65%", text: 'Description', value: 'description' }
                 ],
                 activePage: void 0
             }
@@ -91,7 +89,7 @@
         computed: {
             entity() {
                 this.pagination.page = this.activePage || this.pagination.page || 1;
-                return this.database.users ? this.database.users.filter(user => user !== 'current').map(user => this.entities.user[user]) : [];
+                return this.database.scopes ? this.database.scopes.map(scope => this.entities.scope[scope]) : [];
             },
             pages () {
                 if (this.pagination.rowsPerPage == null || this.pagination.totalItems == null)
@@ -151,5 +149,5 @@
         }
     }
 
-    //# sourceURL=users.js
+    //# sourceURL=scopes.js
 </script>

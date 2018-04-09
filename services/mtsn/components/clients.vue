@@ -53,10 +53,6 @@
         flex-direction: column;
     }
 
-    .table {
-        min-width: 60vw;
-        max-width: 60vw;
-    }
 
 </style>
 

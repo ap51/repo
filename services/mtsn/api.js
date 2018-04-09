@@ -1048,6 +1048,7 @@ let matrix = {
                 },
                 children: {
                     'loading': {},
+                    'loader': {},
                     'dialog-signin': {
                         methods: {
                         },
@@ -1199,9 +1200,15 @@ let matrix = {
                                         to: self.route.ident
                                     }
                                 },
-                                get(req, res) {
+/*
+                                async get(req, res, self) {
+                                    if(self.collection)
+                                        return await database.find(self.collection, {});
 
+                                    return {}
                                 },
+*/
+
                                 'save': {
                                     access: ['current'],
                                     method(req, res, self) {
@@ -1254,41 +1261,15 @@ let matrix = {
                             'phones': {
                                 collection: 'phone',
                                 methods: {
-                                    async get() {
-                                        let delay = new Promise(function(resolve, reject) {
-                                            setTimeout(function() {
-                                                resolve({
-                                                    users: [
-                                                        {
-                                                            id: 'current',
-                                                            phones: [
-                                                                {
-                                                                    id: 100,
-                                                                    number: 10001019056,
-                                                                    owner: 'ancle Bob'
-                                                                }
-                                                            ]
-                                                        }
-                                                    ]
-                                                });
-                                            }, 300000);
-                                        })
-                                        return await delay;
-
+                                    async get(req, res, self) {
                                         return {
                                             users: [
                                                 {
                                                     id: 'current',
-                                                    phones: [
-                                                        {
-                                                            id: 100,
-                                                            number: 10001019056,
-                                                            owner: 'ancle Bob'
-                                                        }
-                                                    ]
+                                                    phones: await database.find(self.collection, {user: req.user._id})
                                                 }
                                             ]
-                                        }            
+                                        };
                                     }
                                 },
                                 children: {
@@ -1302,7 +1283,20 @@ let matrix = {
                                 type: 'tab',
                                 icon: 'fas fa-cogs',
                                 access: ['admins'],
-                                methods: {},
+                                collection: 'client',
+                                methods: {
+                                    async get(req, res, self) {
+                                        let scopes_array = [];
+                                        for(let name in scopes) {
+                                            /*scopes[name].public &&*/ scopes_array.push(scopes[name]);
+                                        }
+
+                                        return {
+                                            clients: await database.find(self.collection, {}),
+                                            scopes: scopes_array
+                                        };
+                                    }
+                                },
                                 children: {
                                     'client-dialog': {}
                                 }
@@ -1311,6 +1305,14 @@ let matrix = {
                                 type: 'tab',
                                 icon: 'fas fa-users',
                                 access: ['admins'],
+                                collection: 'user',
+                                methods: {
+                                    async get(req, res, self) {
+                                        return {
+                                            users: await database.find(self.collection, {})
+                                        };
+                                    }
+                                },
                                 children: {
                                     'user-dialog': {}
                                 }
@@ -1318,8 +1320,19 @@ let matrix = {
                             'scopes': {
                                 type: 'tab',
                                 access: ['admins'],
-                                methods: {},
-                            }                        
+                                methods: {
+                                    async get(req, res, self) {
+                                        let scopes_array = [];
+                                        for(let name in scopes) {
+                                            /*scopes[name].public &&*/ scopes_array.push(scopes[name]);
+                                        }
+
+                                        return {
+                                            scopes: scopes_array
+                                        };
+                                    }
+                                },
+                            }
                         }
                     },
 

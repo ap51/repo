@@ -60,7 +60,7 @@ let router = new VueRouter(
             {
                 path: '/*',
                 components: {
-                    'loading': httpVueLoader('loading'),
+                    //'loader': httpVueLoader('loader'),
                     //'layout': httpVueLoader('layout'),
 /*
                     'public': httpVueLoader('public'),
@@ -198,13 +198,13 @@ Vue.prototype.$request = async function(url, data, options) {
     
     data && (config.data = data);
 
-    console.log('REQUEST:', config.url);
+    //console.log('REQUEST:', config.url);
 
     request_queue[url] = axios(config)
         .then(function(res) {
             request_queue[res.config.url] = false;
 
-            console.log('RESPONSE:', res.config.url);
+            //console.log('RESPONSE:', res.config.url);
             if(res.status > 220) {
                 res.data.token && Vue.set(Vue.prototype.$state, 'token', res.data.token);
                 Vue.prototype.$state.token && localStorage.setItem(`${service}:token`, Vue.prototype.$state.token);
@@ -250,7 +250,7 @@ Vue.prototype.$request = async function(url, data, options) {
                         });
 
                         cache[component] = res.data.sfc || cache[component];
-                        console.log('CACHE:', component);
+                        //console.log('CACHE:', component);
 
                         Vue.prototype.$state.locations[component] = Vue.prototype.$state.locations[component] || res.data.location.split('.');
                         Vue.prototype.$state.hierarchy = Vue.prototype.$state.locations[component];
@@ -314,11 +314,9 @@ Vue.prototype.$request = async function(url, data, options) {
 
                         Vue.prototype.$bus.$emit('merged', merge);
 
-                        Vue.prototype.$bus.$emit('merged', merge);
-
                         
                         //parsed.action === 'get' && Vue.prototype.$bus.$emit(`loaded:${parsed.component}`, merge);
-                        parsed.action === 'get' && console.log('LOADED:', parsed.component);
+                        //parsed.action === 'get' && console.log('LOADED:', parsed.component);
 
                         if(parsed.action === 'get') {
                             Vue.prototype.$bus.$emit(`loading`, false);
@@ -421,7 +419,7 @@ let component = {
         data.name = this.$options.name || this.$options._componentTag;
 
         this.$bus.$on(`data:${data.name}`, function (data) {
-            console.log(self.$data, data);
+            //console.log(self.$data, data);
             Object.assign(self.$data, data);
         });
 
@@ -446,7 +444,7 @@ let component = {
         return data;
     },
     beforeCreate() {
-        console.log('BEFORE CREATE:', this);
+        //console.log('BEFORE CREATE:', this);
     },
     created() {
         //console.log(this.state.path);
@@ -469,7 +467,10 @@ let component = {
             });
 
             if(reload) {
-                this.state.locations[this.address.component] = void 0;
+                this.state.entities = {};
+                //this.state.hierarchy = void 0;
+                this.state.locations = {};
+                //this.state.locations[this.address.component] = void 0;
                 this.$page(this.address.url, true);
             }
         }
@@ -480,7 +481,7 @@ let component = {
             this.visible && this.emptyData && this.emptyData();
         },
         '$state.path': function() {
-            console.log(this.$state.path);
+            //console.log(this.$state.path);
         }
     }
 };
@@ -510,10 +511,11 @@ window.vm = new Vue({
         }
     },
     components: {
+        'loader': httpVueLoader('loader')
     },
     created() {
         this.$vuetify.theme = theme;
-        console.log('LOAD:', this.loading);
+        //console.log('LOAD:', this.loading);
     },
     computed: {
         /* loading() {
