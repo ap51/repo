@@ -667,11 +667,12 @@ let accessGranted = async function (req, res, router) {
 
     let location = parseRoute(req.headers['location']).name || name;
 
-
     try {
         !access_matrix[section] && (section = 'ui');
 
-        let component = access_matrix[section] && access_matrix[section].find(item => item.name === name);
+        let component = access_matrix[section].find(item => item.name === name);
+        !access_matrix[section].find(item => item.name === location) && (location = 'not-found');
+
         if (component) {
             let {user, client, token} = req;
             let access_group = (user && user.group);
@@ -789,8 +790,8 @@ let accessGranted = async function (req, res, router) {
                     throw new CustomError(404, 'Not found');       
                 }
 
-                data.location = data.location.parents.length ? data.location.parents.map(item => item.name).reverse().join('.') + '.' + parseRoute(req.headers['location']).component : parseRoute(req.headers['location']).component;
-                //data.location = data.location.parents.length ? data.location.parents.map(item => item.name).reverse().join('.') + '.' + parseRoute(location).component : parseRoute(location).component;
+                //data.location = data.location.parents.length ? data.location.parents.map(item => item.name).reverse().join('.') + '.' + parseRoute(req.headers['location']).component : parseRoute(req.headers['location']).component;
+                data.location = data.location.parents.length ? data.location.parents.map(item => item.name).reverse().join('.') + '.' + parseRoute(location).component : parseRoute(location).component;
 
                 data = component.methods.__wrapper ? await component.methods.__wrapper(req, res, data) : data;
 
@@ -816,7 +817,7 @@ let accessGranted = async function (req, res, router) {
                 break;
             case 404:
                 req.params = {name: 'not-found'};
-                req.headers['location'] = 'not-found';
+                //req.headers['location'] = 'empty';
                 break;
             default:
                 req.params = {name: 'unknown-error'};
@@ -961,7 +962,7 @@ let matrix = {
         },
         children: {
 
-            layout: {
+            'layout': {
                 scopes: ['site'],
                 access: [],
                 methods: {
@@ -1009,6 +1010,7 @@ let matrix = {
                 },
                 children: {
                     //'loading': {},
+                    'empty': {},
                     'loader': {},
                     
                     'bad-request': {},

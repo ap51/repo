@@ -179,7 +179,8 @@
                             tab && (tab.to = this.parseRoute(data.value).ident);
                             this.active = data.value;
 
-                            this.active_tab.invisible = this.tab_found;
+                            !this.active_tab.invisible && (this.active_tab.invisible = this.tab_found);
+                            this.active_tab.name = this.address.ident;
                             break;
                     }
                 }
@@ -187,35 +188,33 @@
         },
         watch: {
             'tabs': function (new_value, old_value) {
+/*
+                this.active_tab.invisible = this.tab_found;
+                this.active_tab.name = this.address.ident;
+*/
+/*
                 if(new_value.length < old_value.length) {
                     this.active_tab.invisible = this.tab_found;
                     this.active_tab.name = this.address.ident;
                 }
-
-                //let found = newValue.find(tab => this.active.replace(this.state.base_ui, '') == (tab.to || tab.name));
-            
-                //!found && this.$router.push('about');
-/*
-                if(!found) {
-                    this.tabs.push({
-                        name: this.active.replace(this.state.base_ui, ''),
-                        to: this.active.replace(this.state.base_ui, ''),
-                        icon: 'far fa-plus'
-                    })
-                }
 */
             },
+            'state.locationToggle': function (new_value, old_value) {
+                this.active_tab.invisible = this.tab_found;
+                this.active_tab.name = this.address.ident;
+            },
+/*
+            'state.locationToggle': function (new_value, old_value) {
+                this.active_tab.invisible = this.tab_found;
+                this.active_tab.name = this.address.ident;
+            },
+*/
 
             'active': function (new_value, old_value) {
-/*                 //newValue && (delete cache[this.location]);
-                newValue && (cache = {});
-                !newValue && Vue.set(Vue.prototype.$state, 'entities', {});
-                //newValue && (delete cache['layout']);
-                //this.$page(this.location, true);
-                //!newValue && this.$request(this.location);//this.$page(this.location, true);
-                !newValue && (this.signout = false);
-                newValue && (this.signin = false);
- */
+                if(this.active_tab.invisible && this.address.ident !== new_value) {
+                    this.active_tab.invisible = this.tab_found;
+                    this.active_tab.name = this.address.ident;
+                }
             }
         }
     }
