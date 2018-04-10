@@ -44,6 +44,10 @@
 
                     <v-toolbar-items >
 
+                        <v-btn flat to="phones1">
+                            PHONES1
+                        </v-btn>
+
                         <v-btn v-if="!auth.name" flat @click="signin = true">
                             <v-icon class="mr-1 mb-1">fas fa-sign-in-alt</v-icon>SIGN IN
                         </v-btn>

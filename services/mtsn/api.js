@@ -790,6 +790,7 @@ let accessGranted = async function (req, res, router) {
                 }
 
                 data.location = data.location.parents.length ? data.location.parents.map(item => item.name).reverse().join('.') + '.' + parseRoute(req.headers['location']).component : parseRoute(req.headers['location']).component;
+                //data.location = data.location.parents.length ? data.location.parents.map(item => item.name).reverse().join('.') + '.' + parseRoute(location).component : parseRoute(location).component;
 
                 data = component.methods.__wrapper ? await component.methods.__wrapper(req, res, data) : data;
 
@@ -815,6 +816,7 @@ let accessGranted = async function (req, res, router) {
                 break;
             case 404:
                 req.params = {name: 'not-found'};
+                req.headers['location'] = 'not-found';
                 break;
             default:
                 req.params = {name: 'unknown-error'};
@@ -830,42 +832,6 @@ let accessGranted = async function (req, res, router) {
 };
 
 let model = function (data) {
-
-/*
-    const _action = new schema.Entity('action', {});
-
-    const _profile = new schema.Entity('profile', {}, {
-        idAttribute: 'public_id' // to use not standard ID
-    });
-
-    const _phone = new schema.Entity('phone', {});
-
-    const _user = new schema.Entity('user', {
-        phones: [ _phone ],
-    });
-
-    const _scope = new schema.Entity('scope', {});
-
-    const _client = new schema.Entity('client', {
-        users: [ _user ],
-        scopes: [ _scope ]
-    }, {
-        //idAttribute: '_id' // to use not standard ID
-    });
-
-    _user.define({applications: [ _client ]});
-
-    const db = new schema.Entity('database', {
-        action: _action,
-        clients: [ _client ],
-        user: _user,
-        users: [ _user ],
-        profile: _profile,
-        scopes: [ _scope ]
-    }, {
-        idAttribute: 'api'
-    });
-*/
 
     let schema = normalizer.schema;
 
@@ -994,11 +960,6 @@ let matrix = {
             },
         },
         children: {
-            'bad-request': {},
-            'unauthenticate': {},
-            'access-denied': {},
-            'not-found': {},
-            'unknown-error': {},
 
             layout: {
                 scopes: ['site'],
@@ -1047,8 +1008,16 @@ let matrix = {
                     access: [],
                 },
                 children: {
-                    'loading': {},
+                    //'loading': {},
                     'loader': {},
+                    
+                    'bad-request': {},
+                    'unauthenticate': {},
+                    'access-denied': {},
+                    'not-found': {},
+                    'unknown-error': {},
+
+                    
                     'dialog-signin': {
                         methods: {
                         },
@@ -1225,8 +1194,8 @@ let matrix = {
                         },
                         children: {
                             'friends': {},
-                            'dialogs': {},
-                            'profile': {
+                            'chats': {},
+/*                             'profile': {
                                 methods: {
                                     async get(req, res, self) {
                                         let pid = req.params.id || (req.user && req.user.public_id);
@@ -1257,7 +1226,7 @@ let matrix = {
                                         },
                                     }
                                 }
-                            },
+                            }, */
                             'phones': {
                                 collection: 'phone',
                                 methods: {
