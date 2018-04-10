@@ -671,7 +671,7 @@ let accessGranted = async function (req, res, router) {
         !access_matrix[section] && (section = 'ui');
 
         let component = access_matrix[section].find(item => item.name === name);
-        !access_matrix[section].find(item => item.name === location) && (location = 'not-found');
+        !access_matrix[section].find(item => item.name === location) && (location = 'not-found'); //сомнительно
 
         if (component) {
             let {user, client, token} = req;
