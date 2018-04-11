@@ -114,7 +114,7 @@
             }
         },
         created() {
-            console.log(this.database);
+            //console.log(this.database);
         },
         computed: {
             entity() {

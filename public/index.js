@@ -288,7 +288,7 @@ Vue.prototype.$request = async function(url, data, options) {
                         let merge = deepmerge(Vue.prototype.$state.entities, res.data.entities, {
                             arrayMerge: function (destination, source, options) {
                                 //ALL ARRAYS MUST BE SIMPLE IDs HOLDER AFTER NORMALIZE
-                                if(res.data.method === 'DELETE') {
+                                if(res.config.method.toUpperCase() === 'DELETE') {
                                     if(destination.length) {
                                         return destination.filter(id => source.indexOf(id) === -1);
                                     }
@@ -351,6 +351,7 @@ Vue.prototype.$request = async function(url, data, options) {
         })
         .catch(function(err) {
             Vue.prototype.$bus.$emit('snackbar', `ERROR: ${err.message} ${err.code ? 'CODE: ' + err.code + '.': ''}`);
+            delete request_queue[url];
             return '';// Promise.reject(err);
         });
     return request_queue[url];

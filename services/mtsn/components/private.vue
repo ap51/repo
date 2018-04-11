@@ -78,13 +78,13 @@
             }
         },
         created() {
-            console.log('public create', this.active);
+            //console.log('public create', this.active);
             //this.loader.register(Vue, this.tabs[0].to || this.tabs[0].name);
             //this.$router.replace(this.tabs[0].to || this.tabs[0].name);
             //console.log(this.tabs[this.active].name);
         },
         activated() {
-            console.log('ACTIVE', this.active)
+            //console.log('ACTIVE', this.active)
             //this.active = (!(this.active === '') && this.active) || this.tabs[0].to || this.tabs[0].name;
             //newValue = this.active.replace(Vue.prototype.$state.base_ui, '');
             //newValue !== this.state.path && this.$router.replace(newValue);

@@ -821,6 +821,8 @@ let accessGranted = async function (req, res, router) {
                 break;
             default:
                 req.params = {name: 'unknown-error'};
+                res.status(err.code || 400).end(err.message);
+                return false;
                 break;
         }
 
@@ -1086,6 +1088,23 @@ let matrix = {
                             }
                         },
                     },
+                    'account': {
+                        methods: {
+                            __status(req, res) {
+                                return req.params.action === 'default'  ? 221 : 223;
+                            },
+                            async submit(req, res) {
+                                await database.remove('token', {accessToken: req.token.access.token}, {allow_empty: true});
+
+                                req.token.access = void 0;
+                                req.user = void 0;
+
+                                return {
+                                    __execute: ['default']
+                                };
+                            }
+                        },
+                    },
                     'signup': {
                         methods: {},
                     },
@@ -1241,6 +1260,28 @@ let matrix = {
                                                 }
                                             ]
                                         };
+                                    },
+                                    async save(req, res, self) {
+                                        let data = req.body;
+
+                                        if (data.number === '00000000000') {
+                                            throw new CustomError(406, 'Not allowed phone number.');
+                                        }
+                                        else {
+                                            data.user = req.user._id;
+                        
+                                            let updates = await database.update('phone', {_id: data.id}, data);                        
+                                            return {users: [{id: 'current', phones: updates}]};
+                                        }
+                                    },
+                                    async remove(req, res, self) {
+                                        let data = req.body;
+                                        data = Array.isArray(data) ? data : [data];
+                        
+                                        let ids = data.map(phone => phone.id);
+                                        
+                                        let removed = await database.remove('phone', {_id: {$in: ids}});
+                                        return {users: [{id: 'current', phones: ids}]};
                                     }
                                 },
                                 children: {

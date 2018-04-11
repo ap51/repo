@@ -44,16 +44,20 @@
 
                     <v-toolbar-items >
 
-                        <v-btn flat to="phones1">
+<!--                         <v-btn flat to="phones1">
                             PHONES1
                         </v-btn>
-
+ -->
                         <v-btn v-if="!auth.name" flat @click="signin = true">
                             <v-icon class="mr-1 mb-1">fas fa-sign-in-alt</v-icon>SIGN IN
                         </v-btn>
 
-                        <v-btn v-if="auth.name"  flat @click="signout = true">
+                        <v-btn v-if="auth.name" flat @click="account = true">
                             <v-icon class="mr-1 mb-1">fas fa-user-circle</v-icon>{{auth.name}}
+                        </v-btn>
+
+                        <v-btn v-if="auth.name"  flat @click="signout = true">
+                            <v-icon class="mr-1 mb-1">fas fa-sign-out-alt</v-icon>
                         </v-btn>
 
                         <!--
@@ -68,6 +72,7 @@
 
                 <dialog-signin :visible="signin" @cancel="signin = false"></dialog-signin>
                 <signout :visible="signout" :object="current_user" @cancel="signout = false"></signout>
+                <account :visible="account" :object="current_user" @cancel="account = false"></account>
 
                 <v-card class="base-layout">
                     <keep-alive>
@@ -110,6 +115,7 @@
         components: {
             'dialog-signin': httpVueLoader('dialog-signin'),
             'signout': httpVueLoader('signout'),
+            'account': httpVueLoader('account'),
         },
         data() {
             return {
@@ -123,6 +129,7 @@
                 active: void 0,
                 //signin: false,
                 signout: false,
+                account: false,
                 snackbar: {
                     timeout: 4000,
                     color: 'red darken-2',
@@ -177,10 +184,13 @@
                         case 'active:changed':
                             let tab = this.tabs.find(tab => tab.name === 'private'); //не private а родительский элемент в иерархии текущей
                             tab && (tab.to = this.parseRoute(data.value).ident);
-                            this.active = data.value;
 
-                            !this.active_tab.invisible && (this.active_tab.invisible = this.tab_found);
-                            this.active_tab.name = this.address.ident;
+                            /* if(this.active_tab.invisible && this.active_tab.name !== this.address.ident) {
+                                this.active_tab.invisible = this.tab_found;
+                                this.active_tab.name = this.address.ident;
+                            } */
+                            this.active_tab.invisible = this.active === data.value;
+                            this.active = data.value;
                             break;
                     }
                 }

@@ -39,10 +39,11 @@
                 <small>*indicates required field</small>
             </v-card-text>
             <v-card-actions>
-                <v-btn color="blue darken-2" flat @click.native="signup()">sign up</v-btn>
+                <v-btn color="blue darken-2" flat @click.native="signup">sign up</v-btn>
+                <v-btn color="blue darken-2" flat @click.native="forgot">I FORGOT</v-btn>
                 <v-spacer></v-spacer>
-                <v-btn color="blue darken-2" flat @click.native="cancel()">cancel</v-btn>
-                <v-btn color="blue darken-2" flat @click.native="signin()">sign in</v-btn>
+                <v-btn color="blue darken-2" flat @click.native="cancel">cancel</v-btn>
+                <v-btn color="blue darken-2" flat @click.native="signin">sign in</v-btn>
             </v-card-actions>
         </v-card>
 
