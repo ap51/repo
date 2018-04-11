@@ -4,6 +4,7 @@ const path = require('path');
 const Datastore = require('nedb');
 const normalizer = require('normalizr');
 
+console.log('EXPORTS:', module.exports);
 let db = module.exports;
 
 for(let inx in collections) {

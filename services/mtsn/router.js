@@ -11,7 +11,7 @@ const CustomError = require('./error');
 
 const config = require('./config');
 const api = require('./api');
-api.init({router});
+api.init({router, database});
 
 let patterns = config.ui_patterns;
 let api_patterns = config.api_patterns;
@@ -314,6 +314,14 @@ router.all(['/ui/profile', '/ui/clients'], router.authenticateHandler({allowBear
  */
 router.all(config.patterns, router.endHandler());
 
-module.exports = function (name) {
+/*
+let database = void 0;
+
+module.exports = function (options) {
+    database = options.database;
+    api.init({router, database});
     return router;
 };
+*/
+
+module.exports = router;

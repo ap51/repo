@@ -162,7 +162,7 @@
                 this.$request(`${this.$state.base_api}phones.save`, phone, {callback: this.cancel});
             },
             cancel(response) {
-                response && response.data.method === 'DELETE' && (this.selected = []);
+                response && response.config.method.toUpperCase() === 'DELETE' && (this.selected = []);
                 this.dialog.visible = false;
             }
         }

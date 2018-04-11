@@ -1,6 +1,6 @@
 'use strict';
 
-const database = require('./database/db');
+//const database = require('./database/db');
 const cheerio = require('cheerio');
 const loadContent = require('./../../utils').loadContent;
 const normalizer = require('normalizr');
@@ -35,50 +35,11 @@ let generateRandomID = async function(bytes) {
 const CustomError = require('./error');
 
 let router = void 0;
+let database = void 0;
 
 let init = function (options) {
     router = options.router;
-};
-
-let updateDefaults = function (req, res) {
-    let shared = {};
-    for(let name in router.components) {
-
-        if(actions.ui[name] && actions.ui[name].default) {
-            actions.ui[name].default(req, res);
-
-            Object.assign(shared, merge(shared, res.locals.shared || {}, {
-                arrayMerge: function (destinationArray, sourceArray, options) {
-
-                    let convert = function (item) {
-                        typeof item === 'object' && (item = JSON5.stringify(item));
-                        return item;
-                    };
-
-                    let destination = destinationArray.map(convert);
-
-                    let source = sourceArray.map(convert);
-
-                    let a = new Set(destination);
-                    let b = new Set(source);
-                    let union = Array.from(new Set([...a, ...b]));
-
-                    union = union.map(item => {
-                        try {
-                            return JSON5.parse(item)
-                        }
-                        catch (err) {
-                            return item;
-                        }
-                    });
-
-                    return union;
-                }
-            }));
-
-            res.locals.shared = shared;
-        }
-    }
+    database = options.database;
 };
 
 let parseRoute = function (path) {

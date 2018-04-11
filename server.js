@@ -2,6 +2,7 @@
 
 const https = require('https');
 const path = require('path');
+const cluster = require('cluster');
 
 const express = require('express');
 
@@ -39,6 +40,55 @@ app.use('/_file_/:name', function (req, res, next){
     });
 });
 
+cluster.on('exit', function (worker) {
+    console.log('Worker %d died :(', worker.id);
+    cluster.fork();
+});
+
+
+let common_resources = {};
+
+if (cluster.isMaster) {
+    let cpuCount = require('os').cpus().length;
+
+    fs.readdir('./services/', (err, dirs) => {
+        dirs.forEach(dir => {
+            common_resources[dir] = common_resources[dir] || {};
+            common_resources[dir].database = common_resources[dir].database || require(path.join(__dirname, 'services', dir, 'database', 'db'));
+        });
+
+
+        for (let i = 0; i < cpuCount; i += 1) {
+            let worker = cluster.fork();
+
+            //worker.send({common_resources});
+        }
+    });
+}
+else {
+    //console.log('PROCESS:', process.pid);
+    process.on('message', function(msg) {
+        console.log('DATABASE:', msg);
+    });
+
+    fs.readdir('./services/', (err, dirs) => {
+        dirs.forEach(dir => {
+            console.log(dir);
+            try {
+                app.use(`/${dir}/`, require(`./services/${dir}/router`));
+            }
+            catch (err) {
+                console.log(err);
+            }
+        });
+
+        httpsServer.listen(httpsListenPort);
+        console.log(`https server linten on ${httpsListenPort} port.`);
+    });
+
+}
+
+/*
 fs.readdir('./services/', (err, dirs) => {
     dirs.forEach(dir => {
         console.log(dir);
@@ -55,6 +105,7 @@ fs.readdir('./services/', (err, dirs) => {
     httpsServer.listen(httpsListenPort);
     console.log(`https server linten on ${httpsListenPort} port.`);
 });
+*/
 
 
 process.on('unhandledRejection', err => {
