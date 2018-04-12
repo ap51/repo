@@ -28,12 +28,12 @@ model.generateAuthorizationCode = async function(client, user, scope, callback) 
 
 model.getAuthorizationCode = async function(authorizationCode, callback) {
     try {
-        let code = await db.findOne('code', {authorizationCode})
+        let code = await db.findOne('code', {authorizationCode});
         callback(null, code);
     }
     catch(err) {
         callback(err);
-    };
+    }
 
 
 /*     db.find('code', {authorizationCode}, function(err, codes) {
@@ -48,7 +48,7 @@ model.getAuthorizationCode = async function(authorizationCode, callback) {
 
 model.getUser = async function(username, password, callback) {
     try {
-        let user = await db.findOne('user', {email:  username})
+        let user = await db.findOne('user', {email:  username});
 
         if (password !== null && user.password !== password)
             callback();
@@ -73,7 +73,7 @@ model.getUser = async function(username, password, callback) {
 
 model.getClient = async function(clientId, clientSecret, callback) {
     try {
-        let client = await db.findOne('client', {client_id:  clientId})
+        let client = await db.findOne('client', {client_id:  clientId});
         client.id = client._id;
         if (clientSecret !== null && client.client_secret !== clientSecret)
             callback();    
@@ -81,7 +81,7 @@ model.getClient = async function(clientId, clientSecret, callback) {
     }
     catch(err) {
         callback(err);
-    };
+    }
 
     /* db.find('client', {client_id:  clientId}, function(err, clients) {
         if (err || !clients.length)
@@ -120,7 +120,7 @@ model.getAccessToken = async function(accessToken, callback) {
     }
     catch(err) {
         callback(err);
-    };
+    }
 
     /* db.find('token', {accessToken}, async function(err, tokens) {
         let token = tokens[0];
@@ -142,7 +142,7 @@ model.getRefreshToken = async function(refreshToken, callback) {
     }
     catch(err) {
         callback(err);
-    };
+    }
 
     /* db.find('token', {refreshToken}, async function(err, tokens) {
         let token = tokens[0];

@@ -4,6 +4,7 @@
 const https = require('https');
 const path = require('path');
 const cluster = require('cluster');
+const JSON5 = require('json5');
 
 const express = require('express');
 
@@ -46,6 +47,9 @@ cluster.on('exit', function (worker) {
     cluster.fork();
 });
 
+Date.prototype.toJSON = function() {
+    return this * 1
+};
 
 let common_resources = {};
 
@@ -56,6 +60,7 @@ if (cluster.isMaster) {
         dirs.forEach(dir => {
             common_resources[dir] = common_resources[dir] || {};
             common_resources[dir].database = common_resources[dir].database || require(path.join(__dirname, 'services', dir, 'database', 'db'));
+
         });
 
 
@@ -73,20 +78,32 @@ if (cluster.isMaster) {
                     worker.send({module, method, err});
                 }
             });
-            //worker.send({common_resources});
+
+            let entries = Object.entries(common_resources['mtsn'].database);
+            entries = entries.reduce(function (memo, entry) {
+                let [key, value] = entry;
+                typeof value === 'function' && memo.push(key);
+
+                return memo;
+            }, []);
+            worker.send({module: 'databse', method: 'init', exports: entries})
+            //worker.send({a: ''});
         }
     });
 }
 else {
     //console.log('PROCESS:', process.pid);
-    /* process.on('message', function(msg) {
+/*
+     process.on('message', function(msg) {
         console.log('DATABASE:', msg);
-    }); */
+    });
+*/
 
     fs.readdir('./services/', (err, dirs) => {
         dirs.forEach(dir => {
             console.log(dir);
             try {
+                let database = require(path.join(__dirname, 'services', dir, 'database', 'db'));
                 app.use(`/${dir}/`, require(`./services/${dir}/router`));
             }
             catch (err) {

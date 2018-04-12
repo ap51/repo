@@ -4,6 +4,11 @@ const cluster = require('cluster');
 const path = require('path');
 const Datastore = require('nedb');
 const normalizer = require('normalizr');
+const JSON5 = require('json5');
+
+Date.prototype.toISOString = function() {
+    return new Date(this);
+};
 
 class NotFoundError extends Error {
     constructor(collection) {
@@ -112,8 +117,69 @@ if(cluster.isMaster) {
     };
 }
 else {
+    let exports = ['insert', 'find', 'findOne', 'remove', 'update'];
+    process.on('message', function (msg) {
+         if(msg.module === 'database') {
+             switch (msg.method) {
+                 case 'init':
+                     exports = msg.exports;
+                     exports = exports.map(function (name) {
+                         let method = function(...args) {
+                             return new Promise(async function (resolve, reject) {
+                                 process.on('message', function(msg){
+                                     if(msg.method === name) {
+                                         msg.err ? reject(msg.err) : resolve(msg.result);
+                                     }
+                                 });
+
+                                 process.send({
+                                     service: 'mtsn',
+                                     module: 'database',
+                                     method: name,
+                                     args
+                                 });
+                             });
+                         };
+
+                         let fn = {};
+                         fn[name] = method;
+                         return fn;
+                     });
+                     break;
+                 default:
+                     //exports[msg.method]()
+                     break;
+             }
+         }
+    });
+
     console.log('WORKER:', module.exports);
-    let db = module.exports;
+
+    exports = exports.reduce(function (memo, name) {
+        let method = function(...args) {
+            return new Promise(async function (resolve, reject) {
+                process.on('message', function(msg){
+                    if(msg.method === name) {
+                        msg.err ? reject(msg.err) : resolve(msg.result);
+                    }
+                });
+
+                process.send({
+                    service: 'mtsn',
+                    module: 'database',
+                    method: name,
+                    args
+                });
+            });
+        };
+
+        memo[name] = method;
+        return memo;
+    }, {});
+
+    module.exports = exports;
+
+/*    let db = module.exports;
 
     db.insert = function(...args) {
         return new Promise(async function (resolve, reject) {
@@ -164,6 +230,6 @@ else {
                 args
             });
         });
-    };
+    };*/
 
 }
