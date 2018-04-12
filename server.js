@@ -4,7 +4,7 @@
 const https = require('https');
 const path = require('path');
 const cluster = require('cluster');
-const JSON5 = require('json5');
+const memored = require('memored');
 
 const express = require('express');
 
@@ -53,14 +53,41 @@ Date.prototype.toJSON = function() {
 
 let common_resources = {};
 
+let store = function (key, value) {
+    return new Promise(function (resolve, reject) {
+        memored.store(key, value, function(err) {
+            err ? reject(err) : resolve(key);
+            console.log('Value stored!');
+        });
+    })
+};
+
+let read = function (key) {
+    return new Promise(function (resolve, reject) {
+        memored.read(key, function(err, value) {
+            err ? reject(err) : resolve(value);
+        });
+    })
+};
+
+let keys = function () {
+    return new Promise(function (resolve, reject) {
+        memored.keys(function(err, keys) {
+            err ? reject(err) : resolve(keys);
+        });
+    })
+};
+
 if (cluster.isMaster) {
     let cpuCount = require('os').cpus().length;
 
     fs.readdir('./services/', (err, dirs) => {
-        dirs.forEach(dir => {
+        dirs.forEach(async dir => {
             common_resources[dir] = common_resources[dir] || {};
             common_resources[dir].database = common_resources[dir].database || require(path.join(__dirname, 'services', dir, 'database', 'db'));
 
+            await store(dir, common_resources[dir].database);
+            console.log('keys:', await keys());
         });
 
 
@@ -100,7 +127,8 @@ else {
 */
 
     fs.readdir('./services/', (err, dirs) => {
-        dirs.forEach(dir => {
+        dirs.forEach(async dir => {
+            //console.log(await keys());
             console.log(dir);
             try {
                 let database = require(path.join(__dirname, 'services', dir, 'database', 'db'));
