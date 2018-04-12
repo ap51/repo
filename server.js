@@ -1,3 +1,4 @@
+//process.execArgv[0] = process.execArgv[0].replace('-brk', '');
 "use strict";
 
 const https = require('https');
@@ -61,15 +62,26 @@ if (cluster.isMaster) {
         for (let i = 0; i < cpuCount; i += 1) {
             let worker = cluster.fork();
 
+            worker.on('message', async function(msg) {
+                let {service, module, method, args} = msg;
+                try {
+                    console.log(...args);
+                    let result = await common_resources[service][module][method](...args);
+                    worker.send({module, method, result});
+                }
+                catch(err) {
+                    worker.send({module, method, err});
+                }
+            });
             //worker.send({common_resources});
         }
     });
 }
 else {
     //console.log('PROCESS:', process.pid);
-    process.on('message', function(msg) {
+    /* process.on('message', function(msg) {
         console.log('DATABASE:', msg);
-    });
+    }); */
 
     fs.readdir('./services/', (err, dirs) => {
         dirs.forEach(dir => {
