@@ -4,7 +4,7 @@
 const https = require('https');
 const path = require('path');
 const cluster = require('cluster');
-const memored = require('memored');
+//const memored = require('memored');
 
 const express = require('express');
 
@@ -53,7 +53,7 @@ Date.prototype.toJSON = function() {
 
 let common_resources = {};
 
-let store = function (key, value) {
+/* let store = function (key, value) {
     return new Promise(function (resolve, reject) {
         memored.store(key, value, function(err) {
             err ? reject(err) : resolve(key);
@@ -76,50 +76,51 @@ let keys = function () {
             err ? reject(err) : resolve(keys);
         });
     })
-};
+}; */
 
 if (cluster.isMaster) {
     let cpuCount = require('os').cpus().length;
 
+    for (let i = 0; i < cpuCount; i += 1) {
+        let worker = cluster.fork({params: [1,2]});
+
+/*         worker.on('message', async function(msg) {
+            let {service, module, method, args} = msg;
+            try {
+                console.log(...args);
+                let result = await common_resources[service][module][method](...args);
+                worker.send({module, method, result});
+            }
+            catch(err) {
+                worker.send({module, method, err});
+            }
+        }); */
+
+        /* let entries = Object.entries(common_resources['mtsn'].database);
+        entries = entries.reduce(function (memo, entry) {
+            let [key, value] = entry;
+            typeof value === 'function' && memo.push(key);
+
+            return memo;
+        }, []); */
+        
+        //worker.send({module: 'databse', method: 'init', exports: entries})
+        //worker.send({a: ''});
+    }
+    
     fs.readdir('./services/', (err, dirs) => {
         dirs.forEach(async dir => {
-            common_resources[dir] = common_resources[dir] || {};
-            common_resources[dir].database = common_resources[dir].database || require(path.join(__dirname, 'services', dir, 'database', 'db'));
+            //common_resources[dir] = common_resources[dir] || {};
+            //common_resources[dir].database = common_resources[dir].database || require(path.join(__dirname, 'services', dir, 'database', 'db'));
 
-            await store(dir, common_resources[dir].database);
-            console.log('keys:', await keys());
+            //await store(dir, common_resources[dir].database);
+            //console.log('keys:', await keys());
         });
 
-
-        for (let i = 0; i < cpuCount; i += 1) {
-            let worker = cluster.fork();
-
-            worker.on('message', async function(msg) {
-                let {service, module, method, args} = msg;
-                try {
-                    console.log(...args);
-                    let result = await common_resources[service][module][method](...args);
-                    worker.send({module, method, result});
-                }
-                catch(err) {
-                    worker.send({module, method, err});
-                }
-            });
-
-            let entries = Object.entries(common_resources['mtsn'].database);
-            entries = entries.reduce(function (memo, entry) {
-                let [key, value] = entry;
-                typeof value === 'function' && memo.push(key);
-
-                return memo;
-            }, []);
-            worker.send({module: 'databse', method: 'init', exports: entries})
-            //worker.send({a: ''});
-        }
     });
 }
 else {
-    //console.log('PROCESS:', process.pid);
+    //console.log('PROCESS:', process.env);
 /*
      process.on('message', function(msg) {
         console.log('DATABASE:', msg);
@@ -131,7 +132,7 @@ else {
             //console.log(await keys());
             console.log(dir);
             try {
-                let database = require(path.join(__dirname, 'services', dir, 'database', 'db'));
+                //let database = require(path.join(__dirname, 'services', dir, 'database', 'db'));
                 app.use(`/${dir}/`, require(`./services/${dir}/router`));
             }
             catch (err) {

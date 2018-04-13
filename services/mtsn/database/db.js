@@ -18,6 +18,21 @@ class NotFoundError extends Error {
 }
 
 if(cluster.isMaster) {
+    worker.on('message', async function(msg) {
+        let {service, module, method, args} = msg;
+        try {
+            console.log(...args);
+            let result = await common_resources[service][module][method](...args);
+            worker.send({module, method, result});
+        }
+        catch(err) {
+            worker.send({module, method, err});
+        }
+    });
+
+    console.log('module:', module);
+    //module.require.prototype.injection = ['1', '2'];
+
     console.log('MASTER:', module.exports);
     let db = module.exports;
 
@@ -117,8 +132,10 @@ if(cluster.isMaster) {
     };
 }
 else {
+    //console.log('module:', module);
+
     let exports = ['insert', 'find', 'findOne', 'remove', 'update'];
-    process.on('message', function (msg) {
+    /* process.on('message', function (msg) {
          if(msg.module === 'database') {
              switch (msg.method) {
                  case 'init':
@@ -151,9 +168,9 @@ else {
                      break;
              }
          }
-    });
+    }); */
 
-    console.log('WORKER:', module.exports);
+    //console.log('WORKER:', module.exports);
 
     exports = exports.reduce(function (memo, name) {
         let method = function(...args) {
