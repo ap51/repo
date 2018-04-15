@@ -16,6 +16,15 @@
 -->
                         </v-toolbar>
                     </v-flex>
+
+                    <div v-if="text && !entity.length" class="layout-view">
+                        <h1>page not found:</h1>
+                        <v-icon color="red darken-2" class="shadow">fas fa-unlink fa-3x</v-icon>
+                        <h1>"{{address.ident}}"</h1>
+
+                        <v-btn color="blue darken-2" flat="flat" @click.stop="reload()">Try again</v-btn>
+                    </div>
+
                     <v-flex v-if="entity.length" flat xs12>
                         <v-toolbar flat color="white lighten-2" dense class="">
                            <!-- <v-toolbar-title>{{name}}:</v-toolbar-title>-->
@@ -49,7 +58,7 @@
                                 <td >
                                     <div style="display: flex; align-items: center">
                                         <v-icon class="mr-2" :disabled="!props.item.isFriend" color="orange darken-2" style="font-size: 20px; height: 22px;">fas fa-user-circle</v-icon>
-                                        <div style="flex: 1" class=""><a @click="toggle(props.item)">{{ props.item.name }}</a></div>
+                                        <div style="flex: 1" class=""><a :href="'./feed:' + props.item.public_id" @click.prevent="$router.push('feed:' + props.item.public_id)">{{ props.item.name }}</a></div>
 
                                         <v-btn icon>
                                             <v-icon color="accent" style="font-size: 20px; height: 22px;">far fa-comment</v-icon>
@@ -124,8 +133,8 @@
                     this.selected.push(item)
                 }
             },
-            onFind(res) {
-                this.database.found = [];
+            onFind(res, data, time) {
+                !time && (this.database.found = []);
             },
             onAppend(res) {
                 this.selected = [];

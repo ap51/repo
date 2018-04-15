@@ -709,9 +709,11 @@ let accessGranted = async function (req, res, router) {
                 if(!data.location) {
                     throw new CustomError(404, 'Not found');       
                 }
+                //console.log('LOCATION', data.location);
 
                 //data.location = data.location.parents.length ? data.location.parents.map(item => item.name).reverse().join('.') + '.' + parseRoute(req.headers['location']).component : parseRoute(req.headers['location']).component;
-                data.location = data.location.parents.length ? data.location.parents.map(item => item.name).reverse().join('.') + '.' + parseRoute(location).component : parseRoute(location).component;
+                data.location = data.location.parents.length ? data.location.parents.map(item => item.name).reverse().join('.') + '.' + component.route.component : component.route.component;
+                //data.location = data.location.parents.length ? data.location.parents.map(item => item.name).reverse().join('.') + '.' + parseRoute(location).component : parseRoute(location).component;
 
                 data = component.methods.__wrapper ? await component.methods.__wrapper(req, res, data) : data;
 
@@ -763,10 +765,12 @@ let model = function (data) {
     });
 
     const _phone = new schema.Entity('phone', {});
+    const _post = new schema.Entity('post', {});
 
     const _user = new schema.Entity('user', {
         phones: [_phone],
-        profile: _profile
+        profile: _profile,
+        feed: [_post]
     });
 
     const _scope = new schema.Entity('scope', {});
@@ -1080,6 +1084,24 @@ let matrix = {
                             return req.user && self.name + ':' + req.user.public_id;
                         },
                         methods: {
+                            async get(req, res, self) {
+                                let data = req.body;
+                                if(req.params.id) {
+                                    let profile = await database.findOne('profile', {public_id: req.params.id});
+                                    let feed = await database.find('post', {user: profile.user}, {allow_empty: true});
+
+                                    return {
+                                        users: [
+                                            {
+                                                id: profile.user,
+                                                feed
+                                            }
+
+                                        ]
+                                    };
+                                }
+                                return {};
+                            },
                             'save': {
                                 access: ['current', 'admins'],
                                 method() {
@@ -1106,11 +1128,13 @@ let matrix = {
                                 let friends = await database.find('friend', {user: req.user.id}, {allow_empty: true});
 
                                 let users = await database.find('user', {name: regex, _id: {$ne: req.user.id}}, {allow_empty: true});
+                                let profiles = await database.find('profile', {user: {$in: users.map(user => user.id)}}, {allow_empty: true});
 
                                 users = users.map(user => {
                                     let {id, name} = user;
                                     let isFriend = friends.find(record => record.friend === id) ? true : false;
-                                    return {id, name, isFriend};
+                                    let profile = profiles.find(record => record.user === id);
+                                    return {id, name, isFriend, public_id: profile.public_id};
                                 });
 
                                 return {

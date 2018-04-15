@@ -257,6 +257,7 @@ Vue.prototype.$request = async function(url, data, options) {
 
                         let last = [...Vue.prototype.$state.hierarchy];
                         last = last.pop();
+                        console.log(url);
                         parsed.component === last && Vue.prototype.$request(`${Vue.prototype.$state.base_ui}${parsed.ident}.get`);
 
                         if(parsed.component === last) {
@@ -330,7 +331,8 @@ Vue.prototype.$request = async function(url, data, options) {
                             parsed.action === 'get' && Vue.prototype.$bus.$emit(`loaded:${parsed.component}`, merge);
                             parsed.action === 'get' && console.log('LOADED:', parsed.component);
                         }, 3000) */
-            
+
+                        //callback && callback(res, data, 'after');
                         break;
                     default:
                         break;

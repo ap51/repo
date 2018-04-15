@@ -5,6 +5,13 @@
                 <v-layout column>
                     <v-flex xs12>
                         <v-card color="blue darken-2" class="white--text">
+                            <v-card-title>
+                                <div>
+                                    <div class="headline">{{current_user && current_user.name}}</div>
+                                    <div>{{current_user && current_user.status || 'anything...'}}</div>
+                                </div>
+                            </v-card-title>
+<!--
                             <v-container fluid grid-list-lg>
                                 <v-layout row>
                                     <v-avatar size="70px" slot="activator">
@@ -18,6 +25,7 @@
                                     </v-flex>
                                 </v-layout>
                             </v-container>
+-->
                             <v-card-actions>
                                 <v-toolbar flat color="blue darken-2" dense tabs="tabs">
                                      <v-tabs v-model="active" color="blue darken-2" dark dense :right="false" show-arrows>

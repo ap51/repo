@@ -172,6 +172,10 @@ let accessMiddleware = function(options) {
     };
 };
 
+router.all(config.patterns, function (req, res, next) {
+    next(); //to utils endHandler
+});
+
 router.all(config.patterns, accessMiddleware({}), async function (req, res, next) {
     next(); //to utils endHandler
 });

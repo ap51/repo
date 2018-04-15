@@ -1,4 +1,4 @@
-let collections = ['token', 'client', 'user', 'code', 'scope', 'client_user', 'phone', 'profile', 'friend'];
+let collections = ['token', 'client', 'user', 'code', 'scope', 'client_user', 'phone', 'profile', 'friend', 'post'];
 
 const cluster = require('cluster');
 const path = require('path');

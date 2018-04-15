@@ -67,7 +67,12 @@ let parse = function (text) {
         if (typeof value === "string" && value.indexOf('$$regex:') === 0) {
             value = value.replace('$$regex:', '');
             let [expr, flags] = value.split(':');
-            return new RegExp(expr, flags);
+            try {
+                return new RegExp(expr, flags);
+            }
+            catch (err) {
+                return expr;
+            }
         }
 
         return value;
