@@ -3,21 +3,28 @@
         <v-card flat width="50vw">
             <v-container grid-list-lg>
                 <v-layout column>
+<!--
                     <v-flex xs12>
                         <v-toolbar flat color="white lighten-2" dense class="">
-
+                             <v-toolbar-title>{{name}}:</v-toolbar-title>
                         </v-toolbar>
                     </v-flex>
+-->
 
-                    <v-flex v-if="entity.length" flat xs12>
+                    <!--<v-flex v-if="entity.length" flat xs12>-->
+                    <v-flex flat xs12>
+<!--
                         <v-toolbar flat color="white lighten-2" dense class="">
-                            <!-- <v-toolbar-title>{{name}}:</v-toolbar-title>-->
+                            &lt;!&ndash; <v-toolbar-title>{{name}}:</v-toolbar-title>&ndash;&gt;
                             <v-spacer></v-spacer>
-                            <v-btn flat="flat" :disabled="selected.length === 0" @click.stop="append"><v-icon color="green darken-2" class="mr-1 mb-1">fas fa-plus</v-icon>append to friends</v-btn>
-                        </v-toolbar>
 
-                        <div class="text-xs-center pt-2">
-                            <v-pagination v-model="pagination.page" :length="pages" :total-visible="pages"></v-pagination>
+                        </v-toolbar>
+-->
+
+                        <div style="display: flex; align-items: center;">
+                            <v-pagination style="flex: 1" v-model="pagination.page" :length="pages" :total-visible="pages"></v-pagination>
+                            <v-btn color="red darken-2" flat :disabled="selected.length === 0" @click.stop="remove"><v-icon color="red darken-2" class="mr-1 mb-1">fas fa-times</v-icon>remove post</v-btn>
+                            <v-btn color="green darken-2" flat @click.stop="append"><v-icon color="green darken-2" class="mr-1 mb-1">fas fa-plus</v-icon>append post</v-btn>
                         </div>
 
                         <v-data-table item-key="id"
@@ -40,13 +47,10 @@
                                     </v-checkbox>
                                 </td>
                                 <td >
-                                    <div style="display: flex; align-items: center">
-                                        <v-icon class="mr-2" :disabled="!props.item.isFriend" color="orange darken-2" style="font-size: 20px; height: 22px;">fas fa-user-circle</v-icon>
-                                        <div style="flex: 1" class=""><a :href="'./feed:' + props.item.public_id" @click.prevent="$router.push('feed:' + props.item.public_id)">{{ props.item.name }}</a></div>
-
-                                        <v-btn icon>
-                                            <v-icon color="accent" style="font-size: 20px; height: 22px;">far fa-comment</v-icon>
-                                        </v-btn>
+                                    <div class="ma-2">
+                                        <div class="subheading">{{ props.item.title }}</div>
+                                        <div class="caption">{{ props.item.text }}</div>
+                                        <div class="grey--text" style="border-top: 1px solid rgba(0,0,0,.12)" class="caption">{{ new Date(props.item.created).toLocaleString() }}</div>
                                     </div>
 
                                 </td>
@@ -93,14 +97,15 @@
         computed: {
             entity() {
                 this.pagination.page = this.activePage || this.pagination.page || 1;
-                return this.database.found ? this.database.found.map(user => this.entities.user[user]) : [];
+                let posts = this.database.feed && this.entities.feed[this.address.id] ? this.entities.feed[this.address.id].posts.map(post => this.entities.post[post]) : [];
+                return posts;
             },
             pages () {
                 if (this.pagination.rowsPerPage == null || this.pagination.totalItems == null)
                     return 0;
 
-                if(this.database.found) {
-                    let pages = Math.ceil(this.database.found.length / this.pagination.rowsPerPage);
+                if(this.database.feed && this.entities.feed[this.address.id]) {
+                    let pages = Math.ceil(this.entities.feed[this.address.id].posts.length / this.pagination.rowsPerPage);
                     this.pagination.pages = this.pagination.pages !== pages ? pages : this.pagination.pages;
                     return this.pagination.pages;
                 }

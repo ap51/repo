@@ -2,12 +2,14 @@
     <div class="layout-view">
         <!-- <h1>phones database:</h1> -->
 
+<!--
         <v-toolbar flat color="white lighten-2" dense class="">
-            <!--<v-toolbar-title>{{name}}:</v-toolbar-title>-->
+            &lt;!&ndash;<v-toolbar-title>{{name}}:</v-toolbar-title>&ndash;&gt;
             <v-spacer></v-spacer>
             <v-btn color="red darken-2" flat="flat" :disabled="selected.length === 0" @click.stop="remove"><v-icon class="mr-1 mb-1">fas fa-times</v-icon>remove selected</v-btn>
             <v-btn color="green darken-2" flat="flat" @click.stop="append"><v-icon class="mr-1 mb-1">fas fa-plus</v-icon>append client</v-btn>
         </v-toolbar>
+-->
 
 <!--
         <div>
@@ -16,8 +18,10 @@
         </div>
 -->
 
-        <div class="text-xs-center pt-2">
-            <v-pagination v-model="pagination.page" :length="pages" :total-visible="pages"></v-pagination>
+        <div style="display: flex; align-items: center; width: 100%">
+            <v-pagination style="flex: 1" v-model="pagination.page" :length="pages" :total-visible="pages"></v-pagination>
+            <v-btn color="red darken-2" flat="flat" :disabled="selected.length === 0" @click.stop="remove"><v-icon class="mr-1 mb-1">fas fa-times</v-icon>remove selected</v-btn>
+            <v-btn color="green darken-2" flat="flat" @click.stop="append"><v-icon class="mr-1 mb-1">fas fa-plus</v-icon>append client</v-btn>
         </div>
         
         <v-data-table v-if="this.database.clients"

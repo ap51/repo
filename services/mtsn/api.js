@@ -767,10 +767,14 @@ let model = function (data) {
     const _phone = new schema.Entity('phone', {});
     const _post = new schema.Entity('post', {});
 
+    const _feed = new schema.Entity('feed', {
+        posts: [_post]
+    });
+
     const _user = new schema.Entity('user', {
         phones: [_phone],
         profile: _profile,
-        feed: [_post]
+        //feed: [_post]
     });
 
     const _scope = new schema.Entity('scope', {});
@@ -794,7 +798,8 @@ let model = function (data) {
         users: [_user],
         scopes: [_scope],
         create: _create,
-        found: [_user]
+        found: [_user],
+        feed: [_feed]
     }, {
         idAttribute: 'api'
     });
@@ -1082,21 +1087,28 @@ let matrix = {
                         access: ['*'],
                         to(req, res, self) {
                             return req.user && self.name + ':' + req.user.public_id;
+/*
+                            if(req.user) {
+                                let profile = await database.findOne('profile', {user: req.user.id}, {allow_empty: true});
+
+                                return req.user && self.name + ':' + profile.public_id;
+                            }
+*/
+                            //return self.name;
                         },
                         methods: {
                             async get(req, res, self) {
                                 let data = req.body;
                                 if(req.params.id) {
-                                    let profile = await database.findOne('profile', {public_id: req.params.id});
-                                    let feed = await database.find('post', {user: profile.user}, {allow_empty: true});
+                                    let profile = await database.findOne('profile', {public_id: req.params.id}, {allow_empty: true});
+                                    let posts = await database.find('post', {user: profile.user}, {allow_empty: true});
 
                                     return {
-                                        users: [
+                                        feed: [
                                             {
-                                                id: profile.user,
-                                                feed
+                                                id: profile.public_id,
+                                                posts
                                             }
-
                                         ]
                                     };
                                 }

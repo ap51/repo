@@ -17,6 +17,7 @@
                         </v-toolbar>
                     </v-flex>
 
+<!--
                     <div v-if="text && !entity.length" class="layout-view">
                         <h1>page not found:</h1>
                         <v-icon color="red darken-2" class="shadow">fas fa-unlink fa-3x</v-icon>
@@ -24,16 +25,19 @@
 
                         <v-btn color="blue darken-2" flat="flat" @click.stop="reload()">Try again</v-btn>
                     </div>
+-->
 
-                    <v-flex v-if="entity.length" flat xs12>
+                    <v-flex flat xs12>
+<!--
                         <v-toolbar flat color="white lighten-2" dense class="">
-                           <!-- <v-toolbar-title>{{name}}:</v-toolbar-title>-->
+                           &lt;!&ndash; <v-toolbar-title>{{name}}:</v-toolbar-title>&ndash;&gt;
                             <v-spacer></v-spacer>
-                            <v-btn flat="flat" :disabled="selected.length === 0" @click.stop="append"><v-icon color="green darken-2" class="mr-1 mb-1">fas fa-plus</v-icon>append to friends</v-btn>
                         </v-toolbar>
+-->
 
-                        <div class="text-xs-center pt-2">
-                            <v-pagination v-model="pagination.page" :length="pages" :total-visible="pages"></v-pagination>
+                        <div style="display: flex; align-items: center;">
+                            <v-pagination style="flex: 1" v-model="pagination.page" :length="pages" :total-visible="pages"></v-pagination>
+                            <v-btn color="green darken-2" flat :disabled="selected.length === 0" @click.stop="append"><v-icon color="green darken-2" class="mr-1 mb-1">fas fa-plus</v-icon>append to friends</v-btn>
                         </div>
 
                         <v-data-table item-key="id"

@@ -383,7 +383,7 @@ let component = {
         },
         current_user() {
             //this.state.locationToggle && void 0;
-            let id = this.address.id || 'current';
+            let id = 'current';
             let user = this.entities.user && this.entities.user[id];
             let profile = user && this.entities.profile && this.entities.profile[user.profile];
             return (user && {...user, ...profile});

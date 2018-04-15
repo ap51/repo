@@ -7,15 +7,19 @@
             <v-btn color="green darken-2" flat="flat" @click.stop="append"><v-icon class="mr-1 mb-1">fas fa-plus</v-icon>append phone</v-btn>
         </div>
  -->
+<!--
         <v-toolbar flat color="white lighten-2" dense class="">
             <v-toolbar-title>{{name}}:</v-toolbar-title>
             <v-spacer></v-spacer>
             <v-btn flat="flat" :disabled="selected.length === 0" @click.stop="remove"><v-icon color="red darken-2" class="mr-1 mb-1">fas fa-times</v-icon>remove</v-btn>
             <v-btn flat="flat" @click.stop="append"><v-icon color="green darken-2" class="mr-1 mb-1">fas fa-plus</v-icon>append</v-btn>
         </v-toolbar>
-    
-        <div class="text-xs-center pt-2">
-            <v-pagination v-model="pagination.page" :length="pages" :total-visible="pages"></v-pagination>
+-->
+
+        <div style="display: flex; align-items: center; width: 100%">
+            <v-pagination style="flex: 1" v-model="pagination.page" :length="pages" :total-visible="pages"></v-pagination>
+            <v-btn color="red darken-2" flat="flat" :disabled="selected.length === 0" @click.stop="remove"><v-icon color="red darken-2" class="mr-1 mb-1">fas fa-times</v-icon>remove</v-btn>
+            <v-btn color="green darken-2" flat="flat" @click.stop="append"><v-icon color="green darken-2" class="mr-1 mb-1">fas fa-plus</v-icon>append</v-btn>
         </div>
         
         <v-data-table v-if="this.database.users"

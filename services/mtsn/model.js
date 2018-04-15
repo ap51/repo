@@ -49,6 +49,8 @@ model.getAuthorizationCode = async function(authorizationCode, callback) {
 model.getUser = async function(username, password, callback) {
     try {
         let user = await db.findOne('user', {email:  username});
+        let profile = await db.findOne('profile', {user:  user.id});
+        user.public_id = profile.public_id;
 
         if (password !== null && user.password !== password)
             callback();
@@ -114,6 +116,9 @@ model.getAccessToken = async function(accessToken, callback) {
     try {
         let token = await db.findOne('token', {accessToken});
         token.user = await db.findOne('user', {_id: token.user.id}, {not_clear_result: true});
+        let profile = await db.findOne('profile', {user: token.user.id});
+        token.user.public_id = profile.public_id;
+
         token.client = await db.findOne('client', {_id: token.client.id}, {not_clear_result: true});
 
         callback(null, token);
@@ -134,8 +139,11 @@ model.getAccessToken = async function(accessToken, callback) {
 
 model.getRefreshToken = async function(refreshToken, callback) {
     try {
-        let token = await db.findOne('token', {refreshToken})
+        let token = await db.findOne('token', {refreshToken});
         token.user = await db.findOne('user', {_id: token.user.id}, {not_clear_result: true});
+        let profile = await db.findOne('profile', {user: token.user.id});
+        token.user.public_id = profile.public_id;
+
         token.client = await db.findOne('client', {_id: token.client.id}, {not_clear_result: true});
 
         callback(null, token);
