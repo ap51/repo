@@ -1,4 +1,4 @@
-{"app_name":"greenrabbit525","client_id":"nrgMuthH9jtIp8mY","client_secret":"h+kdYTnp3wV4TW2cgwe1MroceLNDUPkL","scope":["site","phones","profile"],"created":1523725535137,"updated":1523725535137,"_id":"3fCmgDRyVPWa5zhx"}
+{"app_name":"greenrabbit525","client_id":"nrgMuthH9jtIp8mY","client_secret":"h+kdYTnp3wV4TW2cgwe1MroceLNDUPkL","scope":["profile"],"created":1523725535137,"updated":1523822200635,"_id":"3fCmgDRyVPWa5zhx"}
 {"client_id":"authenticate","client_secret":"authenticate_secret","redirectUris":["https://localhost:5000/resource/authentificate"],"app_name":"Authenticate client","grants":["password","refresh_token"],"scope":["site"],"trusted":true,"_id":"WIOdMLpm2akyUabs"}
 {"app_name":"Trusted Client","scope":["profile"],"client_id":"P5Wb12oCzT6GNg1Z","client_secret":"d1ckgkLkrC4rHTKwuLikyslVs6gY+IQ8","created":1521998287300,"updatetd":1522082761332,"trusted":true,"id":"pSMJpQ0K0Js1Ae3Z","_id":"pSMJpQ0K0Js1Ae3Z"}
 {"app_name":"new phone","scope":["profile","phones"],"client_id":"J5qBRSVjwiwnrMRB","client_secret":"7QS/4+tjb8zZtbC1d6f+NlfmqzMJY4Il","created":1522007083618,"updatetd":1522075952845,"updated":1523725528844,"_id":"sTIg6ZPYTpKeXjkM"}

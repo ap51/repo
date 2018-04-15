@@ -28,7 +28,7 @@
                 if(data) {
                     self.delay = setTimeout(function() {
                         self.visible = true;
-                    }, 250);
+                    }, 200);
                 }
                 else {
                     self.delay && clearTimeout(self.delay);
