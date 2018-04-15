@@ -13,7 +13,8 @@
             <v-btn color="red darken-2" flat :disabled="selected.length === 0" @click.stop="remove"><v-icon color="red darken-2" class="mr-1 mb-1">fas fa-times</v-icon>remove from friends</v-btn>
         </div>
 
-        <v-data-table item-key="id"
+        <v-data-table style="border-top: 1px solid rgb(128, 128, 128)"
+                      item-key="id"
                       disable-initial-sort
 
                       :headers="headers"

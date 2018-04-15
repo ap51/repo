@@ -27,7 +27,8 @@
                             <v-btn color="green darken-2" flat @click.stop="append"><v-icon color="green darken-2" class="mr-1 mb-1">fas fa-plus</v-icon>append post</v-btn>
                         </div>
 
-                        <v-data-table item-key="id"
+                        <v-data-table style="border-top: 1px solid rgb(128, 128, 128)"
+                                      item-key="id"
                                       disable-initial-sort
 
                                       :headers="headers"
@@ -48,9 +49,17 @@
                                 </td>
                                 <td >
                                     <div class="ma-2">
-                                        <div class="subheading">{{ props.item.title }}</div>
+                                        <div class="subheading"><a @click.prevent>{{ props.item.title }}</a></div>
                                         <div class="caption">{{ props.item.text }}</div>
-                                        <div class="grey--text" style="border-top: 1px solid rgba(0,0,0,.12)" class="caption">{{ new Date(props.item.created).toLocaleString() }}</div>
+                                        <div style="display: flex; align-items: center; border-top: 1px solid rgba(0,0,0,.12)">
+                                            <div style="flex: 1" class="grey--text" style="" class="caption">{{ new Date(props.item.created).toLocaleString() }}</div>
+                                            <v-btn flat small icon color="pink">
+                                                <v-icon>favorite</v-icon>
+                                            </v-btn>
+                                            <v-btn flat small icon color="indigo">
+                                                <v-icon>star</v-icon>
+                                            </v-btn>
+                                        </div>
                                     </div>
 
                                 </td>

@@ -23,7 +23,8 @@
         </div>
         
         <v-data-table v-if="this.database.users"
-                item-key="id"
+                      style="border-top: 1px solid rgb(128, 128, 128)"
+                      item-key="id"
                 disable-initial-sort
 
                 :headers="headers"

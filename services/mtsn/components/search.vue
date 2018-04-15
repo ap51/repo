@@ -40,7 +40,8 @@
                             <v-btn color="green darken-2" flat :disabled="selected.length === 0" @click.stop="append"><v-icon color="green darken-2" class="mr-1 mb-1">fas fa-plus</v-icon>append to friends</v-btn>
                         </div>
 
-                        <v-data-table item-key="id"
+                        <v-data-table style="border-top: 1px solid rgb(128, 128, 128)"
+                                      item-key="id"
                                       disable-initial-sort
 
                                       :headers="headers"
