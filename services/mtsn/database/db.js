@@ -3,12 +3,14 @@ let collections = ['token', 'client', 'user', 'code', 'scope', 'client_user', 'p
 const cluster = require('cluster');
 const path = require('path');
 const Datastore = require('nedb');
-const normalizer = require('normalizr');
-const JSON5 = require('json5');
+//const normalizer = require('normalizr');
+//const JSON5 = require('json5');
 
+/*
 Date.prototype.toISOString = function() {
     return new Date(this);
 };
+*/
 
 class NotFoundError extends Error {
     constructor(collection) {
@@ -18,22 +20,8 @@ class NotFoundError extends Error {
 }
 
 if(cluster.isMaster) {
-    worker.on('message', async function(msg) {
-        let {service, module, method, args} = msg;
-        try {
-            console.log(...args);
-            let result = await common_resources[service][module][method](...args);
-            worker.send({module, method, result});
-        }
-        catch(err) {
-            worker.send({module, method, err});
-        }
-    });
+    //console.log('module:', module);
 
-    console.log('module:', module);
-    //module.require.prototype.injection = ['1', '2'];
-
-    console.log('MASTER:', module.exports);
     let db = module.exports;
 
     for(let inx in collections) {
@@ -70,14 +58,13 @@ if(cluster.isMaster) {
     db.findOne = function(collection, query, options) {
         return new Promise(async function (resolve, reject) {
             try {
-                console.log('ARGS', collection, query, options);
                 let results = await db.find(collection, query, options);
                 resolve(results[0]);
             }
             catch (err) {
                 reject(err);
             }
-        })
+        });
     };
 
     db.remove = function(collection, query, options) {
@@ -132,60 +119,25 @@ if(cluster.isMaster) {
     };
 }
 else {
-    //console.log('module:', module);
-
-    let exports = ['insert', 'find', 'findOne', 'remove', 'update'];
-    /* process.on('message', function (msg) {
-         if(msg.module === 'database') {
-             switch (msg.method) {
-                 case 'init':
-                     exports = msg.exports;
-                     exports = exports.map(function (name) {
-                         let method = function(...args) {
-                             return new Promise(async function (resolve, reject) {
-                                 process.on('message', function(msg){
-                                     if(msg.method === name) {
-                                         msg.err ? reject(msg.err) : resolve(msg.result);
-                                     }
-                                 });
-
-                                 process.send({
-                                     service: 'mtsn',
-                                     module: 'database',
-                                     method: name,
-                                     args
-                                 });
-                             });
-                         };
-
-                         let fn = {};
-                         fn[name] = method;
-                         return fn;
-                     });
-                     break;
-                 default:
-                     //exports[msg.method]()
-                     break;
-             }
-         }
-    }); */
-
-    //console.log('WORKER:', module.exports);
+    let exports = ['insert', 'find', 'findOne', 'remove', 'update']; //get from env??
 
     exports = exports.reduce(function (memo, name) {
         let method = function(...args) {
             return new Promise(async function (resolve, reject) {
-                process.on('message', function(msg){
-                    if(msg.method === name) {
+                let uid = new Date() / 1;
+
+                process.once('message', function(msg){
+                    if(msg.uid === uid) {
                         msg.err ? reject(msg.err) : resolve(msg.result);
                     }
                 });
 
                 process.send({
-                    service: 'mtsn',
-                    module: 'database',
+                    action: 'execute',
+                    module: module.filename,
                     method: name,
-                    args
+                    args,
+                    uid
                 });
             });
         };
@@ -195,58 +147,4 @@ else {
     }, {});
 
     module.exports = exports;
-
-/*    let db = module.exports;
-
-    db.insert = function(...args) {
-        return new Promise(async function (resolve, reject) {
-            process.on('message', function(msg){
-                if(msg.method === 'insert') {
-                    msg.err ? reject(msg.err) : resolve(msg.result);
-                }
-            });
-
-            process.send({
-                service: 'mtsn',
-                module: 'database',
-                method: 'insert',
-                args
-            });
-        });
-    };
-
-    db.find = function(...args) {
-        return new Promise(async function (resolve, reject) {
-            process.on('message', function(msg){
-                if(msg.method === 'find') {
-                    msg.err ? reject(msg.err) : resolve(msg.result);
-                }
-            });
-
-            process.send({
-                service: 'mtsn',
-                module: 'database',
-                method: 'find',
-                args
-            });
-        });
-    };
-
-    db.findOne = function(...args) {
-        return new Promise(async function (resolve, reject) {
-            process.on('message', function(msg){
-                if(msg.method === 'findOne') {
-                    msg.err ? reject(msg.err) : resolve(msg.result);
-                }
-            });
-
-            process.send({
-                service: 'mtsn',
-                module: 'database',
-                method: 'findOne',
-                args
-            });
-        });
-    };*/
-
 }

@@ -153,8 +153,6 @@ router.patch('/phone', ensureSignedIn, function(req, res, next){
 
 router.all(patterns, end);
 
-module.exports = function (name) {
-    //service = name;
-
-    return router;
+module.exports = {
+    router
 };

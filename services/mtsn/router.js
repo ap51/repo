@@ -10,8 +10,7 @@ let router = utils.router(service);
 const CustomError = require('./error');
 
 const config = require('./config');
-const api = require('./api');
-api.init({router, database});
+//api.init({router, database});
 
 let patterns = config.ui_patterns;
 let api_patterns = config.api_patterns;
@@ -25,7 +24,7 @@ let oauth = new OAuth2Server({
     model: require('./model')
 });
 
-router.authenticateHandler = function(options) {
+let authenticateHandler = function(options) {
     return async function(req, res, next) {
         let request = new Request(req);
         let response = new Response(res);
@@ -46,7 +45,7 @@ let authorizeOptions = {
 
             try {
                 let token = await database.findOne('token', {accessToken: req.token.access});
-                user = await database.findOne('user', {_id: token.user._id});
+                user = await database.findOne('user', {_id: token.user.id});
             }
             catch (err) {
                 res.redirect_remote = 'https://localhost:5000/resource/external-signin';
@@ -76,7 +75,7 @@ function authorizeHandler(options) {
     }
 }
 
-router.tokenHandler = function(options) {
+let tokenHandler = function(options) {
     return async function(req, res, next) {
         let request = new Request(req);
         let response = new Response(res);
@@ -89,7 +88,7 @@ router.tokenHandler = function(options) {
     }
 };
 
-router.accessHandler = function(options) {
+let accessHandler = function(options) {
     return async function(req, res, next) {
         try {
             //res.locals.token = token;
@@ -118,7 +117,6 @@ router.onComponentData = async function(req, res, response, data) {
 
     return data;
 };
-
 
 router.all('*', router.jwtHandler());
 
@@ -155,173 +153,27 @@ router.all(['/files/*/:file', '/files/:file'], function(req, res, next) {
     else res.status(404).end('Not found.');
 });
 
-router.all(config.patterns, api.accessMiddleware({}), async function (req, res, next) {
+module.exports = {
+    router,
+    tokenHandler,
+    authenticateHandler,
+    service
+};
+
+let accessMiddleware = function(options) {
+    const api = require('./api');
+
+    return async function(req, res, next) {
+        let response = await api.accessGranted(req, res, router);
+
+        res.locals.response = response;
+
+        response && next();
+    };
+};
+
+router.all(config.patterns, accessMiddleware({}), async function (req, res, next) {
     next(); //to utils endHandler
 });
 
-/* 
-router.all(config.patterns, router.authenticateHandler({allowBearerTokensInQueryString: true}), router.accessHandler(), async function (req, res, next) {
-    let data = void 0;
-
-    if(!res.locals.error) {
-
-        router.components = router.components || {};
-        router.components[req.params.name] = req.params;
-
-        let action = api.action(req, res);
-
-        //console.log('ACTION:', req.params);
-
-        try {
-            data = await action(req, res);
-        }
-        catch (err) {
-            let {code, message} = err;
-            code = code || 404;
-            res.locals.error = {code, message};
-        }
-    }
-
-    switch (req.params.section) {
-        case 'ui':
-                if(res.locals.error) {
-                    switch(res.locals.error.code) {
-                        case 403:
-                            res.locals.params = {name: 'access-denied'};
-                            break;
-                        case 401:
-                            res.locals.params = {name: 'unauthenticate'};
-                            break;
-                    }
-
-                    res.locals.error = void 0;
-                }
-                next();
-            break;
-        case 'ui_api':
-                if(res.locals.error && [401, 403].indexOf(res.locals.error.code) === -1) {
-                     res.status(res.locals.error.code).send(res.locals.error.message);
-                    //res.status(res.locals.error.code).send(res.locals.error.message);
-                }
-                else {
-                    try {
-                        let auth = req.token.auth;
-                        req._token[router.service] = req.token;
-                        let token = await router.encode(req._token);
-                        let shared = res.locals.shared;
-
-                        let response = {api: 'v1', ...data};
-
-                        let entities = {...api.entities(response), method: req.method, token, auth, shared};
-
-                        res.status(222).json(entities);
-                    }
-                    catch(err) {
-                        res.status(err.code || 406).send(err.message);
-                    }
-                }
-                return res.end();
-            break;
-        case 'api':
-                if(res.locals.error) {
-                    res.status(res.locals.error.code).send(res.locals.error.message)
-                }
-                else {
-                    try {
-                        res.status(222).json(data);
-                    }
-                    catch(err) {
-                        res.status(err.code).send(err.message);
-                    }
-                }
-                return res.end();
-            break;
-        default:
-            res.status(404);
-            res.end();
-            break;
-    }
-
-});
- */
-/*router.all(endpoints.patterns('api'), router.authenticateHandler({endpoint:'api', allowBearerTokensInQueryString: true}), router.accessHandler({endpoint:'api'}), async function (req, res, next) {
-    if(res.locals.error) {
-        res.status(res.locals.error.code).send(res.locals.error.message)
-    }
-    else {
-        let action = endpoints.action('api', req.params, res.locals.unit);
-        try {
-            let response = {api: 'v1', ...await action(res.locals.token, req.body)};
-
-            let entities = {...endpoints.entities(response), method: req.method};
-
-            res.status(222).json(entities);
-        }
-        catch(err) {
-            res.status(err.code).send(err.message);
-        }
-    }
-    return res.end();
-});
-
-router.all(endpoints.patterns('ui'), router.authenticateHandler({endpoint:'ui'}), function (req, res, next) {
-    if(res.locals.error) {
-        switch(res.locals.error.code) {
-            case 403: 
-                res.locals.params = {name: 'access-denied'};
-                break;
-            case 401: 
-                res.locals.params = {name: 'unauthenticate'};
-                break;
-        }
-
-        res.locals.error = void 0;
-    }
-    next();
-});*/
-
-/* 
-router.all(api_patterns, router.authenticateHandler({allowBearerTokensInQueryString: true}), function (req, res, next) {
-    res.locals.error ? res.status(res.locals.error.code).send(res.locals.error.message) : res.status(222).json({api: 'v.1.0', request: req.params});
-    return res.end();
-});
-
-router.all(['/ui/profile', '/ui/clients'], router.authenticateHandler({allowBearerTokensInQueryString: true}), function (req, res, next) {
-    if(res.locals.error && res.locals.error.code === 401) {
-        //res.redirect_local = 'unauthenticate';
-        res.locals.params = {name: 'unauthenticate'};
-        res.locals.error = void 0;
-    }
-    next();
-});
- */
-
-//router.all(patterns, router.beginHandler());
-
-//router.all(patterns, authenticateHandler());
-
-/* router.all(patterns, function(req, res, next) {
-    next();
-});
- */
-//router.post('/oauthorize', authorizeHandler(authorizeOptions));
-
-//router.post('/otoken', router.tokenHandler());
-
-/* router.post('/grant', function(req, res, next){
-    next();
-});
- */
 router.all(config.patterns, router.endHandler());
-
-/*
-let database = void 0;
-
-module.exports = function (options) {
-    database = options.database;
-    api.init({router, database});
-    return router;
-};
-*/
-
-module.exports = router;

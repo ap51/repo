@@ -1,5 +1,11 @@
 'use strict';
 
+/*
+let service = __dirname.split(/\/|\\/g);
+service = service[service.length - 1];
+*/
+
+const path = require('path');
 //const database = require('./database/db');
 const cheerio = require('cheerio');
 const loadContent = require('./../../utils').loadContent;
@@ -8,6 +14,12 @@ const merge = require('deepmerge');
 const JSON5 = require('json5');
 const crypto = require('crypto');
 const randomBytes = require('bluebird').promisify(crypto.randomBytes);
+
+let {router, tokenHandler, authenticateHandler, service} = require('./router');
+
+const database = require('./database/db');
+
+const generate = require('nanoid/generate');
 
 let generateRandomToken = async function(bytes) {
     const buffer = await randomBytes(bytes || 24);
@@ -34,6 +46,7 @@ let generateRandomID = async function(bytes) {
 
 const CustomError = require('./error');
 
+/*
 let router = void 0;
 let database = void 0;
 
@@ -41,6 +54,7 @@ let init = function (options) {
     router = options.router;
     database = options.database;
 };
+*/
 
 let parseRoute = function (path) {
     path = path.split('/').pop();
@@ -231,7 +245,7 @@ let actions = {
 
                 req.body.username = req.body.email;
 
-                await router.authenticateHandler({force: true})(req, res);
+                await authenticateHandler({force: true})(req, res);
                 if (res.locals.error) {
                     res.locals.error = void 0;
 
@@ -242,7 +256,7 @@ let actions = {
                     req.body.grant_type = 'password';
                     req.body.scope = scope.join(',');
 
-                    await router.tokenHandler({})(req, res);
+                    await tokenHandler({})(req, res);
 
                     !res.locals.error && updateDefaults(req, res);
 
@@ -519,50 +533,7 @@ let scopes = {
         description: 'Allow access to user profile public information',
         public: true
     },
-/*
-    site1: {
-        id: 11,
-        name: 'Web site user interface',
-        description: 'WSUI',
-        public: false
-    },
-    //api: 'Application programming interface',
-    phones1: {
-        id: 21,
-        name: 'Phones API',
-        description: 'PAPI',
-        public: true
-    },
-    profile1: {
-        id: 31,
-        name: 'Profile read only access',
-        description: 'PROA',
-        public: true
-    }
-*/
 };
-
-/*
-let element = {
-    path: { //ui, api, ...
-        element: { //layout, public, ...
-            type: 'tab',
-            scopes: [],
-            access: [],
-            methods: {
-                'save': {
-                    access: [],
-                    method() {}
-                },
-                get() {}
-            },
-            children: {
-                'element': element
-            }
-        }
-    }
-};
-*/
 
 let flat = function (root, array, parent) {
     array = array || [];
@@ -607,18 +578,6 @@ let flat = function (root, array, parent) {
     }
 
     return array;
-};
-
-let accessMiddleware = function(options) {
-    return async function(req, res, next) {
-        let response = await accessGranted(req, res, router);
-        
-        res.locals.response = response;
-/*         res.status(response.status).json(response);
-        return res.end();
- */
-        response && next();
-    };
 };
 
 let accessGranted = async function (req, res, router) {
@@ -669,7 +628,7 @@ let accessGranted = async function (req, res, router) {
                             req.headers['transfer-encoding'] = 'true';
                             req.headers['content-length'] = 1;
 
-                            token = await router.tokenHandler({})(req, res);
+                            token = await tokenHandler({})(req, res);
 
                             let {accessToken, accessTokenExpiresAt, refreshToken, user, client} = token;
 
@@ -800,7 +759,7 @@ let model = function (data) {
     let schema = normalizer.schema;
 
     const _profile = new schema.Entity('profile', {}, {
-        idAttribute: 'public_id' // to use not standard ID
+        idAttribute: 'user' // to use not standard ID
     });
 
     const _phone = new schema.Entity('phone', {});
@@ -818,11 +777,20 @@ let model = function (data) {
     });
 
     _user.define({applications: [_client]});
+    _user.define({friends: [_user]});
+
+    const _create = new schema.Entity('create', {
+        user: _user,
+        scope: _scope,
+        client: _client
+    });
 
     const db = new schema.Entity('database', {
         clients: [_client],
         users: [_user],
-        scopes: [_scope]
+        scopes: [_scope],
+        create: _create,
+        found: [_user]
     }, {
         idAttribute: 'api'
     });
@@ -954,7 +922,7 @@ let matrix = {
                     async get(req, res, self) {
                         if(req.user) {
                             let {public_id, _id, group, ...current} = req.user;
-                            let {user, ...profile} = await database.findOne('profile', {user: req.user._id});
+                            let {user, ...profile} = await database.findOne('profile', {user: req.user.id});
 
                             return {
                                 users: [
@@ -1010,7 +978,7 @@ let matrix = {
                                     req.body.grant_type = 'password';
                                     req.body.scope = scope.join(',');
                 
-                                    let token = await router.tokenHandler({})(req, res);
+                                    let token = await tokenHandler({})(req, res);
 
                                     let {accessToken, accessTokenExpiresAt, refreshToken, user, client} = token;
                                     req.token.access = {
@@ -1128,7 +1096,67 @@ let matrix = {
                     },
                     'search': {
                         type: 'tab',
-                        access: [],
+                        access: ['*'],
+                        methods: {
+                            async find(req, res, self) {
+                                let data = req.body;
+
+                                let regex = new RegExp(`${data.text}`, 'i');
+                                //let regex = new RegExp(`.*${data.text}.*`, 'gi');
+                                let friends = await database.find('friend', {user: req.user.id}, {allow_empty: true});
+
+                                let users = await database.find('user', {name: regex, _id: {$ne: req.user.id}}, {allow_empty: true});
+
+                                users = users.map(user => {
+                                    let {id, name} = user;
+                                    let isFriend = friends.find(record => record.friend === id) ? true : false;
+                                    return {id, name, isFriend};
+                                });
+
+                                return {
+                                    found: users
+                                };
+                            },
+                            async append(req, res, self) {
+                                let data = req.body;
+                                data = Array.isArray(data) ? data : [data];
+                                data = data.map(friend => {
+                                    return {
+                                        friend: friend.id,
+                                        user: req.user.id
+                                    }
+                                });
+
+                                let ids = [];
+
+                                for(let i = 0; i <= data.length - 1; i++) {
+                                    let item = data[i];
+                                    if(item.user !== item.friend) {
+                                        let record = await database.findOne('friend', {user: item.user, friend: item.friend}, {allow_empty: true});
+                                        if(!record) {
+                                            await database.update('friend', {user: item.user, friend: item.friend}, item);
+                                            ids.push(item.friend);
+                                        }
+                                    }
+                                }
+
+                                let friends = await database.find('user', {_id: {$in: ids}}, {allow_empty: true});
+                                friends = friends.map(friend => {
+                                    friend.isFriend = true;
+                                    return friend;
+                                });
+
+                                return {
+                                    users: [
+                                        {
+                                            id: 'current',
+                                            friends: friends
+                                        }
+
+                                    ]
+                                };
+                            },
+                        }
                     },
                     'private': {
                         type: 'tab',
@@ -1175,7 +1203,47 @@ let matrix = {
                             },
                         },
                         children: {
-                            'friends': {},
+                            'friends': {
+                                collection: 'friend',
+                                methods: {
+                                    async get(req, res, self) {
+                                        let friends = await database.find(self.collection, {user: req.user.id}, {allow_empty: true});
+                                        friends = friends.map(record => record.friend);
+                                        let users = await database.find('user', {_id: {$in: friends}}, {allow_empty: true});
+                                        let profiles = await database.find('profile', {user: {$in: friends}}, {allow_empty: true});
+
+                                        users = users.map(function (user) {
+                                            let profile = profiles.find(record => record.user === user.id);
+                                            user.public_id = profile.public_id;
+                                            return user;
+                                        });
+                                        return {
+                                            users: [
+                                                {
+                                                    id: 'current',
+                                                    friends: users
+                                                }
+                                            ]
+                                        };
+                                    },
+                                    async remove(req, res, self) {
+                                        let data = req.body;
+                                        data = Array.isArray(data) ? data : [data];
+
+                                        let ids = data.map(friend => friend.id);
+
+                                        let removed = await database.remove(self.collection, {user: req.user.id, friend: {$in: ids}});
+                                        ids = ids.map(id => {
+                                            return {id, isFriend: false}});
+                                        return {users: [
+                                            {
+                                                id: 'current',
+                                                friends: ids
+                                            }
+                                        ]};
+                                    }
+                                }
+                            },
                             'chats': {},
 /*                             'profile': {
                                 methods: {
@@ -1217,21 +1285,22 @@ let matrix = {
                                             users: [
                                                 {
                                                     id: 'current',
-                                                    phones: await database.find(self.collection, {user: req.user._id})
+                                                    phones: await database.find(self.collection, {user: req.user.id}, {allow_empty: true})
                                                 }
                                             ]
                                         };
                                     },
                                     async save(req, res, self) {
                                         let data = req.body;
+                                        data.id = data.id || '';
 
                                         if (data.number === '00000000000') {
                                             throw new CustomError(406, 'Not allowed phone number.');
                                         }
                                         else {
-                                            data.user = req.user._id;
+                                            data.user = req.user.id;
                         
-                                            let updates = await database.update('phone', {_id: data.id}, data);                        
+                                            let updates = await database.update(self.collection, {_id: data.id}, data);
                                             return {users: [{id: 'current', phones: updates}]};
                                         }
                                     },
@@ -1241,7 +1310,7 @@ let matrix = {
                         
                                         let ids = data.map(phone => phone.id);
                                         
-                                        let removed = await database.remove('phone', {_id: {$in: ids}});
+                                        let removed = await database.remove(self.collection, {_id: {$in: ids}});
                                         return {users: [{id: 'current', phones: ids}]};
                                     }
                                 },
@@ -1260,18 +1329,59 @@ let matrix = {
                                 methods: {
                                     async get(req, res, self) {
                                         let scopes_array = [];
-                                        for(let name in scopes) {
-                                            /*scopes[name].public &&*/ scopes_array.push(scopes[name]);
+                                        for (let name in scopes) {
+                                            /*scopes[name].public &&*/
+                                            scopes_array.push(scopes[name]);
                                         }
 
                                         return {
                                             clients: await database.find(self.collection, {}),
                                             scopes: scopes_array
                                         };
+                                    },
+                                    async save(req, res, self) {
+                                        let data = req.body;
+                                        data.id = data.id === 'created' ? '' : data.id;
+
+                                        if (!data.scope.length) {
+                                            throw new CustomError(406, 'Choose at least one scope to continue.');
+                                        }
+
+                                        let updates = await database.update('client', {_id: data.id}, data);
+                                        return {clients: updates};
+
+                                    },
+                                    async remove(req, res, self) {
+                                        let data = req.body;
+                                        data = Array.isArray(data) ? data : [data];
+
+                                        let ids = data.map(client => client.id);
+
+                                        let removed = await database.remove(self.collection, {_id: {$in: ids}});
+                                        return {clients: ids};
                                     }
                                 },
                                 children: {
-                                    'client-dialog': {}
+                                    'client-dialog': {
+                                        access: ['admins'],
+                                        methods: {
+                                            async get(req, res, self) {
+                                                return {
+                                                    create: {
+                                                        id: 'current',
+                                                        client: {
+                                                            id: 'created',
+                                                            app_name: 'loading...',
+                                                            client_id: await generateRandomToken(12),
+                                                            client_secret: await generateRandomToken(24),
+                                                            scope: []
+                                                        },
+                                                    },
+                                                };
+                                            }
+                                        },
+
+                                    }
                                 }
                             },
                             'users': {
@@ -1284,6 +1394,42 @@ let matrix = {
                                         return {
                                             users: await database.find(self.collection, {})
                                         };
+                                    },
+                                    async save(req, res, self) {
+                                        let data = req.body;
+                                        data.id = data.id || '';
+
+                                        let user = await database.findOne(self.collection, {email: data.email}, {allow_empty: true});
+
+                                        if(user && user.id !== data.id) {
+                                            throw new CustomError(406, 'Choose another email/password.');
+                                        }
+
+                                        let users = await database.update(self.collection, {_id: data.id}, data);
+
+                                        let public_id = generate('abcdefghijklmnopqrstuvwxyz', 5); //await generateRandomToken(5);
+                                        data = {
+                                            user: users[0].id,
+                                            public_id: public_id,
+                                            status: 'any string',
+                                            avatar: 'default.jpg'
+                                        };
+
+                                        let profiles = await database.update('profile', {user: data.user}, data);
+                                        users[0].profile = profiles[0];
+
+                                        return {users: users};
+                                    },
+                                    async remove(req, res, self) {
+                                        let data = req.body;
+                                        data = Array.isArray(data) ? data : [data];
+
+                                        let ids = data.map(user => user.id);
+
+                                        let removed = await database.remove(self.collection, {_id: {$in: ids}});
+                                        await database.remove('profile', {user: {$in: ids}});
+
+                                        return {users: ids};
                                     }
                                 },
                                 children: {
@@ -1512,11 +1658,11 @@ let entities = function (data) {
 };
 
 module.exports = {
-    init,
+    //init,
     secured,
     access,
     action,
     entities,
-    //accessGranted,
-    accessMiddleware
+    accessGranted,
+    //accessMiddleware
 };

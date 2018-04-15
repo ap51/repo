@@ -25,7 +25,6 @@
                                               readonly
                                               validate-on-blur
                                               label="Client ID"
-                                              autofocus
                                               color="blue darken-2"
                                               hint="any string value"
                                               placeholder="enter password to change"

@@ -3,7 +3,8 @@
 
 const https = require('https');
 const path = require('path');
-const cluster = require('cluster');
+//const cluster = require('cluster');
+var cluster = require('express-cluster');
 //const memored = require('memored');
 
 const express = require('express');
@@ -42,131 +43,80 @@ app.use('/_file_/:name', function (req, res, next){
     });
 });
 
-cluster.on('exit', function (worker) {
-    console.log('Worker %d died :(', worker.id);
-    cluster.fork();
-});
-
 Date.prototype.toJSON = function() {
-    return this * 1
+    return `$$date:${this * 1}`;
 };
+
+RegExp.prototype.toJSON = function () {
+    let regex = this;
+    let flags = regex.flags;
+    regex = regex.toString();
+    regex = regex.replace(`/${flags}`, '').replace(/\//gi, '');
+    return `$$regex:${regex}:${flags}`;
+};
+
+let parseOrigin = JSON.parse;
+
+let parse = function (text) {
+    let reviver = function(key, value) {
+        if (typeof value === "string" && value.indexOf('$$date:') === 0) {
+            value = value.replace('$$date:', '');
+            return new Date(parseInt(value));
+        }
+
+        if (typeof value === "string" && value.indexOf('$$regex:') === 0) {
+            value = value.replace('$$regex:', '');
+            let [expr, flags] = value.split(':');
+            return new RegExp(expr, flags);
+        }
+
+        return value;
+    };
+
+    return parseOrigin(text, reviver);
+};
+
+JSON.parse = parse;
 
 let common_resources = {};
 
-/* let store = function (key, value) {
-    return new Promise(function (resolve, reject) {
-        memored.store(key, value, function(err) {
-            err ? reject(err) : resolve(key);
-            console.log('Value stored!');
+let common_resourses = {};
+
+cluster(function() {
+        fs.readdir('./services/', (err, dirs) => {
+            dirs.forEach(async dir => {
+                console.log(dir);
+                try {
+                    app.use(`/${dir}/`, require(`./services/${dir}/router`).router);
+                    process.send({msg: 'ok', pid: process.pid});
+                }
+                catch (err) {
+                    console.log(err);
+                }
+            });
+
+            httpsServer.listen(httpsListenPort);
+            console.log(`https server linten on ${httpsListenPort} port.`);
         });
-    })
-};
-
-let read = function (key) {
-    return new Promise(function (resolve, reject) {
-        memored.read(key, function(err, value) {
-            err ? reject(err) : resolve(value);
-        });
-    })
-};
-
-let keys = function () {
-    return new Promise(function (resolve, reject) {
-        memored.keys(function(err, keys) {
-            err ? reject(err) : resolve(keys);
-        });
-    })
-}; */
-
-if (cluster.isMaster) {
-    let cpuCount = require('os').cpus().length;
-
-    for (let i = 0; i < cpuCount; i += 1) {
-        let worker = cluster.fork({params: [1,2]});
-
-/*         worker.on('message', async function(msg) {
-            let {service, module, method, args} = msg;
-            try {
-                console.log(...args);
-                let result = await common_resources[service][module][method](...args);
-                worker.send({module, method, result});
+    },
+    {
+        verbose: true,
+        respawn: false,
+        workerListener: async function (msg) {
+            //console.log('master with pid', process.pid, 'received', msg, 'from worker');
+            let {action, module, method, args, uid} = msg;
+            switch (msg.action) {
+                case 'execute':
+                    common_resources[module] = common_resources[module] || require(module);
+                    let result = await common_resources[module][method](...args);
+                    this.send({uid, result});
+                    break;
+                default:
+                    break;
             }
-            catch(err) {
-                worker.send({module, method, err});
-            }
-        }); */
-
-        /* let entries = Object.entries(common_resources['mtsn'].database);
-        entries = entries.reduce(function (memo, entry) {
-            let [key, value] = entry;
-            typeof value === 'function' && memo.push(key);
-
-            return memo;
-        }, []); */
-        
-        //worker.send({module: 'databse', method: 'init', exports: entries})
-        //worker.send({a: ''});
-    }
-    
-    fs.readdir('./services/', (err, dirs) => {
-        dirs.forEach(async dir => {
-            //common_resources[dir] = common_resources[dir] || {};
-            //common_resources[dir].database = common_resources[dir].database || require(path.join(__dirname, 'services', dir, 'database', 'db'));
-
-            //await store(dir, common_resources[dir].database);
-            //console.log('keys:', await keys());
-        });
-
-    });
-}
-else {
-    //console.log('PROCESS:', process.env);
-/*
-     process.on('message', function(msg) {
-        console.log('DATABASE:', msg);
-    });
-*/
-
-    fs.readdir('./services/', (err, dirs) => {
-        dirs.forEach(async dir => {
-            //console.log(await keys());
-            console.log(dir);
-            try {
-                //let database = require(path.join(__dirname, 'services', dir, 'database', 'db'));
-                app.use(`/${dir}/`, require(`./services/${dir}/router`));
-            }
-            catch (err) {
-                console.log(err);
-            }
-        });
-
-        httpsServer.listen(httpsListenPort);
-        console.log(`https server linten on ${httpsListenPort} port.`);
-    });
-
-}
-
-/*
-fs.readdir('./services/', (err, dirs) => {
-    dirs.forEach(dir => {
-        console.log(dir);
-        try {
-            //const serviceStatic = express.static(`public`, {});
-            app.use(`/${dir}/`, require(`./services/${dir}/router`)(dir));
-            //app.use(`/${dir}/ui`, serviceStatic);
-        }
-        catch (err) {
-            console.log(err);
         }
     });
-
-    httpsServer.listen(httpsListenPort);
-    console.log(`https server linten on ${httpsListenPort} port.`);
-});
-*/
-
 
 process.on('unhandledRejection', err => {
     throw err;
-    //console.log('Unhandled rejection:', err);
 });

@@ -1,11 +1,19 @@
 <template>
     <div class="layout-view">
         <!-- <h1>phones database:</h1> -->
+        <v-toolbar flat color="white lighten-2" dense class="">
+            <!--<v-toolbar-title>{{name}}:</v-toolbar-title>-->
+            <v-spacer></v-spacer>
+            <v-btn color="red darken-2" flat="flat" :disabled="selected.length === 0" @click.stop="remove"><v-icon class="mr-1 mb-1">fas fa-times</v-icon>remove selected</v-btn>
+            <v-btn color="green darken-2" flat="flat" @click.stop="append"><v-icon class="mr-1 mb-1">fas fa-plus</v-icon>append user</v-btn>
+        </v-toolbar>
 
+<!--
         <div>
             <v-btn color="red darken-2" flat="flat" :disabled="selected.length === 0" @click.stop="remove"><v-icon class="mr-1 mb-1">fas fa-times</v-icon>remove selected</v-btn>
             <v-btn color="green darken-2" flat="flat" @click.stop="append"><v-icon class="mr-1 mb-1">fas fa-plus</v-icon>append user</v-btn>
         </div>
+-->
 
         <div class="text-xs-center pt-2">
             <v-pagination v-model="pagination.page" :length="pages" :total-visible="pages"></v-pagination>
@@ -75,7 +83,7 @@
                 },
 
                 pagination: {
-                    rowsPerPage: 14
+                    rowsPerPage: 8
                 },
 
                 search: '',
@@ -145,7 +153,7 @@
                 this.$request(`${this.$state.base_api}users.save`, user, {callback: this.cancel});
             },
             cancel(response) {
-                response && response.data.method === 'DELETE' && (this.selected = []);
+                response && response.config.method.toUpperCase() === 'DELETE' && (this.selected = []);
                 this.dialog.visible = false;
             }
         }

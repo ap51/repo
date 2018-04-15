@@ -7,7 +7,7 @@
             <v-btn color="green darken-2" flat="flat" @click.stop="append"><v-icon class="mr-1 mb-1">fas fa-plus</v-icon>append phone</v-btn>
         </div>
  -->
-        <v-toolbar flat color="white lighten-2" dense class="elevation-1 ma-1">
+        <v-toolbar flat color="white lighten-2" dense class="">
             <v-toolbar-title>{{name}}:</v-toolbar-title>
             <v-spacer></v-spacer>
             <v-btn flat="flat" :disabled="selected.length === 0" @click.stop="remove"><v-icon color="red darken-2" class="mr-1 mb-1">fas fa-times</v-icon>remove</v-btn>
@@ -31,19 +31,6 @@
                 :pagination.sync="pagination"
                 hide-actions>
 
-<!--
-            <template slot="headerCell" slot-scope="props">
-                <v-tooltip bottom>
-                    <span slot="activator">
-                      {{ props.header.text }}
-                    </span>
-                    <span>
-                      {{ props.header.text }}
-                    </span>
-                </v-tooltip>
-
-            </template>
- -->            
             <template slot="items" slot-scope="props">
                 <td>
                     <v-checkbox
@@ -170,18 +157,3 @@
 
     //# sourceURL=phones.js
 </script>
-
-<server-script>
-    const Component = require('./component');
-
-    module.exports = class Profile extends Component {
-        constructor(router, req, res) {
-            super(router, req, res);
-
-        }
-
-        get data() {
-            return {};
-        }
-    }
-</server-script>

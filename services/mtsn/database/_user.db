@@ -1,4 +1,4 @@
-{"name":"mr. Alexander Privaloff","email":"ap@gmail.com","password":"d3c7d3e90fd6f75b8c8ea3296e7c54e1","group":"admins","created":1522243013072,"updatetd":1522089237215,"updated":1522243013072,"public_id":"ap-51","_id":"NXlHTrgrYBEp7JZX"}
-{"name":"Joe Doe","email":"123","password":"46ddc40585caa8abc07c460b3485781e","group":"users","created":1522390684651,"updatetd":1521985695089,"updated":1522390684651,"public_id":"jd","_id":"ZBz7mTBDBoWfUZcw"}
-{"name":"ms. margarita gallardo","email":"margarita.gallardo@example.com","password":"ffb879ce3b42c1a20937c4bd4778c1be","group":"users","public_id":"miss-margo","created":1522175778982,"updated":1522175778982,"_id":"ZJsBcoGPBksTBwHl"}
-{"name":"ms. latife tahincioğlu","email":"latife.tahincioğlu@example.com","password":"3b9eb50256f53f5e95e6e85086266611","group":"users","public_id":"latife","created":1522171878928,"updated":1522171878928,"_id":"pgUHxPAnHrGajQic"}
+{"name":"Creator","email":"ap@gmail.com","password":"d3c7d3e90fd6f75b8c8ea3296e7c54e1","group":"admins","created":1522243013072,"updated":1523739407395,"_id":"NXlHTrgrYBEp7JZX"}
+{"name":"mr. joe doe","email":"123","password":"46ddc40585caa8abc07c460b3485781e","group":"users","created":1522390684651,"updated":1523738636870,"isFriend":false,"_id":"ZBz7mTBDBoWfUZcw"}
+{"name":"mr. harold gardner","email":"ap1@gmail.com","password":"da3862e6f0ffeba589f2238c4d08b8f4","group":"admins","created":1523690174690,"updated":1523739449754,"profile":"tm9rsr0lqe6GP2yV","_id":"tm9rsr0lqe6GP2yV"}
+{"name":"ms. bertha rhodes","email":"bertha.rhodes@example.com","password":"15755a671cdb1434c6518bbdd2ae8d90","group":"users","created":1523789785250,"updated":1523789785250,"_id":"IGEvpG1ArbF38D8h"}

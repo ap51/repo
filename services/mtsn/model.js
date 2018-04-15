@@ -22,7 +22,7 @@ let generateRandomToken = function() {
 };
 
 model.generateAuthorizationCode = async function(client, user, scope, callback) {
-    user = user && user._id;
+    user = user && user.id;
     callback(!user && new Error(401, 'no user'), await generateRandomToken());
 };
 
@@ -56,7 +56,7 @@ model.getUser = async function(username, password, callback) {
     }
     catch(err) {
         callback(err);
-    };
+    }
 
     /* db.find('user', {email:  username}, function(err, users) {
         if (err || !users.length)
@@ -74,7 +74,7 @@ model.getUser = async function(username, password, callback) {
 model.getClient = async function(clientId, clientSecret, callback) {
     try {
         let client = await db.findOne('client', {client_id:  clientId});
-        client.id = client._id;
+
         if (clientSecret !== null && client.client_secret !== clientSecret)
             callback();    
             else callback(null, client);
@@ -98,9 +98,9 @@ model.getClient = async function(clientId, clientSecret, callback) {
 };
 
 model.saveToken = async function(token, client, user, callback) {
-    token.client = {_id: client._id, scope: client.scope};//{id: client.client_id};
-    let {_id, name, group, public_id} = user;
-    token.user = {_id, name, group, public_id};
+    token.client = {id: client.id, scope: client.scope};//{id: client.client_id};
+    let {id, name, group, public_id} = user;
+    token.user = {id, name, group, public_id};
     try {
         let inserted = await db.insert('token', token);
         callback(null, inserted);
@@ -113,8 +113,8 @@ model.saveToken = async function(token, client, user, callback) {
 model.getAccessToken = async function(accessToken, callback) {
     try {
         let token = await db.findOne('token', {accessToken});
-        token.user = await db.findOne('user', {_id: token.user._id}, {not_clear_result: true});
-        token.client = await db.findOne('client', {_id: token.client._id}, {not_clear_result: true});
+        token.user = await db.findOne('user', {_id: token.user.id}, {not_clear_result: true});
+        token.client = await db.findOne('client', {_id: token.client.id}, {not_clear_result: true});
 
         callback(null, token);
     }
@@ -135,8 +135,8 @@ model.getAccessToken = async function(accessToken, callback) {
 model.getRefreshToken = async function(refreshToken, callback) {
     try {
         let token = await db.findOne('token', {refreshToken})
-        token.user = await db.findOne('user', {_id: token.user._id}, {not_clear_result: true});
-        token.client = await db.findOne('client', {_id: token.client._id}, {not_clear_result: true});
+        token.user = await db.findOne('user', {_id: token.user.id}, {not_clear_result: true});
+        token.client = await db.findOne('client', {_id: token.client.id}, {not_clear_result: true});
 
         callback(null, token);
     }
@@ -157,7 +157,7 @@ model.getRefreshToken = async function(refreshToken, callback) {
 
 model.saveAuthorizationCode = async function(code, client, user, callback) {
     code.client = {id: client.client_id};
-    code.user = user._id;
+    code.user = user.id;
     db.insert('code', code, function (err, inserted) {
         callback(err, inserted);
     });
@@ -165,7 +165,7 @@ model.saveAuthorizationCode = async function(code, client, user, callback) {
 };
 
 model.revokeAuthorizationCode = async function(code, callback) {
-    db.remove('code', {_id: code._id}, {}, function (err, removed) {
+    db.remove('code', {_id: code.id}, {}, function (err, removed) {
         callback(err, removed);
     });
 };
