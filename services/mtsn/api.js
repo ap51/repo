@@ -961,6 +961,10 @@ let matrix = {
                     'access-denied': {},
                     'not-found': {},
                     'unknown-error': {},
+                    'landing': {
+                        type: 'tab',
+                        icon: 'far fa-question-circle'
+                    },
 
                     
                     'dialog-signin': {
