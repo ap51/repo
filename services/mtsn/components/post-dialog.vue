@@ -1,5 +1,5 @@
 <template>
-    <v-dialog v-model="isVisible" max-width="400px">
+    <v-dialog v-model="isVisible" max-width="600px">
         <v-card>
             <v-card-title>
                 <v-icon class="mr-1">fas fa-mobile</v-icon>

@@ -49,16 +49,23 @@
                                 </td>
                                 <td >
                                     <div class="ma-2">
-                                        <div class="subheading"><a @click.prevent=edit(props.item.id)>{{ props.item.title }}</a></div>
-                                        <div style="border-top: 1px solid rgba(0,0,0,0.1); max-height: 150px; overflow: auto" class="caption" v-html="props.item.text"></div>
-                                        <div style="display: flex; align-items: center; border-top: 1px solid rgba(0,0,0,.12)">
-                                            <div style="flex: 1" class="grey--text" style="" class="caption">{{ new Date(props.item.created).toLocaleString() }}</div>
+                                        <div class="mb-2" style="display: flex; align-items: center">
+                                            <v-avatar color="orange darken-2" class="mr-2" size="42">
+                                                <span class="white--text headline">{{ props.item.title.slice(0, 2).toUpperCase() }}</span>
+                                            </v-avatar>
+                                            <div class="subheading"><a @click.prevent=edit(props.item.id)>{{ props.item.title }}</a></div>
+                                        </div>
+                                        <div style="border-top: 0px solid rgba(0,0,0,0.1); max-height: 150px; overflow: auto;" class="caption" v-html="props.item.text"></div>
+                                        <div style="display: flex; justify-content: flex-start; align-items: center; border-top: 1px solid rgba(0,0,0,.3)" >
+                                            <div class="grey--text" style="" class="caption">{{ new Date(props.item.created).toLocaleString() }}</div>
+<!--
                                             <v-btn flat small icon color="pink">
                                                 <v-icon>favorite</v-icon>
                                             </v-btn>
                                             <v-btn flat small icon color="indigo">
                                                 <v-icon>star</v-icon>
                                             </v-btn>
+-->
                                         </div>
                                     </div>
 
@@ -162,8 +169,7 @@
                 this.dialog.visible = true;
             },
             remove() {
-                this.activePage = this.pagination.page;
-                this.$request(`${this.$state.base_api}feed.remove`, this.selected, {method: 'delete', callback: this.cancel});
+                this.$request(`${this.$state.base_api}${this.address.ident}.remove`, this.selected, {method: 'delete', callback: this.cancel});
             },
             save(post) {
                 this.activePage = this.pagination.page;
@@ -172,6 +178,7 @@
             cancel(response) {
                 response && response.config.method.toUpperCase() === 'DELETE' && (this.selected = []);
                 this.dialog.visible = false;
+                this.activePage = this.pagination.page;
             }
         },
         watch: {

@@ -38,6 +38,7 @@
     "oauth2-server": "^3.0.0",
     "require-from-string": "^2.0.2",
     "serve-favicon": "^2.5.0",
+    "socket.io": "^2.1.0",
     "vuetify": "^1.0.14"
   }
 }

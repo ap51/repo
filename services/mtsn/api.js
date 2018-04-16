@@ -962,7 +962,7 @@ let matrix = {
                     'not-found': {},
                     'unknown-error': {},
                     'landing': {
-                        type: 'tab',
+                        //type: 'tab',
                         icon: 'far fa-question-circle'
                     },
 
@@ -1143,8 +1143,14 @@ let matrix = {
                             },
                             'remove': {
                                 access: ['current', 'admins'],
-                                method() {
+                                async method(req, res, self) {
+                                    let data = req.body;
+                                    data = Array.isArray(data) ? data : [data];
 
+                                    let ids = data.map(post => post.id);
+
+                                    let removed = await database.remove('post', {_id: {$in: ids}});
+                                    return {feed: [{id: req.params.id, posts: ids}]};
                                 }
                             }
                         },

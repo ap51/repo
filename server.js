@@ -94,6 +94,24 @@ cluster(function() {
                 try {
                     app.use(`/${dir}/`, require(`./services/${dir}/router`).router);
                     process.send({msg: 'ok', pid: process.pid});
+
+                    const io = require('socket.io')(httpsServer, {
+                        path: dir
+                    });
+
+                    io.on('connection', function(client){
+                        client.on('event', function(data){
+                            console.log('SOCKET:', data);
+                        });
+
+                        client.on('disconnecting', function(...args){
+                            console.log('SOCKET: DISCONNECTING', args);
+                        });
+
+                        client.on('disconnect', function(...args){
+                            console.log('SOCKET: DISCONNECT', args);
+                        });
+                    });
                 }
                 catch (err) {
                     console.log(err);
@@ -101,6 +119,9 @@ cluster(function() {
             });
 
             httpsServer.listen(httpsListenPort);
+
+
+
             console.log(`https server linten on ${httpsListenPort} port.`);
         });
     },

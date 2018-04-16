@@ -518,6 +518,12 @@ window.vm = new Vue({
     },
     created() {
         this.$vuetify.theme = theme;
+        const socket = io({
+            path: service,
+            transports: ['websocket']
+        });
+
+        socket.emit('event', {hello: 'world'});
         //console.log('LOAD:', this.loading);
     },
     computed: {
