@@ -3,7 +3,7 @@
         <v-card>
             <v-card-title>
                 <v-icon class="mr-1">fas fa-mobile</v-icon>
-                <span class="headline">phone</span>
+                <span class="headline">Post</span>
             </v-card-title>
             <v-card-text>
                 <v-container grid-list-md>
@@ -30,6 +30,8 @@
                                               prepend-icon="fas fa-user"
                                               color="blue darken-2"
                                               hint="any string value"
+                                              multi-line
+                                              counter="1024"
                                               :rules="[
                                                   () => !!object.text || 'This field is required',
                                               ]"
@@ -43,7 +45,7 @@
             <v-card-actions>
                 <v-spacer></v-spacer>
                 <v-btn color="blue darken-2" flat @click.native="cancel">cancel</v-btn>
-                <v-btn color="blue darken-2" flat @click.native="save(phone)">save</v-btn>
+                <v-btn color="blue darken-2" flat @click.native="save(object)">save</v-btn>
             </v-card-actions>
         </v-card>
     </v-dialog>
@@ -63,7 +65,7 @@
             copy: {
                 cache: false,
                 get: function () {
-                    return {...this.phone};
+                    return {...this.object};
                 }
             },
             isVisible: {
@@ -80,9 +82,9 @@
             cancel() {
                 this.$emit('cancel');
             },
-            save(phone) {
+            save(object) {
                 if (this.$refs.form.validate()) {
-                    this.$emit('save', phone);
+                    this.$emit('save', object);
                 }
                 else this.$bus.$emit('snackbar', 'Data entered don\'t match validation rules');
             }

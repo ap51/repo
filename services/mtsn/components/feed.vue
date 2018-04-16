@@ -49,8 +49,8 @@
                                 </td>
                                 <td >
                                     <div class="ma-2">
-                                        <div class="subheading"><a @click.prevent>{{ props.item.title }}</a></div>
-                                        <div class="caption">{{ props.item.text }}</div>
+                                        <div class="subheading"><a @click.prevent=edit(props.item.id)>{{ props.item.title }}</a></div>
+                                        <div style="border-top: 1px solid rgba(0,0,0,0.1); max-height: 150px; overflow: auto" class="caption" v-html="props.item.text"></div>
                                         <div style="display: flex; align-items: center; border-top: 1px solid rgba(0,0,0,.12)">
                                             <div style="flex: 1" class="grey--text" style="" class="caption">{{ new Date(props.item.created).toLocaleString() }}</div>
                                             <v-btn flat small icon color="pink">
@@ -103,7 +103,7 @@
                 },
 
                 pagination: {
-                    rowsPerPage: 12
+                    rowsPerPage: 6
                 },
 
                 selected: [],
@@ -156,10 +156,10 @@
                 this.$request('https://randomuser.me/api', null, {callback: this.onNames, no_headers: true});
             },
             edit(id) {
-/*                 let phone = this.entities.phone[id];
-                console.log(phone);
-                this.dialog.object = {...phone};
-                this.dialog.visible = true; */
+                let object = this.entities.post[id];
+                console.log(object);
+                this.dialog.object = {...object};
+                this.dialog.visible = true;
             },
             remove() {
                 this.activePage = this.pagination.page;
@@ -167,7 +167,7 @@
             },
             save(post) {
                 this.activePage = this.pagination.page;
-                this.$request(`${this.$state.base_api}feed.save`, post, {callback: this.cancel});
+                this.$request(`${this.$state.base_api}${this.address.ident}.save`, post, {callback: this.cancel});
             },
             cancel(response) {
                 response && response.config.method.toUpperCase() === 'DELETE' && (this.selected = []);

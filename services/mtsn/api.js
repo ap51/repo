@@ -697,6 +697,9 @@ let accessGranted = async function (req, res, router) {
                         }, {});
                         Object.assign(data, __execute);
                     }
+                    else {
+                        //throw new CustomError(406, 'Forbidden');       
+                    }
 
                     return data;
                 };
@@ -1116,8 +1119,22 @@ let matrix = {
                             },
                             'save': {
                                 access: ['current', 'admins'],
-                                method() {
+                                async method(req, res, self) {
+                                    let data = req.body;
+                                    data.id = data.id || '';
 
+                                    let profile = await database.findOne('profile', {public_id: req.params.id}, {allow_empty: true});
+                                    data.user = profile.user;
+                    
+                                    let posts = await database.update('post', {_id: data.id}, data);
+                                    return {
+                                        feed: [
+                                            {
+                                                id: profile.public_id, 
+                                                posts
+                                            }
+                                        ]
+                                    };
                                 }
                             },
                             'remove': {
