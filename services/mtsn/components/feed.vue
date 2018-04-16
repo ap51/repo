@@ -70,6 +70,8 @@
                 </v-layout>
             </v-container>
         </v-card>
+
+         <post-dialog :visible="dialog.visible" :object="dialog.object" @save="save" @cancel="cancel"></post-dialog>
     </div>
 </template>
 
@@ -88,9 +90,17 @@
 <script>
     module.exports = {
         extends: component,
+        components: {
+            'post-dialog': httpVueLoader('post-dialog')
+        },
         data() {
             return {
                 text: '',
+
+                dialog: {
+                    visible: false,
+                    object: {}
+                },
 
                 pagination: {
                     rowsPerPage: 12
@@ -131,23 +141,37 @@
                     this.selected.push(item)
                 }
             },
-            onFind(res, data, time) {
-                !time && (this.database.found = []);
-            },
-            onAppend(res) {
-                this.selected = [];
-            },
-            find() {
-                this.text = this.text || '';
-                if(this.text.trim()) {
-                    this.$request(`${this.$state.base_api}search.find`, {text: this.text}, {callback: this.onFind});
-                }
-                else this.database.found = [];
+            onNames(res) {
+                let generated = res.data.results[0];
 
+                this.dialog.object.title = `${generated.name.title}. ${generated.name.first} ${generated.name.last}`;
+                this.dialog.object.text = `${generated.name.title}. ${generated.name.first} ${generated.name.last}`;
             },
             append() {
+                this.dialog.object = {
+                    title: 'loading...',
+                    text: 'loading...'
+                };
+                this.dialog.visible = true;
+                this.$request('https://randomuser.me/api', null, {callback: this.onNames, no_headers: true});
+            },
+            edit(id) {
+/*                 let phone = this.entities.phone[id];
+                console.log(phone);
+                this.dialog.object = {...phone};
+                this.dialog.visible = true; */
+            },
+            remove() {
                 this.activePage = this.pagination.page;
-                this.$request(`${this.$state.base_api}search.append`, this.selected, {callback: this.onAppend});
+                this.$request(`${this.$state.base_api}feed.remove`, this.selected, {method: 'delete', callback: this.cancel});
+            },
+            save(post) {
+                this.activePage = this.pagination.page;
+                this.$request(`${this.$state.base_api}feed.save`, post, {callback: this.cancel});
+            },
+            cancel(response) {
+                response && response.config.method.toUpperCase() === 'DELETE' && (this.selected = []);
+                this.dialog.visible = false;
             }
         },
         watch: {

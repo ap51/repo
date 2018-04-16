@@ -1127,7 +1127,12 @@ let matrix = {
                                 }
                             }
                         },
-                    },
+                        children: {
+                            'post-dialog': {
+                                access: []
+                            }
+                        }
+            },
                     'search': {
                         type: 'tab',
                         access: ['*'],
