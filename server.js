@@ -96,12 +96,15 @@ cluster(function() {
                     process.send({msg: 'ok', pid: process.pid});
 
                     const io = require('socket.io')(httpsServer, {
-                        path: dir
+                        path: `/${dir}/ui/_socket_`
                     });
 
-                    io.on('connection', function(client){
-                        client.on('event', function(data){
+                    const service_namespace = io.of(`/${dir}`);
+
+                    service_namespace.on('connection', function(client){
+                        client.on('event', function(data, callback){
                             console.log('SOCKET:', data);
+                            callback({recieved: 1});
                         });
 
                         client.on('disconnecting', function(...args){

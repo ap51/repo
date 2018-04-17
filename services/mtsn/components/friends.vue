@@ -11,6 +11,7 @@
         <div style="display: flex; align-items: center; width: 100%">
             <v-pagination style="flex: 1" v-model="pagination.page" :length="pages" :total-visible="pages"></v-pagination>
             <v-btn color="red darken-2" flat :disabled="selected.length === 0" @click.stop="remove"><v-icon color="red darken-2" class="mr-1 mb-1">fas fa-times</v-icon>remove from friends</v-btn>
+            <v-btn color="green darken-2" flat :disabled="selected.length === 0" @click.stop="chat"><v-icon color="green darken-2" class="mr-1 mb-1">far fa-comment</v-icon>begin chat</v-btn>
         </div>
 
         <v-data-table style="border-top: 1px solid rgb(128, 128, 128)"
@@ -129,6 +130,10 @@
             remove() {
                 //this.activePage = this.pagination.page;
                 this.$request(`${this.$state.base_api}friends.remove`, this.selected, {method: 'delete', callback: this.onRemoved});
+            },
+            chat() {
+                //this.activePage = this.pagination.page;
+                this.$request(`${this.$state.base_api}charts.save`, this.selected, {callback: this.onRemoved});
             }
         },
         watch: {

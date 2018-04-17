@@ -2,6 +2,11 @@
 let cache = {};
 let service = window.location.pathname.split('/')[1];
 
+Vue.prototype.$socket = io(`/${service}`, {
+    path: `/${service}/ui/_socket_`,
+    transports: ['websocket']
+});
+
 let route = function (path) {
     path = path.split('/').pop();
 
@@ -518,12 +523,10 @@ window.vm = new Vue({
     },
     created() {
         this.$vuetify.theme = theme;
-        const socket = io({
-            path: service,
-            transports: ['websocket']
-        });
 
-        socket.emit('event', {hello: 'world'});
+        this.$socket.emit('event', {hello: 'world'}, function(...args) {
+            console.log('SOCKET:', args);
+        });
         //console.log('LOAD:', this.loading);
     },
     computed: {
