@@ -774,10 +774,16 @@ let model = function (data) {
         posts: [_post]
     });
 
+    const _message = new schema.Entity('message', {});
+
+    const _chat = new schema.Entity('chat', {
+        messages: [_message],
+    });
+
     const _user = new schema.Entity('user', {
         phones: [_phone],
         profile: _profile,
-        //feed: [_post]
+        chats: [_chat]
     });
 
     const _scope = new schema.Entity('scope', {});
@@ -789,6 +795,8 @@ let model = function (data) {
 
     _user.define({applications: [_client]});
     _user.define({friends: [_user]});
+
+    _chat.define({users: [_user]});
 
     const _create = new schema.Entity('create', {
         user: _user,
@@ -1159,7 +1167,7 @@ let matrix = {
                                 access: []
                             }
                         }
-            },
+                    },
                     'search': {
                         type: 'tab',
                         access: ['*'],
@@ -1312,8 +1320,62 @@ let matrix = {
                                     }
                                 }
                             },
-                            'chats': {},
-/*                             'profile': {
+                            'chats': {
+                                collection: 'chat',
+                                methods: {
+                                    async get(req, res, self) {
+                                        
+                                        let chats = await database.find(self.collection, {users: req.user.id}, {allow_empty: true});
+                                        chats = chats.map(chat => {
+                                            chat.users = chat.users.map(user => {
+                                                return {
+                                                    id: user
+                                                }
+                                            });
+
+                                            return chat;
+                                        });
+
+                                        return {
+                                            users: [
+                                                {
+                                                    id: 'current',
+                                                    chats
+                                                }
+                                            ]
+                                        };
+                                    },
+                                    async save(req, res, self) {
+/*                                         let data = req.body;
+                                        data.id = data.id || '';
+
+                                        if (data.number === '00000000000') {
+                                            throw new CustomError(406, 'Not allowed phone number.');
+                                        }
+                                        else {
+                                            data.user = req.user.id;
+                        
+                                            let updates = await database.update(self.collection, {_id: data.id}, data);
+                                            return {users: [{id: 'current', phones: updates}]};
+                                        } */
+                                    },
+                                    async remove(req, res, self) {
+                                        /* let data = req.body;
+                                        data = Array.isArray(data) ? data : [data];
+                        
+                                        let ids = data.map(phone => phone.id);
+                                        
+                                        let removed = await database.remove(self.collection, {_id: {$in: ids}});
+                                        return {users: [{id: 'current', phones: ids}]}; */
+                                    }
+                                },
+                                children: {
+                                    'chat-dialog': {
+                                        access: []
+                                    }
+                                }
+                            },
+    /*                             'profile': {
                                 methods: {
                                     async get(req, res, self) {
                                         let pid = req.params.id || (req.user && req.user.public_id);
