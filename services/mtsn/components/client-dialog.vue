@@ -66,8 +66,7 @@
                                       :search="search"
                                       v-model="selected"
                                       select-all
-                                      style="width: 100%; height: 100%;"
-                        >
+                                      style="width: 100%; height: 100%;">
 
                             <template slot="items" slot-scope="props">
                                 <td>
@@ -82,21 +81,6 @@
                                         <div class="subheading">{{ props.item.name }}</div>
                                         <div class="caption">{{ props.item.description }}</div>
                                     </div>
-<!--
-                                    {{ props.item.name }}
--->
-<!--
-                                    <v-list-tile
-                                            ripple
-                                            :key="props.item.id"
-                                    >
-                                        <v-list-tile-content>
-                                            <v-list-tile-title>{{ props.item.name }}</v-list-tile-title>
-                                            <v-list-tile-sub-title class="caption">{{ props.item.description }}</v-list-tile-sub-title>
-                                        </v-list-tile-content>
-                                    </v-list-tile>
--->
-
                                 </td>
                             </template>
                         </v-data-table>

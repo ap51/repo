@@ -797,6 +797,7 @@ let model = function (data) {
     _user.define({friends: [_user]});
 
     _chat.define({users: [_user]});
+    _chat.define({owner: _user});
 
     const _create = new schema.Entity('create', {
         user: _user,
@@ -1326,7 +1327,36 @@ let matrix = {
                                     async get(req, res, self) {
                                         
                                         let chats = await database.find(self.collection, {users: req.user.id}, {allow_empty: true});
-                                        chats = chats.map(chat => {
+                                        for(let i = 0; i <= chats.length - 1; i++) {
+                                            let chat = chats[i];
+                                            chat.messages = await database.find('message', {chat: chat.id}, {allow_empty: true});
+
+                                            chat.messages = chat.messages.map(message => {
+                                                message.recieved = message.from === req.user.id || message.from === chat.owner;
+
+                                                return message;
+                                            });
+
+                                            chat.owner = await database.findOne('user', {_id: chat.owner}, {allow_empty: true});
+                                            let {password, _id, group, ...clean} = chat.owner;
+                                            chat.owner = clean;
+/*
+                                            chat.owner = {
+                                                id: chat.owner
+                                            };
+*/
+
+                                            chat.users = await database.find('user', {_id: {$in: chat.users}}, {allow_empty: true});
+                                            chat.users = chat.users.map(user => {
+                                                let {password, _id, group, ...clean} = user;
+                                                return clean;
+                                            });
+                                        }
+/*
+                                        chats = chats.map(async function(chat) {
+                                            let messages = await database.find('message', {chat: chat.id}, {allow_empty: true});
+                                            chat.messages = messages;
+
                                             chat.users = chat.users.map(user => {
                                                 return {
                                                     id: user
@@ -1335,12 +1365,13 @@ let matrix = {
 
                                             return chat;
                                         });
+*/
 
                                         return {
                                             users: [
                                                 {
                                                     id: 'current',
-                                                    chats
+                                                    chats: await chats
                                                 }
                                             ]
                                         };
