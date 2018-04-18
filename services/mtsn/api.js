@@ -1332,7 +1332,7 @@ let matrix = {
                                             chat.messages = await database.find('message', {chat: chat.id}, {allow_empty: true});
 
                                             chat.messages = chat.messages.map(message => {
-                                                message.recieved = message.from === req.user.id || message.from === chat.owner;
+                                                message.recieved = message.from === req.user.id || req.user.id === chat.owner;
 
                                                 return message;
                                             });
