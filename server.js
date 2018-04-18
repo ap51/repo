@@ -3,8 +3,8 @@
 
 const https = require('https');
 const path = require('path');
-//const cluster = require('cluster');
-var cluster = require('express-cluster');
+const cluster = require('cluster');
+//var cluster = require('express-cluster');
 //const memored = require('memored');
 
 const express = require('express');
@@ -84,9 +84,90 @@ let parse = function (text) {
 JSON.parse = parse;
 
 let common_resources = {};
+let cpuCount = require('os').cpus().length;
+let workers = [];
 
-let common_resourses = {};
+if(cluster.isMaster) {
 
+    for (let i = 0; i < cpuCount; i++) {
+        let worker = cluster.fork();
+
+        worker.on('message', async function (msg) {
+            let {action, module, method, args, uid} = msg;
+            switch (action) {
+                case 'execute':
+                    common_resources[module] = common_resources[module] || require(module);
+                    let result = await common_resources[module][method](...args);
+                    worker.send({uid, result, source: 'database', origin: msg});
+                    break;
+                default:
+                    break;
+            }
+        });
+
+        //Слушаем сообщение от workera
+/*
+        worker.on('message', function(data) {
+            //отправляем всем worker'ам сообщение
+            for (let j in workers) {
+                workers[j].send(data);
+            }
+        });
+*/
+        //Добавляем объект worker в массив
+        workers.push(worker);
+    }
+}
+
+if(cluster.isWorker) {
+    fs.readdir('./services/', (err, dirs) => {
+        dirs.forEach(async dir => {
+            console.log(dir);
+            try {
+                app.use(`/${dir}/`, require(`./services/${dir}/router`).router);
+                process.send({msg: 'ok', pid: process.pid});
+
+                const io = require('socket.io')(httpsServer, {
+                    path: `/${dir}/ui/_socket_`
+                });
+
+                const service_namespace = io.of(`/${dir}`);
+
+                service_namespace.on('connection', function(client){
+                    client.emit('server:event', 'update1:location', 'https://localhost:5000/mtsn/ui/chats.get');
+
+                    process.on('message', function(msg){
+                        console.log('REGISTERED.SOCKETS:', process.eventNames());
+
+                        let {source, origin} = msg;
+                        switch (source) {
+                            case 'database':
+                                switch (origin.method) {
+                                    case 'insert':
+                                    case 'update':
+                                    case 'remove':
+                                        console.log('DATABASE.UPDATE:', msg.source, msg.origin);
+                                        client.emit('server:event', 'update:location', 'https://localhost:5000/mtsn/ui/chats.get');
+                                        break;
+                                }
+                                break;
+                        }
+                    });
+                });
+            }
+            catch (err) {
+                console.log(err);
+            }
+        });
+
+        httpsServer.listen(httpsListenPort);
+
+        console.log(`https server linten on ${httpsListenPort} port.`);
+    });
+}
+
+
+/*
 cluster(function() {
         fs.readdir('./services/', (err, dirs) => {
             dirs.forEach(async dir => {
@@ -102,28 +183,49 @@ cluster(function() {
                     const service_namespace = io.of(`/${dir}`);
 
                     service_namespace.on('connection', function(client){
+                        client.emit('server:event', 'update1:location', 'https://localhost:5000/mtsn/ui/chats.get');
+
+                        process.on('message', function(msg){
+                            let {source, origin} = msg;
+                            switch (source) {
+                                case 'database':
+                                    switch (origin.method) {
+                                        case 'insert':
+                                        case 'update':
+                                        case 'remove':
+                                            console.log('DATABASE.UPDATE:', msg.source, msg.origin);
+                                            client.emit('server:event', 'update:location', 'https://localhost:5000/mtsn/ui/chats.get');
+                                            break;
+                                    }
+                                    break;
+                            }
+                        });
+
+
                         const database = require(`${__dirname}/services/${dir}/database/db`);
+
+                        console.log('SOCKET CONNECTED:', process.pid, Object.keys(client.nsp.connected));
 
                         client.on('chat:message', async function(data, callback) {
                             let updates = await database.update('message', {_id: ''}, data);
                             let message = {};
                             message = updates[0];
 
-                            console.log('SOCKET:', message);
+                            //console.log('SOCKET:', message);
                             callback(message);
                         });
                         
                         client.on('event', function(data, callback){
-                            console.log('SOCKET:', data);
+                            //console.log('SOCKET:', data);
                             callback({recieved: 1});
                         });
 
                         client.on('disconnecting', function(...args){
-                            console.log('SOCKET: DISCONNECTING', args);
+                            //console.log('SOCKET: DISCONNECTING', args);
                         });
 
                         client.on('disconnect', function(...args){
-                            console.log('SOCKET: DISCONNECT', args);
+                            //console.log('SOCKET: DISCONNECT', args);
                         });
                     });
                 }
@@ -141,22 +243,24 @@ cluster(function() {
     },
     {
         verbose: true,
-        respawn: false,
+        respawn: true,
         workerListener: async function (msg) {
             //console.log('master with pid', process.pid, 'received', msg, 'from worker');
             let {action, module, method, args, uid} = msg;
-            switch (msg.action) {
+            switch (action) {
                 case 'execute':
                     common_resources[module] = common_resources[module] || require(module);
                     let result = await common_resources[module][method](...args);
-                    this.send({uid, result});
+                    this.send({uid, result, source: 'database', origin: msg});
                     break;
                 default:
                     break;
             }
         }
     });
+*/
 
 process.on('unhandledRejection', err => {
-    throw err;
+    //throw err;
+    console.log('unhandledRejection => ', err)
 });

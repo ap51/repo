@@ -126,11 +126,13 @@ else {
             return new Promise(async function (resolve, reject) {
                 let uid = new Date() / 1;
 
+
                 process.once('message', function(msg){
                     if(msg.uid === uid) {
                         msg.err ? reject(msg.err) : resolve(msg.result);
                     }
                 });
+                console.log('REGISTERED.EVENTS:', process.eventNames());
 
                 process.send({
                     action: 'execute',

@@ -522,7 +522,20 @@ window.vm = new Vue({
         'loader': httpVueLoader('loader')
     },
     created() {
+        let self = this;
         this.$vuetify.theme = theme;
+
+        this.$socket.on('server:event', function(event, data) {
+            switch (event) {
+                case 'update:location':
+                    self.$request(data);
+                    break
+            }
+        });
+
+        this.$socket.on('component:event', function(event, component, data) {
+            self.$bus.emit(`${event}:${component}`, data);
+        });
 
         this.$socket.emit('event', {hello: 'world'}, function(...args) {
             console.log('SOCKET:', args);

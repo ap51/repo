@@ -1368,24 +1368,36 @@ let matrix = {
                                             users: [
                                                 {
                                                     id: 'current',
-                                                    chats: await chats
+                                                    chats
                                                 }
                                             ]
                                         };
                                     },
-                                    async save(req, res, self) {
-/*                                         let data = req.body;
+                                    async send(req, res, self) {
+                                        let data = req.body;
                                         data.id = data.id || '';
 
-                                        if (data.number === '00000000000') {
-                                            throw new CustomError(406, 'Not allowed phone number.');
-                                        }
-                                        else {
-                                            data.user = req.user.id;
-                        
-                                            let updates = await database.update(self.collection, {_id: data.id}, data);
-                                            return {users: [{id: 'current', phones: updates}]};
-                                        } */
+                                        let updates = await database.update('message', {_id: data.id}, data);
+                                        updates = updates.map(message => {
+                                            message.recieved = true;
+
+                                            return message;
+                                        });
+
+                                        return {
+                                            users: [
+                                                {
+                                                    id: 'current',
+                                                    chats: [
+                                                        {
+                                                            id: data.chat,
+                                                            messages: updates
+                                                        }
+                                                    ]
+                                                }
+                                            ]
+                                        };
+
                                     },
                                     async remove(req, res, self) {
                                         /* let data = req.body;

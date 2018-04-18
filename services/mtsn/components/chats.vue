@@ -33,7 +33,8 @@
             </template>
         </v-data-table>
 
-        <chat-dialog :visible="dialog.visible" :object="dialog.object" :messages="messages" @save="save" @cancel="cancel"></chat-dialog>
+        <chat-dialog :visible="dialog.visible" :object="dialog.object" @send="send" @cancel="cancel"></chat-dialog>
+        <!--<chat-dialog :visible="dialog.visible" :object="dialog.object" :messages="messages" @send="send" @cancel="cancel"></chat-dialog>-->
     </div>
 </template>
 
@@ -86,6 +87,7 @@
                 this.pagination.page = this.activePage || this.pagination.page || 1;
                 return this.database.users ? (this.entities.user.current.chats || []).map(chat => this.entities.chat[chat]) : [];
             },
+/*
             messages() {
                 if(this.active) {
                     let chat = this.entities.chat[this.active];
@@ -100,6 +102,7 @@
                 }
                 return [];
             },
+*/
             pages () {
                 if (this.pagination.rowsPerPage == null || this.pagination.totalItems == null)
                     return 0;
@@ -143,12 +146,18 @@
                 this.dialog.visible = true;
             },
             remove() {
-                this.activePage = this.pagination.page;
-                this.$request(`${this.$state.base_api}phones.remove`, this.selected, {method: 'delete', callback: this.cancel});
+                //this.activePage = this.pagination.page;
+                //this.$request(`${this.$state.base_api}phones.remove`, this.selected, {method: 'delete', callback: this.cancel});
+            },
+            send(data) {
+                //this.activePage = this.pagination.page;
+                this.$request(`${this.$state.base_api}chats.send`, data, {callback: function (res) {
+                        console.log(res);
+                    }});
             },
             save(phone) {
-                this.activePage = this.pagination.page;
-                this.$request(`${this.$state.base_api}phones.save`, phone, {callback: this.cancel});
+                //this.activePage = this.pagination.page;
+                //this.$request(`${this.$state.base_api}phones.save`, phone, {callback: this.cancel});
             },
             cancel(response) {
                 response && response.config.method.toUpperCase() === 'DELETE' && (this.selected = []);

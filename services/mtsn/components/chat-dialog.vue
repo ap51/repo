@@ -9,7 +9,7 @@
                 <v-container grid-list-md>
                     <v-layout wrap row>
                         <div style="display: flex; align-items: center; width: 100%">
-                            <v-pagination style="flex: 1" v-model="pagination.page" :length="pages" :total-visible="pages"></v-pagination>
+                            <v-pagination style="flex: 1" v-model="pagination.page" :length="pages" :total-visible="pages > 6 ? 7 : pages"></v-pagination>
                             <!-- <v-btn color="red darken-2" flat="flat" :disabled="selected.length === 0" @click.stop="remove"><v-icon color="red darken-2" class="mr-1 mb-1">fas fa-times</v-icon>remove</v-btn>
                             <v-btn color="green darken-2" flat="flat" @click.stop="append"><v-icon color="green darken-2" class="mr-1 mb-1">fas fa-plus</v-icon>append</v-btn> -->
                         </div>
@@ -21,7 +21,7 @@
                                       :items="messages"
                                       :pagination.sync="pagination"
 
-                                      style="width: 100%; max-height: 500px; overflow: auto; border-top: 1px solid rgba(0,0,0,0.4); border-bottom: 1px solid rgba(0,0,0,0.4)">
+                                      style="width: 100%; max-height: 500px; min-height: 500px; overflow: auto; border-top: 1px solid rgba(0,0,0,0.4); border-bottom: 1px solid rgba(0,0,0,0.4)">
 
                             <template slot="items" slot-scope="props">
                                 <tr style="border-bottom: none;">
@@ -81,10 +81,11 @@
         props: [
             'visible',
             'object',
-            'messages'
+            //'messages'
         ],
         data() {
             return {
+                activePage: 1,
                 pagination: {
                     rowsPerPage: 5
                 },
@@ -107,6 +108,24 @@
                     !value && this.cancel();
                 }
             },
+            messages() {
+                if(this.object.id) {
+                    let chat = this.entities.chat[this.object.id];
+                    let messages = chat.messages && chat.messages.map(message => {
+                        let msg = this.entities.message[message];
+                        msg.author = this.entities.user[msg.from];
+
+                        return msg;
+                    });
+
+                    let pages = Math.ceil(messages.length / this.pagination.rowsPerPage);
+                    this.pagination.page = pages;
+
+                    return messages;
+                }
+
+                return [];
+            },
             pages () {
                 if (this.pagination.rowsPerPage == null || this.pagination.totalItems == null)
                     return 0;
@@ -124,19 +143,23 @@
                 this.$emit('cancel');
             },
             send() {
+                this.$emit('send', {chat: this.object.id, text: this.message, from: this.current_user.id});
+                this.message = '';
+/*
                 this.$socket.emit('chat:message', {chat: this.object.id, text: this.message, from: this.current_user.id}, (response) => {
                     this.message = '';
                     console.log('SOCKET:', response);
                     this.entities.message[response.id] = response;
                     //Vue.set(Vue.prototype.$state.entities, 'message', response);
                 });
+*/
 
                 console.log('sending...')
             },
         },
         watch: {
             'visible': function (newValue, oldValue) {
-                newValue && this.pagination.page < 2 && (this.pagination.page = this.pages);
+                //newValue && this.pagination.page < 2 && (this.pagination.page = this.pages);
 
                 //newValue && (this.selected = this.scopes.filter(scope => this.object.scope.indexOf(scope.id) !== -1));
             },
