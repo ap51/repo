@@ -8,14 +8,20 @@
             <v-card-text>
                 <v-container grid-list-md>
                     <v-layout wrap row>
+                        <div style="display: flex; align-items: center; width: 100%">
+                            <v-pagination style="flex: 1" v-model="pagination.page" :length="pages" :total-visible="pages"></v-pagination>
+                            <!-- <v-btn color="red darken-2" flat="flat" :disabled="selected.length === 0" @click.stop="remove"><v-icon color="red darken-2" class="mr-1 mb-1">fas fa-times</v-icon>remove</v-btn>
+                            <v-btn color="green darken-2" flat="flat" @click.stop="append"><v-icon color="green darken-2" class="mr-1 mb-1">fas fa-plus</v-icon>append</v-btn> -->
+                        </div>
                         <v-data-table item-key="id"
                                       disable-initial-sort
                                       hide-actions
                                       hide-headers
                                       :headers="headers"
                                       :items="messages"
+                                      :pagination.sync="pagination"
 
-                                      style="width: 100%; height: 100%; border-top: 1px solid rgba(0,0,0,0.4); border-bottom: 1px solid rgba(0,0,0,0.0)">
+                                      style="width: 100%; max-height: 500px; overflow: auto; border-top: 1px solid rgba(0,0,0,0.4); border-bottom: 1px solid rgba(0,0,0,0.4)">
 
                             <template slot="items" slot-scope="props">
                                 <tr style="border-bottom: none;">
@@ -23,8 +29,8 @@
                                         <td>
                                             <div style="padding: 4px; width: 50%; border: 1px solid rgba(0,0,0,0.0); border-radius: 4px" :style="props.item.recieved && 'margin-left: 50%'">
                                                 <div :class="props.item.recieved ? 'green--text text--darken-2' : 'blue--text text--darken-2' " class="caption">{{ props.item.author.name + ':' }}</div>
-                                                <div class="subheading">{{ props.item.text }}</div>
-                                                <div class="grey--text" class="caption" style="border-top: 1px solid rgba(0,0,0,0.1); text-align: left">{{ new Date(props.item.created).toLocaleString() }}</div>
+                                                <div class="caption">{{ props.item.text }}</div>
+                                                <div class="grey--text caption" style="border-top: 1px solid rgba(0,0,0,0.1); text-align: left">{{ new Date(props.item.created).toLocaleString() }}</div>
                                             </div>
                                         </td>
                                     </div>
@@ -71,6 +77,7 @@
 
 <script>
     module.exports = {
+        extends: component,
         props: [
             'visible',
             'object',
@@ -78,6 +85,9 @@
         ],
         data() {
             return {
+                pagination: {
+                    rowsPerPage: 5
+                },
                 search: '',
                 selected: [],
                 headers: [
@@ -86,7 +96,7 @@
                 message: ''
             }
         },
-        mounted() {
+        activated() {
         },
         computed: {
             isVisible: {
@@ -96,6 +106,17 @@
                 set(value) {
                     !value && this.cancel();
                 }
+            },
+            pages () {
+                if (this.pagination.rowsPerPage == null || this.pagination.totalItems == null)
+                    return 0;
+
+                if(this.messages) {
+                    let pages = Math.ceil(this.messages.length / this.pagination.rowsPerPage);
+                    this.pagination.pages = this.pagination.pages !== pages ? pages : this.pagination.pages;
+                    return this.pagination.pages;
+                }
+
             }
         },
         methods: {
@@ -103,12 +124,20 @@
                 this.$emit('cancel');
             },
             send() {
-                this.message = '';
+                this.$socket.emit('chat:message', {chat: this.object.id, text: this.message, from: this.current_user.id}, (response) => {
+                    this.message = '';
+                    console.log('SOCKET:', response);
+                    this.entities.message[response.id] = response;
+                    //Vue.set(Vue.prototype.$state.entities, 'message', response);
+                });
+
                 console.log('sending...')
             },
         },
         watch: {
             'visible': function (newValue, oldValue) {
+                newValue && this.pagination.page < 2 && (this.pagination.page = this.pages);
+
                 //newValue && (this.selected = this.scopes.filter(scope => this.object.scope.indexOf(scope.id) !== -1));
             },
             'selected': function (newValue, oldValue) {

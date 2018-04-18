@@ -942,14 +942,17 @@ let matrix = {
                     },
                     async get(req, res, self) {
                         if(req.user) {
-                            let {public_id, _id, group, ...current} = req.user;
-                            let {user, ...profile} = await database.findOne('profile', {user: req.user.id});
+                            let {public_id, group, ...current} = req.user;
+
+                            let {user, id, ...profile} = await database.findOne('profile', {user: req.user.id});
+                            profile.id = current.id;
 
                             return {
                                 users: [
                                     {
                                         ...current,
                                         id: 'current',
+                                        
                                         profile
                                     }
                                 ]
@@ -1325,14 +1328,13 @@ let matrix = {
                                 collection: 'chat',
                                 methods: {
                                     async get(req, res, self) {
-                                        
                                         let chats = await database.find(self.collection, {users: req.user.id}, {allow_empty: true});
                                         for(let i = 0; i <= chats.length - 1; i++) {
                                             let chat = chats[i];
                                             chat.messages = await database.find('message', {chat: chat.id}, {allow_empty: true});
 
                                             chat.messages = chat.messages.map(message => {
-                                                message.recieved = message.from === req.user.id || req.user.id === chat.owner;
+                                                message.recieved = message.from === req.user.id ? true : chat.users.some(user => user === req.user.id) ? false : req.user.id === chat.owner;
 
                                                 return message;
                                             });
@@ -1340,11 +1342,6 @@ let matrix = {
                                             chat.owner = await database.findOne('user', {_id: chat.owner}, {allow_empty: true});
                                             let {password, _id, group, ...clean} = chat.owner;
                                             chat.owner = clean;
-/*
-                                            chat.owner = {
-                                                id: chat.owner
-                                            };
-*/
 
                                             chat.users = await database.find('user', {_id: {$in: chat.users}}, {allow_empty: true});
                                             chat.users = chat.users.map(user => {

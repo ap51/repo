@@ -102,6 +102,17 @@ cluster(function() {
                     const service_namespace = io.of(`/${dir}`);
 
                     service_namespace.on('connection', function(client){
+                        const database = require(`${__dirname}/services/${dir}/database/db`);
+
+                        client.on('chat:message', async function(data, callback) {
+                            let updates = await database.update('message', {_id: ''}, data);
+                            let message = {};
+                            message = updates[0];
+
+                            console.log('SOCKET:', message);
+                            callback(message);
+                        });
+                        
                         client.on('event', function(data, callback){
                             console.log('SOCKET:', data);
                             callback({recieved: 1});
