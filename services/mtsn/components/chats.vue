@@ -153,7 +153,7 @@
                 //this.activePage = this.pagination.page;
                 this.$request(`${this.$state.base_api}chats.send`, data, {callback: function (res) {
                         console.log(res);
-                    }});
+                }});
             },
             save(phone) {
                 //this.activePage = this.pagination.page;

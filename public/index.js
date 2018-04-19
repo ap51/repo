@@ -526,6 +526,7 @@ window.vm = new Vue({
         this.$vuetify.theme = theme;
 
         this.$socket.on('server:event', function(event, data) {
+            console.log('SOCKET:', event);
             switch (event) {
                 case 'update:location':
                     self.$request(data);

@@ -94,27 +94,24 @@ if(cluster.isMaster) {
 
         worker.on('message', async function (msg) {
             let {action, module, method, args, uid} = msg;
+            console.log('PROXY:', module, method, process.pid);
+
             switch (action) {
                 case 'execute':
                     common_resources[module] = common_resources[module] || require(module);
                     let result = await common_resources[module][method](...args);
+
                     worker.send({uid, result, source: 'database', origin: msg});
+                    for (let j in workers) {
+                        worker !== workers[j] && workers[j].send({source: 'database', origin: msg});
+                    }
+
                     break;
                 default:
                     break;
             }
         });
 
-        //Слушаем сообщение от workera
-/*
-        worker.on('message', function(data) {
-            //отправляем всем worker'ам сообщение
-            for (let j in workers) {
-                workers[j].send(data);
-            }
-        });
-*/
-        //Добавляем объект worker в массив
         workers.push(worker);
     }
 }
@@ -136,17 +133,18 @@ if(cluster.isWorker) {
                 service_namespace.on('connection', function(client){
                     client.emit('server:event', 'update1:location', 'https://localhost:5000/mtsn/ui/chats.get');
 
-                    process.on('message', function(msg){
-                        console.log('REGISTERED.SOCKETS:', process.eventNames());
-
+                    process.on('message', function(msg) {
                         let {source, origin} = msg;
+
                         switch (source) {
                             case 'database':
                                 switch (origin.method) {
                                     case 'insert':
                                     case 'update':
                                     case 'remove':
-                                        console.log('DATABASE.UPDATE:', msg.source, msg.origin);
+                                        console.log('SOCKET:', source, origin.method, process.pid, client.id);
+                                        //console.log('broadcast from:', process.pid);
+                                        //client.broadcast.emit('server:event', 'update:location', 'https://localhost:5000/mtsn/ui/chats.get');
                                         client.emit('server:event', 'update:location', 'https://localhost:5000/mtsn/ui/chats.get');
                                         break;
                                 }

@@ -126,13 +126,17 @@ else {
             return new Promise(async function (resolve, reject) {
                 let uid = new Date() / 1;
 
+                //const listeners = process.rawListeners('message');
+                //console.log('LISTENERS:', listeners);
 
-                process.once('message', function(msg){
+                process.prependOnceListener('message', function(msg){
+                    console.log('RECIEVED:', name, uid);
                     if(msg.uid === uid) {
                         msg.err ? reject(msg.err) : resolve(msg.result);
                     }
                 });
-                console.log('REGISTERED.EVENTS:', process.eventNames());
+                
+                console.log('SEND:', name, uid);
 
                 process.send({
                     action: 'execute',

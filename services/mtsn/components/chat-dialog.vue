@@ -143,8 +143,12 @@
                 this.$emit('cancel');
             },
             send() {
-                this.$emit('send', {chat: this.object.id, text: this.message, from: this.current_user.id});
-                this.message = '';
+                this.message = this.message.trim();
+
+                if(this.message) {
+                    this.$emit('send', {chat: this.object.id, text: this.message, from: this.current_user.id});
+                    this.message = '';
+                }
 /*
                 this.$socket.emit('chat:message', {chat: this.object.id, text: this.message, from: this.current_user.id}, (response) => {
                     this.message = '';
