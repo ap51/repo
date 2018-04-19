@@ -14,8 +14,23 @@ const merge = require('deepmerge');
 const JSON5 = require('json5');
 const crypto = require('crypto');
 const randomBytes = require('bluebird').promisify(crypto.randomBytes);
+const cluster = require('cluster');
 
 let {router, tokenHandler, authenticateHandler, service} = require('./router');
+
+let sockets = {};
+let broadcast = function (message_name, ...args) {
+    let entries = Object.entries(sockets);
+    entries.map(pair => {
+        let [id, socket] = pair;
+        if(socket) {
+            let [event, ...rest] = args;
+            socket.emit(message_name, event, ...rest);
+        }
+    });
+
+    cluster.isWorker && process.send({action: 'broadcast', module: module.filename, message: {message_name, ...args}});
+};
 
 const database = require('./database/db');
 
@@ -1384,6 +1399,10 @@ let matrix = {
                                             return message;
                                         });
 
+                                        console.log('CHATS:SAVE', Object.keys(sockets));
+                                        let location = req.headers['location'];
+                                        broadcast('server:event', 'update:location', 'chats.get');
+
                                         return {
                                             users: [
                                                 {
@@ -1827,12 +1846,24 @@ let entities = function (data) {
     return normalized;
 };
 
+let onSocket = function (socket) {
+    sockets[socket.id] = socket;
+    console.log('API.SOCKETS:', Object.keys(sockets));
+
+    socket.on('disconnect', function(){
+        sockets[socket.id] = void 0;
+    });
+};
+
+
 module.exports = {
     //init,
     secured,
-    access,
-    action,
-    entities,
+    //access,
+    //action,
+    //entities,
+    onSocket,
+    broadcast,
     accessGranted,
     //accessMiddleware
 };

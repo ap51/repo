@@ -153,6 +153,11 @@ router.patch('/phone', ensureSignedIn, function(req, res, next){
 
 router.all(patterns, end);
 
+let init = function () {
+    return router;
+};
+
 module.exports = {
+    init,
     router
 };

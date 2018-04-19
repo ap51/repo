@@ -97,14 +97,23 @@ if(cluster.isMaster) {
             console.log('PROXY:', module, method, process.pid);
 
             switch (action) {
+                case 'broadcast':
+                    common_resources[module] = common_resources[module] || require(module);
+                    let {message_name, ...rest} = msg.message;
+                    common_resources[module].broadcast(message_name, ...rest);
+                    console.log(msg);
+                    break;
                 case 'execute':
                     common_resources[module] = common_resources[module] || require(module);
                     let result = await common_resources[module][method](...args);
 
-                    worker.send({uid, result, source: 'database', origin: msg});
+                    worker.send({uid, result});
+
+/*
                     for (let j in workers) {
                         worker !== workers[j] && workers[j].send({source: 'database', origin: msg});
                     }
+*/
 
                     break;
                 default:
@@ -121,18 +130,22 @@ if(cluster.isWorker) {
         dirs.forEach(async dir => {
             console.log(dir);
             try {
-                app.use(`/${dir}/`, require(`./services/${dir}/router`).router);
-                process.send({msg: 'ok', pid: process.pid});
-
                 const io = require('socket.io')(httpsServer, {
                     path: `/${dir}/ui/_socket_`
                 });
+                const sockets = io.of(`/${dir}`);
 
-                const service_namespace = io.of(`/${dir}`);
 
-                service_namespace.on('connection', function(client){
-                    client.emit('server:event', 'update1:location', 'https://localhost:5000/mtsn/ui/chats.get');
+                let router_module = require(`./services/${dir}/router`);
+                app.use(`/${dir}/`, router_module.router);
 
+
+                sockets.on('connection', function(client){
+                    let api_module = require(`./services/${dir}/api`);
+                    api_module.onSocket && api_module.onSocket(client);
+                    //client.emit('server:event', 'update1:location', 'https://localhost:5000/mtsn/ui/chats.get');
+
+/*
                     process.on('message', function(msg) {
                         let {source, origin} = msg;
 
@@ -151,6 +164,7 @@ if(cluster.isWorker) {
                                 break;
                         }
                     });
+*/
                 });
             }
             catch (err) {

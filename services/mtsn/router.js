@@ -153,11 +153,16 @@ router.all(['/files/*/:file', '/files/:file'], function(req, res, next) {
     else res.status(404).end('Not found.');
 });
 
+let onSocket = function (socket) {
+    router.sockets = sockets;
+};
+
 module.exports = {
     router,
     tokenHandler,
     authenticateHandler,
-    service
+    service,
+    onSocket
 };
 
 let accessMiddleware = function(options) {

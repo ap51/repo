@@ -203,13 +203,13 @@ Vue.prototype.$request = async function(url, data, options) {
     
     data && (config.data = data);
 
-    //console.log('REQUEST:', config.url);
+    console.log('REQUEST:', config.url);
 
     request_queue[url] = axios(config)
         .then(function(res) {
             request_queue[res.config.url] = false;
 
-            //console.log('RESPONSE:', res.config.url);
+            console.log('RESPONSE:', res.config.url);
             if(res.status > 220) {
                 res.data.token && Vue.set(Vue.prototype.$state, 'token', res.data.token);
                 Vue.prototype.$state.token && localStorage.setItem(`${service}:token`, Vue.prototype.$state.token);
@@ -319,6 +319,7 @@ Vue.prototype.$request = async function(url, data, options) {
                         Vue.set(Vue.prototype.$state, 'entities', merge);
 
                         Vue.prototype.$bus.$emit('merged', merge);
+                        console.log('MERGED:', res.config.url);
 
                         
                         //parsed.action === 'get' && Vue.prototype.$bus.$emit(`loaded:${parsed.component}`, merge);
@@ -526,9 +527,9 @@ window.vm = new Vue({
         this.$vuetify.theme = theme;
 
         this.$socket.on('server:event', function(event, data) {
-            console.log('SOCKET:', event);
             switch (event) {
                 case 'update:location':
+                    console.log('SOCKET:', event);
                     self.$request(data);
                     break
             }
