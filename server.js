@@ -94,14 +94,13 @@ if(cluster.isMaster) {
 
         worker.on('message', async function (msg) {
             let {action, module, method, args, uid} = msg;
-            console.log('PROXY:', module, method, process.pid);
+            //console.log('PROXY:', module, method, process.pid);
 
             switch (action) {
                 case 'broadcast':
-                    common_resources[module] = common_resources[module] || require(module);
-                    let {message_name, ...rest} = msg.message;
-                    common_resources[module].broadcast(message_name, ...rest);
-                    console.log(msg);
+                    for (let j in workers) {
+                        workers[j].send(msg);
+                    }
                     break;
                 case 'execute':
                     common_resources[module] = common_resources[module] || require(module);
@@ -125,52 +124,81 @@ if(cluster.isMaster) {
     }
 }
 
+let name_spaces = [];
+let name_spaces_sockets = [];
+
 if(cluster.isWorker) {
+    process.on('message', function(msg) {
+        let {action, ...rest} = msg;
+
+        switch (action) {
+            case 'broadcast':
+                let {name, event, ...other} = rest.message;
+                //name_spaces[`${dir}:${cluster.worker.id}`].emit(name, event, ...data);
+                let entries = Object.entries(name_spaces);
+                for(let i = 0; i <= entries.length - 1; i++) {
+                    let [id, socket] = entries[i];
+                    try {
+                        socket && socket.emit(name, event, other);
+                    }
+                    catch(err) {
+                        console.log(err);
+                    }
+                }
+
+                break;
+        };
+
+    });
+
     fs.readdir('./services/', (err, dirs) => {
+        /* for(let i = 0; i <= dirs.length - 1; i++) {
+            let dir = dirs[i]; */
         dirs.forEach(async dir => {
             console.log(dir);
             try {
                 const io = require('socket.io')(httpsServer, {
                     path: `/${dir}/ui/_socket_`
                 });
+                
                 const sockets = io.of(`/${dir}`);
-
+                name_spaces[`${dir}:${cluster.worker.id}`] = sockets;
 
                 let router_module = require(`./services/${dir}/router`);
                 app.use(`/${dir}/`, router_module.router);
 
+                name_spaces[`${dir}:${cluster.worker.id}`].on('connection', function(client){
+                    //let api_module = require(`./services/${dir}/api`);
+                    //api_module.onSocket && api_module.onSocket(client);
 
-                sockets.on('connection', function(client){
-                    let api_module = require(`./services/${dir}/api`);
-                    api_module.onSocket && api_module.onSocket(client);
-                    //client.emit('server:event', 'update1:location', 'https://localhost:5000/mtsn/ui/chats.get');
+                    name_spaces_sockets[`${dir}:${cluster.worker.id}:${client.id}`] = client;
 
-/*
-                    process.on('message', function(msg) {
-                        let {source, origin} = msg;
-
-                        switch (source) {
-                            case 'database':
-                                switch (origin.method) {
-                                    case 'insert':
-                                    case 'update':
-                                    case 'remove':
-                                        console.log('SOCKET:', source, origin.method, process.pid, client.id);
-                                        //console.log('broadcast from:', process.pid);
-                                        //client.broadcast.emit('server:event', 'update:location', 'https://localhost:5000/mtsn/ui/chats.get');
-                                        client.emit('server:event', 'update:location', 'https://localhost:5000/mtsn/ui/chats.get');
-                                        break;
-                                }
+                    /* process.on('message', function(msg) {
+                        let {action, ...rest} = msg;
+                
+                        switch (action) {
+                            case 'broadcast':
+                                let {name, event, ...other} = rest.message;
+                                client.emit(name, event, other);
+                                //name_spaces[`${dir}:${cluster.worker.id}`].emit(name, event, ...data);
+                                
+                
                                 break;
-                        }
+                        };
+                
+                    }); */
+
+                    client.on('disconnect', function(){
+                        delete name_spaces_sockets[`${dir}:${cluster.worker.id}:${client.id}`];
                     });
-*/
+                
                 });
             }
             catch (err) {
                 console.log(err);
             }
         });
+        //}
 
         httpsServer.listen(httpsListenPort);
 

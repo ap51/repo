@@ -130,13 +130,13 @@ else {
                 //console.log('LISTENERS:', listeners);
 
                 process.prependOnceListener('message', function(msg){
-                    console.log('RECIEVED:', name, uid);
+                    console.log('RECIEVED ONCE:', name, uid);
                     if(msg.uid === uid) {
                         msg.err ? reject(msg.err) : resolve(msg.result);
                     }
                 });
                 
-                console.log('SEND:', name, uid);
+                console.log('SEND:', name, uid, args);
 
                 process.send({
                     action: 'execute',
