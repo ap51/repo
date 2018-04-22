@@ -1,9 +1,9 @@
 <template>
-    <v-dialog v-model="isVisible" max-width="500px" scrollable content-class="client-dialog">
+    <v-dialog v-model="isVisible" max-width="500px" scrollable content-class="client-dialog" hide-overlay>
         <v-card>
             <v-card-title>
-                <v-icon class="mr-1">fas fa-cog</v-icon>
-                <span class="headline">client</span>
+                <v-icon class="mr-1 blue--text text--darken-2">fas fa-cog</v-icon>
+                <span class="headline blue--text text--darken-2">client</span>
             </v-card-title>
             <v-card-text>
                 <v-container grid-list-md>
@@ -39,21 +39,6 @@
                                               hint="any string value"
                                 ></v-text-field>
                             </v-flex>
-<!--
-                            <v-flex xs12>
-                                <v-text-field v-model="object.scope"
-                                              readonly
-                                              validate-on-blur
-                                              label="Scopes"
-                                              required
-                                              color="blue darken-2"
-                                              hint="any string value"
-                                              :rules="[
-                                                  () => !!object.scope || 'This field is required',
-                                              ]"
-                                ></v-text-field>
-                            </v-flex>
--->
                         </v-form>
                         <small>*indicates required field</small>
 

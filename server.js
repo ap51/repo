@@ -103,16 +103,21 @@ if(cluster.isMaster) {
                     }
                     break;
                 case 'execute':
+                    //console.log('EXECUTING:', method, uid);
                     common_resources[module] = common_resources[module] || require(module);
                     let result = await common_resources[module][method](...args);
 
+                    //console.log('EXECUTED:', method, uid);
                     worker.send({uid, result});
+                    //console.log('SENT:', method, uid);
 
-/*
+                    //process.send({action: 'broadcast', message: {name: 'server:event', event: 'update:location', data: `${req.baseUrl}/${req.params.section}/messages:${updates[0].id}.refresh`}});
+
+
                     for (let j in workers) {
-                        worker !== workers[j] && workers[j].send({source: 'database', origin: msg});
+                        //worker !== workers[j] &&
+                        workers[j].send({action: 'module:call', uid, method, args, result});
                     }
-*/
 
                     break;
                 default:
@@ -124,14 +129,48 @@ if(cluster.isMaster) {
     }
 }
 
-let name_spaces = [];
+let name_spaces = {};
 let name_spaces_sockets = [];
 
 if(cluster.isWorker) {
+
     process.on('message', function(msg) {
         let {action, ...rest} = msg;
 
         switch (action) {
+            case 'module:call':
+                //console.log(rest);
+                switch(rest.method) {
+                    case 'update':
+                        let [collection, condition, data] = rest.args;
+                        let id = data.id || (Array.isArray(rest.result) && rest.result[0].id);
+
+                        switch (collection) {
+                            default:
+                                collection = collection + 's';
+                                break;
+                        }
+
+                        let {name, event, ...other} = {name: 'server:event', event: 'update:location', data: `${collection}${id ? ':' + id : ''}.refresh`};
+
+                        console.log({name, event, ...other});
+
+                        let entries = Object.entries(name_spaces);
+                        for(let i = 0; i <= entries.length - 1; i++) {
+                            let [id, socket] = entries[i];
+                            try {
+                                socket && socket.emit(name, event, other);
+                                socket && console.log(id, Object.keys(socket.connected).length);
+                            }
+                            catch(err) {
+                                console.log(err);
+                            }
+                        }
+                        break;
+
+                }
+
+                break;
             case 'broadcast':
                 let {name, event, ...other} = rest.message;
                 //name_spaces[`${dir}:${cluster.worker.id}`].emit(name, event, ...data);
@@ -147,7 +186,7 @@ if(cluster.isWorker) {
                 }
 
                 break;
-        };
+        }
 
     });
 
@@ -168,6 +207,7 @@ if(cluster.isWorker) {
                 app.use(`/${dir}/`, router_module.router);
 
                 name_spaces[`${dir}:${cluster.worker.id}`].on('connection', function(client){
+                    console.log(`CONNECTED TO: ${dir}:${cluster.worker.id}`);
                     //let api_module = require(`./services/${dir}/api`);
                     //api_module.onSocket && api_module.onSocket(client);
 

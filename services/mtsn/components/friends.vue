@@ -9,12 +9,12 @@
 -->
 
         <div style="display: flex; align-items: center; width: 100%">
-            <v-pagination style="flex: 1" v-model="pagination.page" :length="pages" :total-visible="pages"></v-pagination>
-            <v-btn color="red darken-2" flat :disabled="selected.length === 0" @click.stop="remove"><v-icon color="red darken-2" class="mr-1 mb-1">fas fa-times</v-icon>remove from friends</v-btn>
-            <v-btn color="green darken-2" flat :disabled="selected.length === 0" @click.stop="chat"><v-icon color="green darken-2" class="mr-1 mb-1">far fa-comment</v-icon>begin chat</v-btn>
+            <v-pagination style="flex: 1" v-model="pagination.page" :length="pages" :total-visible="pages > 6 ? 7 : pages"></v-pagination>
+            <v-btn v-if="!mode" color="red darken-2" flat :disabled="selected.length === 0" @click.stop="remove"><v-icon color="red darken-2" class="mr-1 mb-1">fas fa-times</v-icon>remove from friends</v-btn>
+            <v-btn v-if="!mode" color="green darken-2" flat :disabled="selected.length === 0" @click.stop="chat(selected)"><v-icon color="green darken-2" class="mr-1 mb-1">far fa-comment</v-icon>begin chat</v-btn>
         </div>
 
-        <v-data-table style="border-top: 1px solid rgb(128, 128, 128)"
+        <v-data-table style="border-top: 1px solid rgba(0,0,0,0.4); border-bottom: 1px solid rgba(0,0,0,0.4)"
                       item-key="id"
                       disable-initial-sort
 
@@ -40,10 +40,10 @@
 -->
                     <div style="display: flex; align-items: center">
                         <v-icon class="mr-2" color="orange darken-2" style="font-size: 20px; height: 22px;">fas fa-user-circle</v-icon>
-                        <div style="flex: 1" class=""><a :href="'./feed:' + props.item.public_id" @click.prevent="$router.push('feed:' + props.item.public_id)">{{ props.item.name }}</a></div>
+                        <div style="flex: 1" class=""><a :href="'./posts:' + props.item.public_id" @click.prevent="$router.push('posts:' + props.item.public_id)">{{ props.item.name }}</a></div>
                         <!--<div style="flex: 1" class=""><a :href="'myfeed:wer' + ">{{ props.item.name }}</a></div>-->
 
-                        <v-btn icon>
+                        <v-btn icon v-if="!mode" @click="chat([props.item])">
                             <v-icon color="accent" style="font-size: 20px; height: 22px;">far fa-comment</v-icon>
                         </v-btn>
                     </div>
@@ -81,6 +81,10 @@
 <script>
     module.exports = {
         extends: component,
+        props: [
+            'mode',
+            'object'
+        ],
         data() {
             return {
                 text: '',
@@ -114,6 +118,7 @@
             }
         },
         methods: {
+/*
             toggle(item) {
                 const i = this.selected.indexOf(item);
 
@@ -123,6 +128,7 @@
                     this.selected.push(item)
                 }
             },
+*/
             onRemoved(res) {
                 this.selected = [];
                 this.pagination.page = this.activePage || this.pagination.page || 1;
@@ -131,15 +137,19 @@
                 //this.activePage = this.pagination.page;
                 this.$request(`${this.$state.base_api}friends.remove`, this.selected, {method: 'delete', callback: this.onRemoved});
             },
-            chat() {
+            chat(selected) {
                 //this.activePage = this.pagination.page;
-                this.$request(`${this.$state.base_api}charts.save`, this.selected, {callback: this.onRemoved});
+                this.$request(`${this.$state.base_api}chats.begin`, {name: `chat:${new Date() * 1}`, users: selected}, {callback: this.onRemoved});
             }
         },
         watch: {
-            'selected': function (n, o) {
-                //console.log(n, o)
-            }
+            'object': function (newValue, oldValue) {
+                newValue && this.object.users.length && (this.selected = this.object.users.map(id => {return {id}}));
+            },
+            'selected': function (newValue, oldValue) {
+                this.$emit('selected', newValue.map(user => user.id));
+                //this.selection.length && (this.selected = this.selection.map(id => {return {id}}));
+            },
         }
     }
 

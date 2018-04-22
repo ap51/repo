@@ -1,9 +1,9 @@
 <template>
-    <v-dialog v-if="object" v-model="visible" persistent max-width="400px">
+    <v-dialog v-if="object" v-model="visible" persistent max-width="400px" hide-overlay>
         <v-card>
             <v-card-title>
-                <v-icon class="mr-1">fas fa-sign-out-alt</v-icon>
-                <span class="headline">sign out</span>
+                <v-icon class="mr-1 blue--text text--darken-2">fas fa-sign-out-alt</v-icon>
+                <span class="headline blue--text text--darken-2">sign out</span>
             </v-card-title>
             <v-card-text>
                 THIS ACTION WILL SIGN YOU OUT!

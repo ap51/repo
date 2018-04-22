@@ -143,7 +143,9 @@ let flat = function (root, array, parent) {
 };
 
 let accessGranted = async function (req, res, router) {
-    let {section, name, id, action} = req.params; 
+
+
+    let {section, name, id, action} = req.params;
     action = action || 'default';
     req.params.action = action;
 
@@ -282,7 +284,7 @@ let accessGranted = async function (req, res, router) {
 
                 data = component.methods.__wrapper ? await component.methods.__wrapper(req, res, data) : data;
 
-                let auth = req.user ? {name: req.user.name} : {};
+                let auth = req.user ? {name: req.user.name, id: req.user.id, public_id: req.user.public_id} : {};
                 let response = {...data, auth};
 
                 return response;
@@ -318,7 +320,7 @@ let accessGranted = async function (req, res, router) {
         return accessGranted(req, res, router);
     }
 
-    console.log(access);
+    //console.log(access);
 };
 
 let model = function (data) {
@@ -663,7 +665,7 @@ let matrix = {
                             }
                         }
                     },
-                    'feed': {
+                    'posts': {
                         type: 'tab',
                         access: ['*'],
                         to(req, res, self) {
@@ -886,13 +888,20 @@ let matrix = {
                                     }
                                 }
                             },
+/*
                             'messages': {
+                                type: '',
                                 access: ['*'],
                                 collection: 'message',
                                 methods: {
-                                    async get(req, res, self) {
+                                    async refresh(req, res, self) {
                                         console.log('GET MESSAGE');
                                         let message = await database.findOne(self.collection, {_id: req.params.id}, {allow_empty: true});
+                                        let chat = await database.findOne('chat', {_id: message.chat}, {allow_empty: true});
+
+                                        message.recieved = message.from === req.user.id ? true : chat.users.some(user => user === req.user.id) ? false : req.user.id === chat.owner;
+
+
                                         return {
                                             users: [
                                                 {
@@ -909,11 +918,27 @@ let matrix = {
                                     }
                                 }
                             },
+*/
                             'chats': {
+                                access: ['*'],
                                 collection: 'chat',
                                 methods: {
+                                    async refresh(req, res, self) {
+                                        let chats = await database.find('chat', {_id: req.params.id}, {allow_empty: true});
+
+                                        return {
+                                            users: [
+                                                {
+                                                    id: 'current',
+                                                    chats
+                                                }
+                                            ]
+                                        };
+
+                                    },
                                     async get(req, res, self) {
                                         let chats = await database.find(self.collection, {users: req.user.id}, {allow_empty: true});
+/*
                                         for(let i = 0; i <= chats.length - 1; i++) {
                                             let chat = chats[i];
                                             chat.messages = await database.find('message', {chat: chat.id}, {allow_empty: true});
@@ -934,19 +959,6 @@ let matrix = {
                                                 return clean;
                                             });
                                         }
-/*
-                                        chats = chats.map(async function(chat) {
-                                            let messages = await database.find('message', {chat: chat.id}, {allow_empty: true});
-                                            chat.messages = messages;
-
-                                            chat.users = chat.users.map(user => {
-                                                return {
-                                                    id: user
-                                                }
-                                            });
-
-                                            return chat;
-                                        });
 */
 
                                         return {
@@ -958,9 +970,10 @@ let matrix = {
                                             ]
                                         };
                                     },
-                                    async send(req, res, self) {
+                                    async send1(req, res, self) {
                                         let data = req.body;
                                         data.id = data.id || '';
+                                        data.seen = [data.from];
 
                                         let updates = await database.update('message', {_id: data.id}, data);
                                         updates = updates.map(message => {
@@ -969,10 +982,10 @@ let matrix = {
                                             return message;
                                         });
 
-                                        console.log('CHATS:SAVE', Object.keys(sockets));
+                                        //console.log('CHATS:SAVE', Object.keys(sockets));
                                         let location = req.headers['location'];
 
-                                        process.send({action: 'broadcast', message: {name: 'server:event', event: 'update:location', data: `${req.baseUrl}/${req.params.section}/messages:${updates[0].id}.get`}});
+                                        //process.send({action: 'broadcast', message: {name: 'server:event', event: 'update:location', data: `${req.baseUrl}/${req.params.section}/messages:${updates[0].id}.refresh`}});
 
                                         //broadcast('server:event', 'update:location', 'chats.get');
 
@@ -991,6 +1004,51 @@ let matrix = {
                                         };
 
                                     },
+                                    async begin(req, res, self) {
+                                        let data = req.body;
+
+                                        data.owner = req.user.id;
+
+                                        data.users = data.users.map(user => user.id);
+                                        data.users.push(data.owner);
+
+                                        let updates = await database.update(self.collection, {_id: ''}, data);
+
+                                        return {
+                                            users: [
+                                                {
+                                                    id: 'current',
+                                                    chats: updates
+                                                }
+                                            ]
+                                        };
+                                    },
+                                    async save(req, res, self) {
+                                        let data = req.body;
+                                        data.id = data.id || '';
+                                        delete data.messages;
+
+                                        if (data.name.trim() === '') {
+                                            throw new CustomError(406, 'Not allowed chat name.');
+                                        }
+
+                                        if (data.owner !== req.user.id) {
+                                            throw new CustomError(406, 'You are not chat owner.');
+                                        }
+
+                                        let updates = await database.update(self.collection, {_id: data.id}, data);
+
+                                        return {
+                                            users: [
+                                                {
+                                                    id: 'current',
+                                                    chats: updates
+                                                }
+                                            ]
+                                        };
+
+
+                                    },
                                     async remove(req, res, self) {
                                         /* let data = req.body;
                                         data = Array.isArray(data) ? data : [data];
@@ -1002,8 +1060,135 @@ let matrix = {
                                     }
                                 },
                                 children: {
+                                    'messages': {
+                                        type: '',
+                                        access: ['*'],
+                                        collection: 'message',
+                                        methods: {
+                                            async update(req, res, self) {
+                                                let data = req.body;
+                                                delete data.recieved;
+
+                                                let updates = await database.update('message', {_id: data.id}, data);
+
+                                                return {
+                                                    users: [
+                                                        {
+                                                            id: 'current',
+                                                            chats: [
+                                                                {
+                                                                    id: data.chat,
+                                                                    messages: updates
+                                                                }
+                                                            ]
+                                                        }
+                                                    ]
+                                                };
+
+                                            },
+                                            async send(req, res, self) {
+                                                let data = req.body;
+                                                data.id = data.id || '';
+                                                data.seen = [data.from];
+
+                                                let updates = await database.update('message', {_id: data.id}, data);
+                                                updates = updates.map(message => {
+                                                    message.recieved = true;
+
+                                                    return message;
+                                                });
+
+                                                //console.log('CHATS:SAVE', Object.keys(sockets));
+                                                let location = req.headers['location'];
+
+                                                //process.send({action: 'broadcast', message: {name: 'server:event', event: 'update:location', data: `${req.baseUrl}/${req.params.section}/messages:${updates[0].id}.refresh`}});
+
+                                                //broadcast('server:event', 'update:location', 'chats.get');
+
+                                                return {
+                                                    users: [
+                                                        {
+                                                            id: 'current',
+                                                            chats: [
+                                                                {
+                                                                    id: data.chat,
+                                                                    messages: updates
+                                                                }
+                                                            ]
+                                                        }
+                                                    ]
+                                                };
+
+                                            },
+                                            async getByChat(req, res, self) {
+                                                let messages = await database.find('message', {chat: req.params.id}, {allow_empty: true});
+                                                let chat = await database.findOne('chat', {_id: req.params.id}, {allow_empty: true});
+
+                                                chat.messages = messages.map(message => {
+                                                    message.recieved = message.from === req.user.id ? true : chat.users.some(user => user === req.user.id) ? false : req.user.id === chat.owner;
+
+                                                    return message;
+                                                });
+
+                                                chat.users = await database.find('user', {_id: {$in: chat.users}}, {allow_empty: true});
+                                                chat.users = chat.users.map(user => {
+                                                    let {password, _id, group, ...clean} = user;
+                                                    return clean;
+                                                });
+
+                                                return {
+                                                    users: [
+                                                        {
+                                                            id: 'current',
+                                                            chats: [chat]
+                                                        }
+                                                    ]
+                                                };
+                                            },
+                                            async refresh(req, res, self) {
+                                                //console.log('GET MESSAGE');
+                                                let message = await database.findOne(self.collection, {_id: req.params.id}, {allow_empty: true});
+                                                let chat = await database.findOne('chat', {_id: message.chat}, {allow_empty: true});
+                                                if(chat.users.some(user => req.user.id === user)) {
+
+                                                    message.recieved = message.from === req.user.id ? true : chat.users.some(user => user === req.user.id) ? false : req.user.id === chat.owner;
+
+                                                    return {
+                                                        users: [
+                                                            {
+                                                                id: 'current',
+                                                                chats: [
+                                                                    {
+                                                                        id: message.chat,
+                                                                        messages: [message]
+                                                                    }
+                                                                ]
+                                                            }
+                                                        ]
+                                                    }
+                                                }
+
+                                                return {};
+                                            }
+                                        },
+                                        children: {
+                                            'chat-dialog': {
+                                                access: [],
+                                                children: {
+                                                    'friends': {
+                                                        access: [],
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    },
                                     'chat-dialog': {
-                                        access: []
+                                        access: [],
+                                        children: {
+                                            'friends': {
+                                                access: [],
+                                            }
+                                        }
                                     }
                                 }
                             },

@@ -1,5 +1,5 @@
 <template>
-    <v-dialog v-model="visible" hide-overlay persistent max-width="500px">
+    <v-dialog v-model="visible" hide-overlay persistent max-width="500px" hide-overlay>
         <signin :reset="!visible" @cancel="cancel"></signin>
     </v-dialog>
 </template>

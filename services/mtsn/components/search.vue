@@ -63,7 +63,7 @@
                                 <td >
                                     <div style="display: flex; align-items: center">
                                         <v-icon class="mr-2" :disabled="!props.item.isFriend" color="orange darken-2" style="font-size: 20px; height: 22px;">fas fa-user-circle</v-icon>
-                                        <div style="flex: 1" class=""><a :href="'./feed:' + props.item.public_id" @click.prevent="$router.push('feed:' + props.item.public_id)">{{ props.item.name }}</a></div>
+                                        <div style="flex: 1" class=""><a :href="'./posts:' + props.item.public_id" @click.prevent="$router.push('posts:' + props.item.public_id)">{{ props.item.name }}</a></div>
 
                                         <v-btn icon>
                                             <v-icon color="accent" style="font-size: 20px; height: 22px;">far fa-comment</v-icon>

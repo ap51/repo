@@ -1,9 +1,9 @@
 <template>
-    <v-dialog v-model="isVisible" hide-overlay persistent max-width="400px">
+    <v-dialog v-model="isVisible" hide-overlay persistent max-width="400px" hide-overlay>
         <v-card>
             <v-card-title>
-                <v-icon class="mr-1">fas fa-user-circle</v-icon>
-                <span class="headline">sign up</span>
+                <v-icon class="mr-1 blue--text text--darken-2">fas fa-user-circle</v-icon>
+                <span class="headline blue--text text--darken-2">sign up</span>
             </v-card-title>
             <v-card-text>
                 <v-container grid-list-md>

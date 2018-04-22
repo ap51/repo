@@ -164,7 +164,7 @@ Vue.prototype.$request = async function(url, data, options) {
     if(request_queue[url])
         return request_queue[url];
 
-    let {method, callback, encode, config, no_headers} = options || {};
+    let {method, callback, encode, config, no_headers, on_merge} = options || {};
 
     let response = !data && !parsed.action && cache[component];
 
@@ -320,7 +320,7 @@ Vue.prototype.$request = async function(url, data, options) {
 
                         Vue.prototype.$bus.$emit('merged', merge);
                         console.log('MERGED:', res.config.url);
-
+                        on_merge && on_merge(merge);
                         
                         //parsed.action === 'get' && Vue.prototype.$bus.$emit(`loaded:${parsed.component}`, merge);
                         //parsed.action === 'get' && console.log('LOADED:', parsed.component);
@@ -530,7 +530,7 @@ window.vm = new Vue({
             switch (event) {
                 case 'update:location':
                     console.log('SOCKET:', event);
-                    self.$request(content.data);
+                    self.$request(`${self.$state.base_ui}${content.data}`);
                     break
             }
         });

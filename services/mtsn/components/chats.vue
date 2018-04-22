@@ -28,13 +28,14 @@
                             v-model="props.selected">
                     </v-checkbox>
                 </td>
-                <td><a @click="edit(props.item.id)">{{ props.item.name }}</a></td>
+                <td><a @click="messages(props.item.id)">{{ props.item.name }}</a></td>
                 <!--<td><a @click="edit(props.item.id)">{{ props.item.owner }}</a></td>-->
             </template>
         </v-data-table>
 
-        <chat-dialog :visible="dialog.visible" :object="dialog.object" @send="send" @cancel="cancel"></chat-dialog>
-        <!--<chat-dialog :visible="dialog.visible" :object="dialog.object" :messages="messages" @send="send" @cancel="cancel"></chat-dialog>-->
+        <messages :visible="dialog.visible==='messages'" :object="dialog.object" @send="send" @cancel="cancel"></messages>
+
+        <!--<chat-dialog :visible="dialog.visible" :object="dialog.object" @send="send" @cancel="cancel"></chat-dialog>-->
     </div>
 </template>
 
@@ -58,7 +59,8 @@
     module.exports = {
         extends: component,
         components: {
-            'chat-dialog': httpVueLoader('chat-dialog')
+            //'chat-dialog': httpVueLoader('chat-dialog'),
+            'messages': httpVueLoader('messages')
         },
         data() {
             return {
@@ -87,22 +89,6 @@
                 this.pagination.page = this.activePage || this.pagination.page || 1;
                 return this.database.users ? (this.entities.user.current.chats || []).map(chat => this.entities.chat[chat]) : [];
             },
-/*
-            messages() {
-                if(this.active) {
-                    let chat = this.entities.chat[this.active];
-                    let messages = chat.messages && chat.messages.map(message => {
-                        let msg = this.entities.message[message];
-                        msg.author = this.entities.user[msg.from];
-
-                        return msg;
-                    });
-
-                    return messages;
-                }
-                return [];
-            },
-*/
             pages () {
                 if (this.pagination.rowsPerPage == null || this.pagination.totalItems == null)
                     return 0;
@@ -129,21 +115,14 @@
                 this.dialog.visible = true;
                 this.$request('https://randomuser.me/api', null, {callback: this.onNames, no_headers: true});
             },
-            edit(id) {
-                this.active = id;
-/*
-                let chat = this.entities.chat[id];
-                this.messages = chat.messages && chat.messages.map(message => {
-                    let msg = this.entities.message[message];
-                    msg.from = this.entities.user[msg.from];
+            messages(id) {
+                this.$request(`${this.$state.base_ui}messages:${id}.getByChat`, void 0, {on_merge: (data) => {
+                    this.active = id;
 
-                    return msg;
-                });
-*/
-
-                let chat = this.entities.chat[id];
-                this.dialog.object = {...chat};
-                this.dialog.visible = true;
+                    let chat = this.entities.chat[id];
+                    this.dialog.object = {...chat};
+                    this.dialog.visible = 'messages';
+                }});
             },
             remove() {
                 //this.activePage = this.pagination.page;
@@ -151,9 +130,14 @@
             },
             send(data) {
                 //this.activePage = this.pagination.page;
-                this.$request(`${this.$state.base_api}chats.send`, data, {callback: function (res) {
+                this.$request(`${this.$state.base_ui}messages.send`, data, {callback: function (res) {
                         console.log(res);
                 }});
+/*
+                this.$request(`${this.$state.base_ui}chats.send`, data, {callback: function (res) {
+                        console.log(res);
+                }});
+*/
             },
             save(phone) {
                 //this.activePage = this.pagination.page;

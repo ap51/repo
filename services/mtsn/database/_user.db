@@ -3,7 +3,7 @@
 {"name":"mr. dustin frazier","email":"dustin.frazier@example.com","password":"2e058f18ef00dd257b6ab987f65946bd","group":"users","created":1523795886237,"updated":1523795886237,"_id":"52CyYjnCGGAyK7rZ"}
 {"name":"mr. gerald schmidt","email":"gerald.schmidt@example.com","password":"e551110214422b2a6d69078f4b148669","group":"users","created":1523795899496,"updated":1523795899496,"_id":"8KTUHyWVQg6pcY2t"}
 {"name":"mr. xavier margaret","email":"xavier.margaret@example.com","password":"1ff745af42000cafcc62260815a648f3","group":"users","created":1523795889358,"updated":1523795889358,"_id":"BAmrHxMW9zmHyHNP"}
-{"name":"ms. bertha rhodes","email":"bertha.rhodes@example.com","password":"15755a671cdb1434c6518bbdd2ae8d90","group":"users","created":1523789785250,"updated":1523789785250,"_id":"IGEvpG1ArbF38D8h"}
+{"name":"ms. bertha rhodes","email":"bertha.rhodes@example.com","password":"1b56622614dd2ef34ccac846e454255a","group":"users","created":1523789785250,"updated":1524295838451,"_id":"IGEvpG1ArbF38D8h"}
 {"name":"ms. kimberly howard","email":"kimberly.howard@example.com","password":"971189a886894e2b2fece2b632db8482","group":"users","created":1523790937892,"updated":1523790937892,"_id":"IHbIYhYboTkeEpy5"}
 {"name":"mr. jeremiah wilson","email":"jeremiah.wilson@example.com","password":"0913cd8c10aedf60c71cd32fe0e8c80f","group":"users","created":1523795869557,"updated":1523795869557,"_id":"Irayn345jEPralu1"}
 {"name":"Creator","email":"ap@gmail.com","password":"d3c7d3e90fd6f75b8c8ea3296e7c54e1","group":"admins","created":1522243013072,"updated":1523739407395,"_id":"NXlHTrgrYBEp7JZX"}

@@ -5,6 +5,7 @@ const path = require('path');
 const Datastore = require('nedb');
 //const normalizer = require('normalizr');
 //const JSON5 = require('json5');
+const nanoid = require('nanoid');
 
 /*
 Date.prototype.toISOString = function() {
@@ -121,22 +122,39 @@ if(cluster.isMaster) {
 else {
     let exports = ['insert', 'find', 'findOne', 'remove', 'update']; //get from env??
 
+    let listeners = {};
+
     exports = exports.reduce(function (memo, name) {
         let method = function(...args) {
             return new Promise(async function (resolve, reject) {
-                let uid = new Date() / 1;
+                let uid = nanoid();
+
 
                 //const listeners = process.rawListeners('message');
-                //console.log('LISTENERS:', listeners);
+                //console.log('SEND:', name, uid, args);
 
+                listeners[uid] = function (msg) {
+                    //console.log('RECIEVED ONCE:', name, uid);
+                    if(msg.uid === uid) {
+                        msg.err ? reject(msg.err) : resolve(msg.result);
+
+                        process.removeListener('message', listeners[uid]);
+                        delete listeners[uid];
+                    }
+
+                };
+
+                process.on('message', listeners[uid]);
+/*
                 process.prependOnceListener('message', function(msg){
                     console.log('RECIEVED ONCE:', name, uid);
                     if(msg.uid === uid) {
                         msg.err ? reject(msg.err) : resolve(msg.result);
                     }
                 });
-                
-                console.log('SEND:', name, uid, args);
+*/
+
+                //console.log('SEND:', name, uid, args);
 
                 process.send({
                     action: 'execute',

@@ -1,6 +1,6 @@
 <template>
     <div class="layout-view">
-        <v-dialog v-model="frame" max-width="500px">
+        <v-dialog v-model="frame" max-width="500px" hide-overlay>
             <v-card>
                 <iframe v-if="frame" style="width: 100%;height: 100%;border: none;" src="https://localhost:5000/phones/about"></iframe>
             </v-card>

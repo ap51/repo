@@ -2,8 +2,8 @@
     <div>
         <v-card>
             <v-card-title>
-                <v-icon class="mr-1">fas fa-user-circle</v-icon>
-                <span class="headline">sign in</span>
+                <v-icon class="mr-1 blue--text text--darken-2">fas fa-user-circle</v-icon>
+                <span class="headline blue--text text--darken-2">sign in</span>
             </v-card-title>
             <v-card-text>
                 <v-container grid-list-md>
