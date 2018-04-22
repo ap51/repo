@@ -1065,6 +1065,30 @@ let matrix = {
                                         access: ['*'],
                                         collection: 'message',
                                         methods: {
+                                            async read(req, res, self) {
+                                                let data = req.body;
+                                                delete data.recieved;
+
+                                                let message = await database.findOne('message', {_id: data.id});
+                                                message.seen = message.seen.concat(data.seen);
+
+                                                let updates = await database.update('message', {_id: data.id}, message);
+
+                                                return {
+                                                    users: [
+                                                        {
+                                                            id: 'current',
+                                                            chats: [
+                                                                {
+                                                                    id: data.chat,
+                                                                    messages: updates
+                                                                }
+                                                            ]
+                                                        }
+                                                    ]
+                                                };
+
+                                            },
                                             async update(req, res, self) {
                                                 let data = req.body;
                                                 delete data.recieved;

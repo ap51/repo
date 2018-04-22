@@ -147,7 +147,7 @@
                         msg.seen = msg.seen || [];
                         if(this.isVisible && msg.seen.indexOf(id) === -1) {
                             msg.seen.push(id);
-                            this.$request(`${this.$state.base_ui}messages:${msg.id}.update`, {...msg});
+                            this.$request(`${this.$state.base_ui}messages:${msg.id}.read`, {...msg});
                         }
 
                         msg.author = this.entities.user[msg.from];
