@@ -28,7 +28,16 @@
                             v-model="props.selected">
                     </v-checkbox>
                 </td>
-                <td><a @click="messages(props.item.id)">{{ props.item.name }}</a></td>
+                <td>
+                    <a @click="messages(props.item.id)">    
+                        <v-badge left overlap color="green darken-2">
+                            <!-- <span slot="badge">222</span> -->
+                            <v-icon slot="badge" dark>fas fa-exclamation</v-icon>
+                            <!-- <span slot="badge">2</span> -->
+                            <span>{{ props.item.name }}</span>
+                        </v-badge>
+                    </a>
+                </td>
                 <!--<td><a @click="edit(props.item.id)">{{ props.item.owner }}</a></td>-->
             </template>
         </v-data-table>
@@ -40,6 +49,16 @@
 </template>
 
 <style scoped>
+    .badge__badge {
+        width: 16px; 
+        height: 16px; 
+        font-size: 12px;
+    }
+
+    .badge__badge > i {
+        font-size: 11px;
+    }
+
     .layout-view {
         display: flex;
         justify-content: flex-start;
