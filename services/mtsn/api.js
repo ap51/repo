@@ -1069,10 +1069,10 @@ let matrix = {
                                                 let data = req.body;
                                                 delete data.recieved;
 
-                                                let message = await database.findOne('message', {_id: data.id});
-                                                message.seen = message.seen.concat(data.seen);
+                                                let message = await database.findOne('message', {_id: req.params.id}, {allow_empty: true});
+                                                message && message.seen ? message.seen.indexOf(req.user.id) === -1 && message.seen.push(req.user.id) : message.seen = [req.user.id];
 
-                                                let updates = await database.update('message', {_id: data.id}, message);
+                                                let updates = await database.update('message', {_id: req.params.id}, message);
 
                                                 return {
                                                     users: [
@@ -1080,7 +1080,7 @@ let matrix = {
                                                             id: 'current',
                                                             chats: [
                                                                 {
-                                                                    id: data.chat,
+                                                                    id: message.chat,
                                                                     messages: updates
                                                                 }
                                                             ]
@@ -1176,17 +1176,19 @@ let matrix = {
                                                 if(chat.users.some(user => req.user.id === user)) {
 
                                                     message.recieved = message.from === req.user.id ? true : chat.users.some(user => user === req.user.id) ? false : req.user.id === chat.owner;
+                                                    chat.messages = [message];
 
                                                     return {
                                                         users: [
                                                             {
                                                                 id: 'current',
-                                                                chats: [
+                                                                chats: [chat]
+/*                                                                 chats: [
                                                                     {
                                                                         id: message.chat,
                                                                         messages: [message]
                                                                     }
-                                                                ]
+                                                                ] */
                                                             }
                                                         ]
                                                     }

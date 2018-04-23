@@ -510,6 +510,8 @@ const theme = {
 //httpVueLoader.register(Vue, 'picture-input');
 //Vue.use(VueLoading);
 
+Vue.config.devtools = true;
+
 window.vm = new Vue({
     el: '#app',
     extends: component,

@@ -119,7 +119,7 @@
                     descending: false
                 },
                 search: '',
-                selected: [],
+            
                 headers: [
                     { width: "100%", text: 'Messages', value: 'text' },
                 ],
@@ -143,11 +143,9 @@
                     let messages = chat && chat.messages && chat.messages.map(message => {
                         let msg = this.entities.message[message];
 
-                        let id = this.$state.auth.id;
                         msg.seen = msg.seen || [];
-                        if(this.isVisible && msg.seen.indexOf(id) === -1) {
-                            msg.seen.push(id);
-                            this.$request(`${this.$state.base_ui}messages:${msg.id}.read`, {...msg});
+                        if(this.isVisible && msg.seen.indexOf(this.$state.auth.id) === -1) {
+                            this.$request(`${this.$state.base_ui}messages:${msg.id}.read`, {});
                         }
 
                         msg.author = this.entities.user[msg.from];
@@ -208,15 +206,7 @@
             }
         },
         watch: {
-            'visible': function (newValue, oldValue) {
-                //!newValue && this.$emit('cancel');
-                //newValue && this.pagination.page < 2 && (this.pagination.page = this.pages);
 
-                //newValue && (this.selected = this.scopes.filter(scope => this.object.scope.indexOf(scope.id) !== -1));
-            },
-            'selected': function (newValue, oldValue) {
-                //this.visible && (this.object.scope = this.selected.map(scope => scope.id));
-            }
         }
     }
 
