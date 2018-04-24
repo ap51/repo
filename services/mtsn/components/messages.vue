@@ -140,17 +140,23 @@
             messages() {
                 if(this.object.id && this.entities.chat) {
                     let chat = this.entities.chat[this.object.id];
+                    let unread = [];
+
                     let messages = chat && chat.messages && chat.messages.map(message => {
                         let msg = this.entities.message[message];
 
                         msg.seen = msg.seen || [];
-                        if(this.isVisible && msg.seen.indexOf(this.$state.auth.id) === -1) {
-                            this.$request(`${this.$state.base_ui}messages:${msg.id}.read`, {});
+                        if(msg.seen.indexOf(this.$state.auth.id) === -1) {
+                            unread.push(msg.id);
+                            //this.$request(`${this.$state.base_ui}messages:${msg.id}.read`, {});
                         }
 
                         msg.author = this.entities.user[msg.from];
                         return msg;
                     });
+
+                    Vue.set(chat, 'unread', unread.length);
+                    this.isVisible && unread.length && this.$request(`${this.$state.base_ui}messages.read`, {chat: chat.id, messages:unread});
 
                     let pages = (messages && Math.ceil(messages.length / this.pagination.rowsPerPage)) || 0;
                     this.pagination.page = pages;

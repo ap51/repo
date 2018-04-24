@@ -32,7 +32,7 @@
                     <a @click="messages(props.item.id)">    
                         <v-badge left overlap color="green darken-2">
                             <!-- <span slot="badge">222</span> -->
-                            <v-icon slot="badge" dark>fas fa-exclamation</v-icon>
+                            <v-icon v-if="props.item.unread" slot="badge" dark>fas fa-exclamation</v-icon> <!---->
                             <!-- <span slot="badge">2</span> -->
                             <span>{{ props.item.name }}</span>
                         </v-badge>

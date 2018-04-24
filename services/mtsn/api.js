@@ -1067,12 +1067,16 @@ let matrix = {
                                         methods: {
                                             async read(req, res, self) {
                                                 let data = req.body;
-                                                delete data.recieved;
 
-                                                let message = await database.findOne('message', {_id: req.params.id}, {allow_empty: true});
-                                                message && message.seen ? message.seen.indexOf(req.user.id) === -1 && message.seen.push(req.user.id) : message.seen = [req.user.id];
+                                                let messages = await database.find('message', {_id: {$in: data.messages}}, {allow_empty: true});
 
-                                                let updates = await database.update('message', {_id: req.params.id}, message);
+                                                for(let i = 0; i <= messages.length - 1; i++) {
+                                                    let message = messages[i];
+                                                    message && message.seen ? message.seen.indexOf(req.user.id) === -1 && message.seen.push(req.user.id) : message.seen = [req.user.id];
+                                                    let updates = await database.update('message', {_id: message.id}, message);
+                                                }
+
+
 
                                                 return {
                                                     users: [
@@ -1080,8 +1084,8 @@ let matrix = {
                                                             id: 'current',
                                                             chats: [
                                                                 {
-                                                                    id: message.chat,
-                                                                    messages: updates
+                                                                    id: data.chat,
+                                                                    messages
                                                                 }
                                                             ]
                                                         }
@@ -1122,12 +1126,7 @@ let matrix = {
                                                     return message;
                                                 });
 
-                                                //console.log('CHATS:SAVE', Object.keys(sockets));
-                                                let location = req.headers['location'];
-
-                                                //process.send({action: 'broadcast', message: {name: 'server:event', event: 'update:location', data: `${req.baseUrl}/${req.params.section}/messages:${updates[0].id}.refresh`}});
-
-                                                //broadcast('server:event', 'update:location', 'chats.get');
+                                                //await database.update('chat', {_id: data.chat}, {unread: new Date() / 1});
 
                                                 return {
                                                     users: [
