@@ -13,18 +13,18 @@
 <!--
                 &emsp;&emsp;
 -->
-                Сервис проверки наличия номера мобильного телефона в базе данных (PostgresSQL) с использованием oauth2.0 авторизации на базе nodejs+express+pgsql+oauth2orize vuejs+vuetifyjs.
+                Тестовый проект.
                 <p>
-                НЕ РЕАЛИЗОВАН OAuth2.0 СЕРВЕР
+                Бэк-енд: HTTPS, NodeJS, cluster, IPC, express, socket.io, OAuth2.0 server, crypto, NeDB, cheerio, normalizr, deepmerge
                 </p>
                 <p>
-                НЕ ПРИКРУЧЕН PostgresSQL
+                Фронт-енд: VueJS, Vuetify, vue-router, socket.io, axios
                 </p>
                 <p>
-                    ТЕСТОВЫЙ ЛОГИН: 123, ПАРОЛЬ: ЛОБОЙ
+                    
                 </p>
                 <p>
-                БАЗА ДАННЫХ РЕАЛИЗОВАНА В ПРОСТОМ JSON
+                
                 </p>
             </p>
         </div>
