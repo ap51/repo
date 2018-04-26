@@ -10,22 +10,19 @@
 
         <div>
             <p>
-<!--
-                &emsp;&emsp;
--->
                 Тестовый проект.
-                <p>
-                Бэк-енд: HTTPS, NodeJS, cluster, IPC, express, socket.io, OAuth2.0 server, crypto, NeDB, cheerio, normalizr, deepmerge
-                </p>
-                <p>
-                Фронт-енд: VueJS, Vuetify, vue-router, socket.io, axios
-                </p>
-                <p>
-                    
-                </p>
-                <p>
+            </p>
+            <p>
+            Бэк-енд: HTTPS, NodeJS, cluster, IPC, express, socket.io, OAuth2.0 server, crypto, NeDB, cheerio, normalizr, deepmerge
+            </p>
+            <p>
+            Фронт-енд: VueJS, Vuetify, vue-router, socket.io, axios
+            </p>
+            <p>
                 
-                </p>
+            </p>
+            <p>
+            
             </p>
         </div>
     </div>
