@@ -1,4 +1,3 @@
-
 let cache = {};
 let service = window.location.pathname.split('/')[1];
 
@@ -526,6 +525,7 @@ window.vm = new Vue({
     },
     created() {
         let self = this;
+
         this.$vuetify.theme = theme;
 
         this.$socket.on('server:event', function(event, content) {
